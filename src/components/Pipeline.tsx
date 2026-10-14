@@ -64,28 +64,15 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
   useEffect(() => setItems(cards), [cards]);
   useEffect(() => {
     setNow(Date.now());
-    let saved: Partial<Filters> & { view?: "list" | "board" } = {};
-    try {
-      saved = JSON.parse(localStorage.getItem("scout.pipeline") || "{}");
-    } catch {
-      /* private window */
-    }
+    // Filters come only from the URL (10-14-26: a saved search came back on a plain nav click, "that should not be the case")
     const fromUrl: Partial<Filters> = {};
     if (params.get("q")) fromUrl.q = params.get("q")!;
     if (params.get("min")) fromUrl.score = params.get("min")!;
     if (params.get("seen")) fromUrl.seen = params.get("seen")!;
     if (params.get("area")) fromUrl.area = params.get("area")!;
-    const hasUrl = Object.keys(fromUrl).length > 0;
-    setF({ ...EMPTY, ...(hasUrl ? {} : saved), ...fromUrl });
-    if (params.get("view") === "board" || (!params.get("view") && saved.view === "board")) setView("board");
+    setF({ ...EMPTY, ...fromUrl });
+    setView(params.get("view") === "board" ? "board" : "list");
   }, [params]);
-  useEffect(() => {
-    try {
-      localStorage.setItem("scout.pipeline", JSON.stringify({ ...f, view }));
-    } catch {
-      /* ignore */
-    }
-  }, [f, view]);
   const set = (k: keyof Filters) => (v: string) => {
     setF((x) => ({ ...x, [k]: v }));
     setPage(0);

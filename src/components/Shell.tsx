@@ -15,8 +15,7 @@ export const NAV: { href: string; label: string }[] = [
   { href: "/trends", label: "Trends" },
   { href: "/sponsors", label: "Sponsor Radar" },
   { href: "/culture", label: "Culture" },
-  { href: "/people", label: "People" },
-  { href: "/alerts", label: "Alerts" },
+  { href: "/tracking", label: "Tracking" },
   { href: "/backtest", label: "Backtest" },
 ];
 export const MONEY = [
@@ -462,8 +461,8 @@ function Keys() {
         case "goCulture":
           router.push("/culture");
           return true;
-        case "goAlerts":
-          router.push("/alerts");
+        case "goTracking":
+          router.push("/tracking");
           return true;
         case "goBrief":
           router.push("/brief");

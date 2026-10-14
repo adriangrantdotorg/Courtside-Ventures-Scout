@@ -24,3 +24,4 @@ One line per defect fixed, so the next session can find the first report.
 - 10-14-26 · "Kai Bond" news showed a marine safety officer → people news is searched with the firm's name; the 5 rows removed.
 - 10-14-26 · 40 sponsors had no site, so no logo (Claude, DraftKings…) → keyless site lookup with exact-name matching plus a known-brands map; 29 filled; the sponsors job fills new ones.
 - 10-14-26 · The home filings table spilled into the next column → compact tables fold Source and Notes under the cells and wrap mono text.
+- 10-14-26 · A plain nav click on Pipeline came back with the last search preselected → filters come only from the URL; no saved filters (`Pipeline.tsx`); e2e clicks the nav link and expects an empty search.

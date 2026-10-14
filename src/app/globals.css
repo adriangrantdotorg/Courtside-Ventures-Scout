@@ -701,7 +701,8 @@ table.t tr[hidden] { display:none; }
 /* Deep links land under the sticky top bar unless every target keeps room for it; the landed item gets a red edge. */
 [id] { scroll-margin-top:84px; }
 article:target, tr:target, .tile:target, .card2:target, .rowcard:target { box-shadow:inset 3px 0 0 var(--red); }
-.band h2 a { color:#fff; }
+/* The Spotlight headline is a link and says so at rest (Adrian, 10-14-26) */
+.band h2 a { color:#fff; text-decoration:underline dotted; text-decoration-color:var(--red-ink); text-underline-offset:6px; }
 .band h2 a:hover, .cname a:hover, .rowcard h3 a:hover, table.t .fund:hover, table.t .co a:hover { text-decoration:underline dotted; text-decoration-color:var(--red-ink); text-underline-offset:5px; }
 button.p2 { background:none; border:0; padding:0; margin:0; font:inherit; color:var(--red-ink); cursor:pointer; }
 button.p2:hover, button.p2:focus-visible { text-decoration:underline dotted; text-underline-offset:4px; }
@@ -709,3 +710,11 @@ button.p2:hover, button.p2:focus-visible { text-decoration:underline dotted; tex
 .grid2 table.t th, .grid2 table.t td { padding-left:6px; padding-right:6px; }
 .foot .left { display:flex; gap:22px; }
 .foot .right { margin-left:auto; display:flex; gap:22px; align-items:center; }
+
+.tabadd { margin:14px 32px 0; position:relative; }
+.tabadd .fsearch { width:100%; }
+.addhits { position:absolute; left:0; right:0; z-index:5; margin-top:6px; border:1px solid var(--border); border-radius:10px; background:var(--surface); box-shadow:var(--shadow); overflow:hidden; }
+.addhits button { display:flex; gap:10px; align-items:baseline; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--border); color:var(--text); padding:10px 14px; cursor:pointer; font:500 15px Montserrat, sans-serif; min-height:40px; }
+.addhits button:first-child { border-top:0; }
+.addhits button:hover { background:var(--elevated); }
+.addhits small { font:500 12.5px/1.4 "IBM Plex Mono", monospace; color:var(--text-3); }

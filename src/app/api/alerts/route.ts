@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     .values({ title, rule: { subject: subject || "any", event: "keywords", keywords: keywords.map((k: string) => k.toLowerCase()), sources: ["news", "voices", "podcasts", "sec"] } })
     .returning();
   await db().insert(S.changeLog).values({ kind: "alert", summary: `New alert: ${title}`, target: `alert:${a.id}`, before: { active: false }, after: { active: true } });
-  revalidatePath("/alerts");
+  revalidatePath("/tracking");
   return NextResponse.json({ ok: true, alert: a });
 }
 
@@ -33,6 +33,6 @@ export async function PATCH(req: Request) {
   if (!a) return NextResponse.json({ error: "No such alert" }, { status: 404 });
   await db().update(S.alerts).set({ active: !!active }).where(eq(S.alerts.id, a.id));
   await db().insert(S.changeLog).values({ kind: "alert", summary: `${active ? "Turned on" : "Turned off"} the alert "${a.title}"`, target: `alert:${a.id}`, before: { active: a.active }, after: { active: !!active } });
-  revalidatePath("/alerts");
+  revalidatePath("/tracking");
   return NextResponse.json({ ok: true });
 }

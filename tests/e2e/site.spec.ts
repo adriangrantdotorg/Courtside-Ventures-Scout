@@ -31,7 +31,7 @@ for (const path of PAGES) {
           if (cs.display === "none" || !a.offsetParent) return;
           const opted = a.matches(OPT);
           if (cs.color === "rgb(0, 0, 238)") out.push("blue:" + a.textContent);
-          if (cs.textDecorationLine.includes("underline")) out.push("underlined at rest:" + a.textContent?.slice(0, 40));
+          if (cs.textDecorationLine.includes("underline") && !a.matches(".band h2 a")) out.push("underlined at rest:" + a.textContent?.slice(0, 40)); // the Spotlight headline keeps its underline (10-14-26)
           void opted;
         });
         return out.slice(0, 10);

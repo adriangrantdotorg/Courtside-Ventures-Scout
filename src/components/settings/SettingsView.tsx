@@ -308,7 +308,7 @@ function Pane({ id, data, refresh }: { id: string; data: Data; refresh: () => vo
       return (
         <>
           <p className="sub">Each alert is a rule checked once a day, around 8 AM ET, against everything new.</p>
-          <Card title="Alert Rules" note={<Link href="/alerts">Open Alerts</Link>}>
+          <Card title="Alert Rules" note={<Link href="/tracking#rules">Open Tracking</Link>}>
             {data.alerts.map((a: any) => (
               <div className="trow" key={a.id}>
                 <span className="lbl">{a.title}</span>
@@ -954,7 +954,7 @@ function Trackers({ data, refresh }: { data: Data; refresh: () => void }) {
       <Card title="Trends" note={`${data.trackedTrends.length} of 30 tracked`}>
         {data.trackedTrends.length ? data.trackedTrends.map((t: any) => <Row key={t.id} kind="trend" id={t.id} name={t.headline} href="/trends" />) : <p className="sub">Press Track on any trend to follow it here.</p>}
       </Card>
-      <Card title="People" note={<Link href="/people">Open People</Link>}>
+      <Card title="People" note={<Link href="/tracking#people">Open Tracking</Link>}>
         {data.people.map((p: any) => (
           <div className="trow" key={p.id}>
             <span className="lbl">{p.name}</span>

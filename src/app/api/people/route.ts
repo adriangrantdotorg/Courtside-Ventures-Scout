@@ -15,6 +15,6 @@ export async function POST(req: Request) {
     .onConflictDoUpdate({ target: S.people.slug, set: { tracked: true } })
     .returning();
   await db().insert(S.changeLog).values({ kind: "person", summary: `Tracking ${name}`, target: `person:${p.id}`, before: null, after: { id: p.id } });
-  revalidatePath("/people");
+  revalidatePath("/tracking");
   return NextResponse.json({ ok: true, person: p });
 }

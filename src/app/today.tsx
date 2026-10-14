@@ -132,8 +132,8 @@ export async function Today() {
               <section aria-label="Alert Hits" style={{ marginTop: 28 }}>
                 <div className="h">
                   <h2>Alert Hits</h2>
-                  <Link className="more" href="/alerts" title="Open Alerts">
-                    All Alerts
+                  <Link className="more" href="/tracking#hits" title="Open Tracking: every hit">
+                    All Hits
                   </Link>
                 </div>
                 {hits.map((h) => (
