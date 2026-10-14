@@ -89,7 +89,7 @@ function ThemeChip() {
     return () => obs.disconnect();
   }, []);
   return (
-    <button className="chip red" aria-pressed={theme === "light"} onClick={toggleTheme} title={theme === "dark" ? "Switch to the Day theme (⇧T)" : "Switch to the Night theme (⇧T)"} data-theme-chip>
+    <button className="chip" aria-pressed={theme === "light"} onClick={toggleTheme} title={theme === "dark" ? "Switch to the Day theme (⇧T)" : "Switch to the Night theme (⇧T)"} data-theme-chip>
       {theme === "dark" ? <Sun className="ico" /> : <Moon className="ico" />}
       <span className="kbd">⇧T</span>
     </button>

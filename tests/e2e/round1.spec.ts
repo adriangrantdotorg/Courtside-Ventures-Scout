@@ -32,6 +32,8 @@ test("the theme chip is a symbol with no keycap (the key lives in its tooltip)",
   expect((await chip.innerText()).trim()).toBe("");
   expect(await chip.locator(".kbd").evaluate((el) => getComputedStyle(el).display)).toBe("none");
   expect(await chip.getAttribute("title")).toMatch(/⇧T/);
+  const [chipBorder, searchBorder] = await Promise.all([chip.evaluate((el) => getComputedStyle(el).borderColor), page.locator("[data-search-chip]").evaluate((el) => getComputedStyle(el).borderColor)]);
+  expect(chipBorder).toBe(searchBorder);
 });
 
 test("links carry no underline at rest and a dotted one on hover", async ({ page }) => {

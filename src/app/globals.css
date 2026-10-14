@@ -718,3 +718,5 @@ button.p2:hover, button.p2:focus-visible { text-decoration:underline dotted; tex
 .addhits button:first-child { border-top:0; }
 .addhits button:hover { background:var(--elevated); }
 .addhits small { font:500 12.5px/1.4 "IBM Plex Mono", monospace; color:var(--text-3); }
+/* The theme chip's border matches the Search chip; only its sun or moon is red (Adrian, 10-14-26) */
+.chip[data-theme-chip] .ico { stroke:var(--red-ink); }
