@@ -22,7 +22,7 @@ export default async function Page() {
       <DocHead
         label="Backtest"
         title="We'd Have Found It First"
-        lede="For each of Courtside's own deals, Scout looks for public signals before the Why We Invested post: Form D filings, Hacker News, the App Store, news, domain records. A signal counts only if the company is the headline's subject, inside the thesis, and would have passed today's scoring. One true win beats five shaky ones."
+        lede="For each of Courtside's own deals, Scout checks when it would have surfaced the company, from Form D filings, Hacker News, the App Store, news and domain records. A signal counts only when the company is the headline's subject, inside the thesis, and would pass today's scoring."
         slackText="Backtest: Scout would have flagged these Courtside deals before they were announced."
       />
       <div className="doc">

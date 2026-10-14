@@ -25,7 +25,6 @@ type UI = {
   aiCard: () => void;
   openPalette: () => void;
   openSheet: () => void;
-  startFlag: () => void;
   pushUndo: (e: UndoEntry) => void;
   undo: () => Promise<boolean>;
   overlayOpen: boolean;
@@ -107,7 +106,7 @@ export function Kbd({ children }: { children: ReactNode }) {
   return <span className="k">{children}</span>;
 }
 
-export function UIProvider({ children, palette, sheet, flag }: { children: ReactNode; palette: (close: () => void) => ReactNode; sheet: (close: () => void) => ReactNode; flag: (stop: () => void) => ReactNode }) {
+export function UIProvider({ children, palette, sheet }: { children: ReactNode; palette: (close: () => void) => ReactNode; sheet: (close: () => void) => ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [errors, setErrors] = useState<ErrCard[]>([]);
   const [dlg, setDlg] = useState<(ConfirmOpts & { resolve: (v: boolean) => void }) | null>(null);
@@ -115,7 +114,6 @@ export function UIProvider({ children, palette, sheet, flag }: { children: React
   const [ai, setAi] = useState(false);
   const [pal, setPal] = useState(false);
   const [sh, setSh] = useState(false);
-  const [flagging, setFlagging] = useState(false);
   const undoStack = useRef<UndoEntry[]>([]);
   const seq = useRef(0);
 
@@ -154,7 +152,6 @@ export function UIProvider({ children, palette, sheet, flag }: { children: React
     aiCard: () => setAi(true),
     openPalette: () => setPal(true),
     openSheet: () => setSh(true),
-    startFlag: () => setFlagging(true),
     pushUndo,
     undo,
     overlayOpen,
@@ -293,7 +290,6 @@ export function UIProvider({ children, palette, sheet, flag }: { children: React
       )}
       {pal && palette(() => setPal(false))}
       {sh && sheet(() => setSh(false))}
-      {flagging && flag(() => setFlagging(false))}
     </Ctx.Provider>
   );
 }

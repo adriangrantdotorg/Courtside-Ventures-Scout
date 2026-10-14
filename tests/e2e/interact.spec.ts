@@ -4,7 +4,7 @@ import { HOME, LIVE } from "./pages";
 test.describe("controls are real", () => {
   test.skip(LIVE, "writes or long holds run locally only");
 
-  test("Settings: slider and number stay in sync; 99 keeps Save off; search clears", async ({ page }) => {
+  test("Settings: slider and number stay in sync; a moved weight rebalances to 100; search clears", async ({ page }) => {
     await page.goto("/settings?s=scoring");
     await expect(page.getByRole("textbox", { name: "Search every setting and shortcut" })).toBeFocused();
     const num = page.getByRole("textbox", { name: "Thesis fit value" });
@@ -12,8 +12,8 @@ test.describe("controls are real", () => {
     await num.fill("29");
     await num.press("Enter");
     await expect(slider).toHaveValue("29");
-    await expect(page.getByTestId("weights-total")).toContainText("99");
-    await expect(page.getByRole("button", { name: /Save Changes/ })).toBeDisabled();
+    await expect(page.getByTestId("weights-total")).toContainText("100");
+    await expect(page.getByRole("button", { name: /Save Changes/ })).toBeEnabled();
     await slider.fill("31");
     await expect(num).toHaveValue("31");
     await page.getByRole("button", { name: /Discard/ }).click();
@@ -89,7 +89,9 @@ test.describe("controls are real", () => {
 
   test("a vote reverts on a server error", async ({ page }) => {
     await page.route("**/api/vote", (r) => r.fulfill({ status: 500, body: "{}" }));
+    const batch = page.waitForResponse((r) => r.url().includes("/api/votes"));
     await page.goto("/pipeline");
+    await batch; // the live counts land before the start value is read (the cached page can carry an older count)
     const v = page.locator("[data-vote]").first();
     const start = await v.locator(".n").innerText();
     await v.locator("[data-act=up]").click();

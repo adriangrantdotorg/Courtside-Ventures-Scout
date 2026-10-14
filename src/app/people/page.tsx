@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { desc } from "drizzle-orm";
 import { db, schema as S } from "@/db";
@@ -19,7 +20,13 @@ export default async function Page() {
         <h1>People</h1>
         <span className="count">{people.length} people tracked · a daily check of their public posts and appearances</span>
       </div>
-      <p className="ph-lede">Their YouTube uploads, podcast appearances, Medium or Substack posts, GitHub activity and news mentions, newest first. &quot;What they&apos;ve been saying&quot; is the list of their newest items; with AI on, it becomes a written summary.</p>
+      <p className="ph-lede">
+        The people you track, through their YouTube uploads, podcast appearances, Medium and Substack posts, GitHub activity and news mentions.{" "}
+        <Link href="/settings?s=ai" title="Open Settings › AI">
+          Turn AI on in Settings
+        </Link>{" "}
+        for a written summary of what each one has been saying.
+      </p>
       <div className="rule" style={{ marginTop: 16 }} />
       <div className="list">
         <div style={{ margin: "18px 0" }}>

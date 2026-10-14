@@ -4,7 +4,7 @@
 
 Deal sourcing for Courtside Ventures: startups, trends, sponsors, culture and funds inside Courtside's thesis (Sports, Gaming, Lifestyle, Health, Media), found every morning from free public sources. Every fact links to its source.
 
-A non-commercial demo built by Adrian Grant to show what's possible. No payments, no ads.
+A prototype built by Adrian Grant to start a conversation with Courtside.
 
 ## Three things to try
 

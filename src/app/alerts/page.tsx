@@ -26,10 +26,12 @@ export default async function Page() {
           {alerts.length} alerts · {hits.length} hits
         </span>
       </div>
-      <p className="ph-lede">
-        Each alert is a rule (who or what, the event, keywords, sources), checked once a day, around 8 AM ET, against everything new. Hits land here and on Today, each with its source. In this prototype that
-        is one check a day; watching all day is Phase II, built together.
-      </p>
+      <p className="ph-lede">Your alerts live here. Each one is a rule: who or what, the event, keywords, sources.</p>
+      <ul className="ph-lede" style={{ paddingLeft: 50, marginTop: 6 }}>
+        <li>Checked once a day, around 8 AM ET, against everything new.</li>
+        <li>Hits land here and on Today, each with its source.</li>
+        <li>Watching all day, with email and text alerts, is Phase II, built together.</li>
+      </ul>
       <p className="ph-lede mono" style={{ fontSize: 14, color: "var(--text-2)", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         {last[0]?.t && (
           <>

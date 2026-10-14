@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { PAGES, IGNORE_CONSOLE, HOME } from "./pages";
 
-const BANNED = [/\blanes?\b/i, /\bvoices\b/i, /key insight/i, /context only/i, /\bPre-seed\b/, /\bpretend\b/i, /\bthesis areas?\b/, /\b(pricing|subscribe|upsell|premium|paid tier|hiring|on board)\b/i];
+const BANNED = [/\blanes?\b/i, /\bvoices\b/i, /key insight/i, /context only/i, /\bPre-seed\b/, /\bpretend\b/i, /\bthesis areas?\b/, /\b(pricing|subscribe|upsell|premium|paid tier|hiring|on board)\b/i, /\b(no payments|no ads|non-commercial)\b/i, /Flag a UI problem/i, /&#\d+;|&amp;/];
 
 async function open(page: Page, path: string) {
   const errors: string[] = [];
@@ -20,7 +20,7 @@ for (const path of PAGES) {
     expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
     const text = await page.locator("body").innerText();
     for (const b of BANNED) expect(text, `${path} shows ${b}`).not.toMatch(b);
-    // links: dotted underline unless opted out; never browser blue
+    // links: red, no underline at rest (the dotted underline comes on hover, tested in round1.spec); never browser blue
     for (const theme of ["dark", "light"]) {
       await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
       const bad = await page.evaluate(() => {
@@ -31,8 +31,8 @@ for (const path of PAGES) {
           if (cs.display === "none" || !a.offsetParent) return;
           const opted = a.matches(OPT);
           if (cs.color === "rgb(0, 0, 238)") out.push("blue:" + a.textContent);
-          if (!opted && !(cs.textDecorationLine.includes("underline") && cs.textDecorationStyle === "dotted")) out.push("not dotted:" + a.textContent?.slice(0, 40));
-          if (opted && cs.textDecorationStyle === "dotted" && cs.textDecorationLine.includes("underline")) out.push("opted dotted:" + a.textContent?.slice(0, 40));
+          if (cs.textDecorationLine.includes("underline")) out.push("underlined at rest:" + a.textContent?.slice(0, 40));
+          void opted;
         });
         return out.slice(0, 10);
       });

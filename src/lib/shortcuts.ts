@@ -24,7 +24,6 @@ export type Action =
   | "goSettings"
   | "theme"
   | "undo"
-  | "flag"
   | "sheet";
 
 export const ACTIONS: { id: Action; label: string; keys: string[]; group: string }[] = [
@@ -48,11 +47,10 @@ export const ACTIONS: { id: Action; label: string; keys: string[]; group: string
   { id: "goTrends", label: "Go to Trends", keys: ["g t"], group: "Go" },
   { id: "goCulture", label: "Go to Culture", keys: ["g c"], group: "Go" },
   { id: "goAlerts", label: "Go to Alerts", keys: ["g a"], group: "Go" },
-  { id: "goBrief", label: "Go to Brief", keys: ["g b"], group: "Go" },
+  { id: "goBrief", label: "Go to IC Meeting", keys: ["g b"], group: "Go" },
   { id: "goSettings", label: "Go to Settings", keys: ["g s"], group: "Go" },
   { id: "theme", label: "Switch theme (Night / Day)", keys: ["shift+t"], group: "View" },
   { id: "undo", label: "Undo the last vote, track or note", keys: ["cmd+z", "ctrl+z"], group: "Act" },
-  { id: "flag", label: "Flag a UI problem", keys: ["!"], group: "View" },
   { id: "sheet", label: "Shortcut sheet", keys: ["?"], group: "View" },
 ];
 

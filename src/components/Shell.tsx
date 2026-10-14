@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Search, Sun, Moon, House, ListChecks, TrendingUp, Users2, Menu, FileText, Flag } from "lucide-react";
+import { Search, Sun, Moon, House, ListChecks, TrendingUp, Users2, Menu, FileText } from "lucide-react";
 import { UIProvider, useUI, Overlay, Kbd, ClearX } from "./ui";
 import { ACTIONS, loadBindings, comboOf, prettyCombo, type Action } from "@/lib/shortcuts";
 import { postJSON } from "@/lib/client";
@@ -11,12 +11,12 @@ import { postJSON } from "@/lib/client";
 export const NAV: { href: string; label: string }[] = [
   { href: "/", label: "Today" },
   { href: "/pipeline", label: "Pipeline" },
+  { href: "/brief", label: "IC Meeting" },
   { href: "/trends", label: "Trends" },
   { href: "/sponsors", label: "Sponsor Radar" },
   { href: "/culture", label: "Culture" },
   { href: "/people", label: "People" },
   { href: "/alerts", label: "Alerts" },
-  { href: "/brief", label: "Brief" },
   { href: "/backtest", label: "Backtest" },
 ];
 export const MONEY = [
@@ -92,7 +92,6 @@ function ThemeChip() {
   return (
     <button className="chip red" aria-pressed={theme === "light"} onClick={toggleTheme} title={theme === "dark" ? "Switch to the Day theme (⇧T)" : "Switch to the Night theme (⇧T)"} data-theme-chip>
       {theme === "dark" ? <Sun className="ico" /> : <Moon className="ico" />}
-      <span>{theme === "dark" ? "Day" : "Night"}</span>
       <span className="kbd">⇧T</span>
     </button>
   );
@@ -132,7 +131,6 @@ function TopBar() {
             </Link>
           ))}
           <Dropdown label="Money Moves" items={MONEY} path={path} />
-          <Dropdown label="More" items={MORE} path={path} />
         </nav>
         <div className="tools">
           <button className="chip" onClick={ui.openPalette} title="Search companies, pages, trends, people and brands (⌘K)" data-search-chip>
@@ -204,7 +202,6 @@ function Palette({ close }: { close: () => void }) {
       const pages: Hit[] = ALL_PAGES.filter((p) => !q || p.label.toLowerCase().includes(q.toLowerCase())).map((p) => ({ kind: "Pages", title: p.label, href: p.href }));
       const actions: Hit[] = [
         { kind: "Pages", title: "Settings › Scoring", sub: "weights, penalties, Worth a Look threshold", href: "/settings?s=scoring" },
-        { kind: "Pages", title: "Flag a UI problem", sub: "point at what is not working", href: "#flag", act: "flag" },
         { kind: "Pages", title: "Switch theme", sub: "Night or Day", href: "#theme", act: "theme" },
       ].filter((p) => !q || p.title.toLowerCase().includes(q.toLowerCase()));
       let remote: Hit[] = [];
@@ -237,11 +234,6 @@ function Palette({ close }: { close: () => void }) {
   }, [q]);
 
   async function go(h: Hit, newWin = false) {
-    if (h.act === "flag") {
-      close();
-      ui.startFlag();
-      return;
-    }
     if (h.act === "theme") {
       toggleTheme();
       close();
@@ -369,98 +361,6 @@ function Sheet({ close }: { close: () => void }) {
   );
 }
 
-/* ---------- Flag a UI problem ---------- */
-const CHIPS = ["Hard to read", "Broken", "Confusing", "Slow", "Missing something"];
-function describe(el: Element): string {
-  const tag = el.tagName.toLowerCase();
-  const id = el.id ? "#" + el.id : "";
-  const cls = typeof el.className === "string" && el.className ? "." + el.className.trim().split(/\s+/).slice(0, 2).join(".") : "";
-  const text = (el.textContent || "").trim().slice(0, 60);
-  return `${tag}${id}${cls}${text ? ` "${text}"` : ""}`;
-}
-function FlagMode({ stop }: { stop: () => void }) {
-  const ui = useUI();
-  const [picked, setPicked] = useState<{ el: string; x: number; y: number } | null>(null);
-  const [chips, setChips] = useState<string[]>([]);
-  const [note, setNote] = useState("");
-  const last = useRef<Element | null>(null);
-  useEffect(() => {
-    if (picked) return;
-    const over = (e: MouseEvent) => {
-      const t = e.target as Element;
-      if (t.closest(".flagbar")) return;
-      last.current?.classList.remove("flag-outline");
-      t.classList.add("flag-outline");
-      last.current = t;
-    };
-    const click = (e: MouseEvent) => {
-      const t = e.target as Element;
-      if (t.closest(".flagbar")) return;
-      e.preventDefault();
-      e.stopPropagation();
-      t.classList.remove("flag-outline");
-      setPicked({ el: describe(t), x: Math.min(e.clientX, window.innerWidth - 360), y: Math.min(e.clientY + 12, window.innerHeight - 320) });
-    };
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && stop();
-    document.addEventListener("mouseover", over, true);
-    document.addEventListener("click", click, true);
-    document.addEventListener("keydown", esc);
-    return () => {
-      last.current?.classList.remove("flag-outline");
-      document.removeEventListener("mouseover", over, true);
-      document.removeEventListener("click", click, true);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [picked, stop]);
-  async function save() {
-    const r = await postJSON("/api/feedback", {
-      page: location.pathname,
-      element: picked?.el,
-      viewport: `${innerWidth}×${innerHeight}`,
-      theme: document.documentElement.dataset.theme,
-      browser: navigator.userAgent.slice(0, 160),
-      chips,
-      note,
-    });
-    if (r.ok) ui.toast("Problem Flagged");
-    else ui.error("The flag didn't save", r.error || "The server did not answer.");
-    stop();
-  }
-  return (
-    <>
-      {!picked && (
-        <div className="flagbar" role="status">
-          <Flag className="ico" /> Click the part that is not working
-          <button onClick={stop} title="Leave pick mode (Esc)">
-            Cancel
-          </button>
-        </div>
-      )}
-      {picked && (
-        <div className="flagcard" style={{ left: picked.x, top: picked.y }} role="dialog" aria-label="Flag a UI problem" data-testid="dialog">
-          <b style={{ font: "600 15px/1.2 Oswald, sans-serif", textTransform: "uppercase", letterSpacing: ".06em" }}>Flag a UI Problem</b>
-          <div className="chips">
-            {CHIPS.map((c) => (
-              <button key={c} className="lane-chip" aria-pressed={chips.includes(c)} onClick={() => setChips((x) => (x.includes(c) ? x.filter((y) => y !== c) : [...x, c]))}>
-                {c}
-              </button>
-            ))}
-          </div>
-          <textarea className="sinput" placeholder="Optional note" value={note} onChange={(e) => setNote(e.target.value)} autoCorrect="off" autoCapitalize="off" spellCheck={false} />
-          <div className="acts2">
-            <button className="btn" onClick={stop} title="Close without saving (Esc)">
-              Cancel<Kbd>Esc</Kbd>
-            </button>
-            <button className="btn red" onClick={save} title="Save this report for the team">
-              Send Report
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
 /* ---------- keyboard ---------- */
 function Keys() {
   const ui = useUI();
@@ -577,9 +477,6 @@ function Keys() {
         case "undo":
           ui.undo();
           return true;
-        case "flag":
-          ui.startFlag();
-          return true;
         case "sheet":
           ui.openSheet();
           return true;
@@ -657,7 +554,7 @@ function Swipe() {
 
 export function Shell({ children, ticker }: { children: ReactNode; ticker: ReactNode }) {
   return (
-    <UIProvider palette={(c) => <Palette close={c} />} sheet={(c) => <Sheet close={c} />} flag={(s) => <FlagMode stop={s} />}>
+    <UIProvider palette={(c) => <Palette close={c} />} sheet={(c) => <Sheet close={c} />} >
       <div className="app">
         <TopBar />
         {ticker}
@@ -683,13 +580,16 @@ function Footer() {
       <button className="linkish" onClick={() => ui.door("team")} title="What Phase II adds, built together">
         Phase II
       </button>
-      <button className="linkish" onClick={ui.startFlag} title="Point at a part of the page that is not working (!)">
-        Flag a UI problem
-      </button>
       <button className="linkish" onClick={ui.openSheet} title="Show every keyboard shortcut (?)">
         Shortcuts
       </button>
-      <span className="sp">A non-commercial demo built by Adrian Grant to show what&apos;s possible. No payments, no ads.</span>
+      <span className="sp" style={{ display: "flex", gap: 22 }}>
+        {MORE.map((m) => (
+          <Link key={m.href} href={m.href} title={`Open ${m.label}`}>
+            {m.label}
+          </Link>
+        ))}
+      </span>
     </footer>
   );
 }

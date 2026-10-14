@@ -1,8 +1,26 @@
 // Screen-copy rules shared by the loader, the jobs and the pages.
+/** HTML entities to characters. Feeds double-encode ("&amp;#8217;"), so callers may run it twice; cleanCopy runs it on every screen string. */
+export function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&#x27;|&rsquo;|&lsquo;|&apos;/g, "'")
+    .replace(/&ldquo;|&rdquo;/g, '"')
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
+    .replace(/&hellip;/g, "…")
+    .replace(/&amp;/g, "&");
+}
+/** Nothing on screen ever shows "&#8217;" or "&amp;": two passes cover a double-encoded feed. */
+export function unescapeTwice(s: string): string {
+  return decodeEntities(decodeEntities(s));
+}
 /** Screen copy never says "lane" or "Context only": the seed's older wording is cleaned here. */
 export function cleanCopy(s: string | null | undefined): string {
   if (!s) return "";
-  return s
+  return unescapeTwice(s)
     .replace(/\bSame lane\b/g, "Same area of the thesis")
     .replace(/\b([A-Z][a-z]+) lane\b/g, "$1")
     .replace(/\boutside the lanes\b/gi, "outside the thesis")

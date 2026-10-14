@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+// Unit tests read the same .env.local the app does (SITE_URL for the User-Agent); the shell no longer has to export it.
+config({ path: ".env.local", quiet: true });
 import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
 

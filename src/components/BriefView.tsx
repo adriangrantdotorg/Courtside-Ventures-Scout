@@ -19,17 +19,20 @@ export function BriefView({ week, data, archive }: { week: string; data: any; ar
   return (
     <div>
       <DocHead
-        label={`Monday Brief · Week of ${fmtDate(week)}`}
-        title="The Monday Brief"
+        label={`IC Meeting · Week of ${fmtDate(week)}`}
+        title="IC Meeting"
         lede={
           <>
-            The week inside Courtside&apos;s thesis, every item with its source. Next brief Monday 11 AM ET, <Until date={nextRun(15, new Date(), 1)} ch={9} />.{" "}
+            The week inside Courtside&apos;s thesis, every item with its source, ready for Monday&apos;s meeting.{" "}
             <Link href="/settings?s=slack" title="Post the brief to a Slack channel every Monday">
               Want this in Slack? Connect Slack
             </Link>
+            <span className="mono" style={{ display: "block", marginTop: 6, fontSize: 14, color: "var(--text-3)" }}>
+              Next brief Monday 12 AM ET · <Until date={nextRun(4, new Date(), 1)} ch={9} />
+            </span>
           </>
         }
-        slackText={`The Monday brief for the week of ${fmtDate(week)}.`}
+        slackText={`The IC Meeting brief for the week of ${fmtDate(week)}.`}
       />
       <div className="doc">
         <div className="main">

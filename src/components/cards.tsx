@@ -383,7 +383,7 @@ export function Facts({ c }: { c: CompanyCard }) {
         Stage <b>{c.stageText}</b>
       </span>
       <span>
-        Check <b className={c.check.tone === "ok" ? "ok" : c.check.tone === "warn" ? "warn" : ""}>{c.check.text}</b>
+        Check size <b className={c.check.tone === "ok" ? "ok" : c.check.tone === "warn" ? "warn" : ""}>{c.check.text}</b>
       </span>
       {c.portfolio && (
         <span>
@@ -444,7 +444,7 @@ export function Dossier({ c, showRank = true }: { c: CompanyCard; showRank?: boo
         {c.descSegs.length > 0 && (
           <p className="cdesc">
             <Rich segs={c.descSegs} />{" "}
-            {c.descSource && (
+            {c.descSource && !c.signals.some((s) => sigLabel(s).toLowerCase() === c.descSource!.label.toLowerCase()) && (
               <span className="per">
                 per{" "}
                 <a href={c.descSource.url} target="_blank" rel="noopener noreferrer" title={`Opens ${c.descSource.label} in a new window`}>

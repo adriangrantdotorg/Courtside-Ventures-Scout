@@ -6,7 +6,7 @@ import { Ticker } from "@/components/Ticker";
 
 export const metadata: Metadata = {
   title: { default: "Courtside Ventures Scout", template: "%s · Courtside Ventures Scout" },
-  description: "Deal sourcing for Courtside Ventures: startups, trends, sponsors and funds inside Courtside's thesis, every fact linked to its source. A non-commercial demo built by Adrian Grant.",
+  description: "Deal sourcing for Courtside Ventures: startups, trends, sponsors and funds inside Courtside's thesis, every fact linked to its source. A prototype by Adrian Grant.",
   robots: { index: false, follow: false },
 };
 
@@ -17,7 +17,7 @@ export const viewport: Viewport = {
 };
 
 // Night is written into the HTML; Day (a saved choice) is applied before paint.
-const prePaint = `try{var t=localStorage.getItem("scout.theme");if(t==="light")document.documentElement.dataset.theme="light";var d=localStorage.getItem("scout.density");if(d)document.documentElement.dataset.density=d;var s=localStorage.getItem("scout.text");if(s)document.documentElement.dataset.text=s;}catch(e){}`;
+const prePaint = `try{var t=localStorage.getItem("scout.theme");if(t==="light")document.documentElement.dataset.theme="light";var d=localStorage.getItem("scout.density");if(d)document.documentElement.dataset.density=d;var s=localStorage.getItem("scout.text");if(s)document.documentElement.dataset.text=s;var m=localStorage.getItem("scout.motion");if(m==="off")document.documentElement.dataset.motion="off";}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

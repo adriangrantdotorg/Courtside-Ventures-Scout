@@ -72,8 +72,8 @@ export function SponsorsView({ cards }: { cards: SponsorCard[] }) {
         {list.map((c) => (
           <article className="rowcard" key={c.id} id={c.key} data-item>
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                {c.domain && <img src={favicon(c.domain)} alt="" width={28} height={28} style={{ borderRadius: 7, background: "#fff" }} />}
+              <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
+                {c.domain ? <img src={favicon(c.domain)} alt="" width={28} height={28} style={{ borderRadius: 7, background: "#fff" }} /> : <span className="lmark s28" aria-hidden="true">{c.brand.trim().charAt(0).toUpperCase()}</span>}
                 <h3 style={{ margin: 0 }}>
                   {c.site ? (
                     <a href={c.site} target="_blank" rel="noopener noreferrer" title={`Opens ${c.domain} in a new window`} data-act="source">

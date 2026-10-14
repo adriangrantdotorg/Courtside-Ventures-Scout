@@ -105,7 +105,8 @@ export function whyFitsLine(i: { name: string; description: string; thesisArea: 
   const play = playOf(text, i.thesisArea);
   const area = i.thesisArea ? i.thesisArea[0].toUpperCase() + i.thesisArea.slice(1) : "";
   const d = (i.description || "").trim();
-  const what = d.length > 30 && !HEADLINE.test(d.split(/(?<=[.!?])\s/)[0]) ? shortWhat(d) : `A new ${area || "consumer"} company`;
+  // A bare name or a stripped-to-nothing sentence never leaves the line starting with ":" or "," (10-14-26).
+  const what = (d.length > 30 && !HEADLINE.test(d.split(/(?<=[.!?])\s/)[0]) ? shortWhat(d) : "") || `A new ${area || "consumer"} company`;
   const parallel = i.near || (i.thesisArea ? AREA_PARALLEL[i.thesisArea] : null);
   const head = play ? `${what}: ${play.label}, like ${play.parallel}` : parallel ? `${what} in the ${area} area of the thesis, near ${parallel} in the portfolio` : `${what}, inside Courtside's thesis`;
   let fact = "";
@@ -126,13 +127,14 @@ function shortWhat(desc: string): string {
   first = first.replace(/^(a|an|the)\s+/i, (m) => m[0].toUpperCase() + m.slice(1).toLowerCase());
   first = first.replace(/[.!?]+$/, "");
   const words = first.split(" ");
-  const out = words.length > 12 ? words.slice(0, 12).join(" ").replace(/[,;:]$/, "") : first;
+  const out = (words.length > 12 ? words.slice(0, 12).join(" ").replace(/[,;:]$/, "") : first).trim();
+  if (!/[a-z]/i.test(out)) return "";
   return out.charAt(0).toUpperCase() + out.slice(1);
 }
 
 /* ---------- portfolio check ---------- */
 const STOP = new Set(
-  "the a an and or for of to in on at with by from is are be as its it this that their they we our your you company platform app apps startup based founded founder founders ceo team users user people new first world leading help helps building builds build make makes using use used through via into across more all every each other most best data technology tech solution solutions service services products product brand brands including such like over well also has have had which who what when where how than can will one two three"
+  "the a an and or for of to in on at with by from is are be as its it this that their they we our your you company platform app apps startup based founded founder founders ceo team users user people new first world leading help helps building builds build make makes using use used through via into across more all every each other most best data technology tech solution solutions service services products product brand brands including such like over well also has have had which who what when where how than can will one two three focused focus focuses mobile online digital free daily easy simple better faster fast real time way ways need needs get gets work works live home life day days week now today top big small high low next last only just any some own same about after before between under modern smart powered designed built create creates created provides provide offers offer enables enable allows allow delivers deliver"
     .split(" "),
 );
 function tokens(s: string): Set<string> {
@@ -164,7 +166,7 @@ export function portfolioCheck(c: { name: string; description: string; thesisAre
     if (!best || score > best.score) best = { p, shared, score };
   }
   if (!best || best.score < 3) return null;
-  const ground = best.shared.slice(0, 3).join(", ");
+  const ground = best.shared.filter((t) => t.length > 3).slice(0, 3).join(", ");
   if (best.score >= 4) return { kind: "competes", with: best.p.name, reason: `Both build ${ground ? "around " + ground : "the same product"}` };
-  return { kind: "adjacent", with: best.p.name, reason: `Shared ground: ${ground}` };
+  return { kind: "adjacent", with: best.p.name, reason: ground ? `Both touch ${ground}` : "Nearby in the portfolio" };
 }

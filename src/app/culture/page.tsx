@@ -1,11 +1,11 @@
+import { cleanCopy } from "@/lib/copy";
 import type { Metadata } from "next";
 import { and, desc, gte, inArray } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import { cultureOverlaps } from "@/lib/queries";
 import { CultureRow } from "@/components/rows";
-import { LockChip, Vote } from "@/components/cards";
+import { LockChip } from "@/components/cards";
 import { RowFilter } from "@/components/ListHead";
-import { Ago } from "@/components/Live";
 import { AREA_LABEL, fmtDate, slugify } from "@/lib/format";
 
 export const revalidate = 300;
@@ -34,8 +34,8 @@ export default async function Page() {
         </span>
       </div>
       <p className="ph-lede">
-        Every day Scout reads each new episode, video and post from the creators and shows, pulls out every company, brand and startup they mention with the sentence it came from, and marks whether they
-        recommend, like, discuss, criticize or are sponsored by it. The taste map below ranks where different audiences overlap. It updates once a day; real-time is Phase II work.
+        Every day Scout reads the new episodes, videos and posts from {sources.filter((s) => s.status === "active").length} creators and shows and pulls out every company, brand and startup they mention, with the
+        sentence it came from and the sentiment: recommend, like, discuss or criticize. The taste map below ranks who overlaps on what. Once a day in this prototype; real-time is Phase II, built together.
       </p>
       <RowFilter placeholder="Search brands and startups" areas={areas} target="#taste" />
       <section className="list" id="taste" aria-label="The taste map">
@@ -70,7 +70,7 @@ export default async function Page() {
                   {news.map((n) => (
                     <span key={n.id} style={{ marginTop: 4 }}>
                       <a href={n.url} target="_blank" rel="noopener noreferrer" title="Opens the story in a new window">
-                        {n.title}
+                        {cleanCopy(n.title)}
                       </a>{" "}
                       <span className="mono" style={{ color: "var(--text-3)" }}>{fmtDate(n.date)}</span>
                     </span>
@@ -95,23 +95,14 @@ export default async function Page() {
       </section>
       <section className="list" aria-label="The creators and shows">
         <div className="h" style={{ marginTop: 18 }}>
-          <h2>The Creators and Shows</h2>
-          <span className="note-h">{sources.filter((s) => s.status === "active").length} active sources</span>
+          <h2>The Creators and Shows Scout Is Tracking</h2>
         </div>
-        <p className="explain">A podcast with no new episode in 90 days is not a source and shows here as quiet. Adrian Grant&apos;s own show always stays. Add or remove one in Settings › Creators and Shows.</p>
         <div className="brands wide4">
           {sources.map((v) => (
             <div className="tile" key={v.id} id={slugify(v.name)} data-item>
-              {v.image ? <img src={v.image} alt="" width={30} height={30} /> : <span />}
+              {v.image ? <img src={v.image} alt="" width={30} height={30} /> : <span className="lmark" aria-hidden="true">{v.name.trim().charAt(0).toUpperCase()}</span>}
               <span>
-                <b>{v.site ? <a href={v.site} target="_blank" rel="noopener noreferrer" title={`Opens ${v.name} in a new window`}>{v.name}</a> : v.name}</b>
-                <small>
-                  {v.status === "quiet" ? "Quiet: no episode in 90 days" : v.kind === "podcast" ? "Podcast" : "Creator"}
-                  {v.lastEpisode ? <> · last <Ago date={v.lastEpisode} ch={8} /></> : null}
-                </small>
-                <span style={{ marginTop: 6 }}>
-                  <Vote k={`voice:${v.id}`} row name={v.name} upTitle="A great source" downTitle="Not useful" />
-                </span>
+                <b style={{ margin: 0 }}>{v.site ? <a href={v.site} target="_blank" rel="noopener noreferrer" title={`Opens ${v.name} in a new window`}>{v.name}</a> : v.name}</b>
               </span>
             </div>
           ))}

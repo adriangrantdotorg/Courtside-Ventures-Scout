@@ -5,7 +5,7 @@ import { db, schema } from "@/db";
 import { buildIndex, linkify, type Entity, type Index, type Seg } from "./linkify";
 import { areaLabel, domainOf, fmtMoney, pastStage, slugify, stageLabel } from "./format";
 import { getSetting, getThreshold, type BuildProgress } from "./settings";
-import { cleanCopy } from "./copy";
+import { cleanCopy, unescapeTwice } from "./copy";
 import { classify } from "./thesis";
 export { cleanCopy };
 
@@ -415,7 +415,7 @@ export async function sponsorCards(limit?: number): Promise<SponsorCard[]> {
       stamp,
       fresh: fresh || !!newShow,
       hot: shows.length >= 2 && fresh,
-      sightings: list.slice(0, 12).map((x) => ({ show: x.show, date: x.date?.toISOString() || null, url: x.url, evidence: x.evidence })),
+      sightings: list.slice(0, 12).map((x) => ({ show: x.show, date: x.date?.toISOString() || null, url: x.url, evidence: x.evidence ? unescapeTwice(x.evidence) : null })),
       votes: counts[`sponsor:${s.id}`] || 0,
     };
   });
@@ -448,7 +448,7 @@ export async function cultureOverlaps(days = 30, limit = 40): Promise<Overlap[]>
     const kind = l[0].kind;
     const recent = l.filter((x) => x.date && Date.now() - x.date.getTime() < 7 * 86400000).length;
     const score = voices.length * 10 + recent * 2 + (kind === "startup" ? 6 : kind === "portfolio" ? 4 : 0);
-    const quotes = voices.map((v) => l.find((x) => x.voice === v)!).map((x) => ({ voice: x.voice, quote: x.quote, url: x.url, date: x.date?.toISOString() || null, stance: x.stance }));
+    const quotes = voices.map((v) => l.find((x) => x.voice === v)!).map((x) => ({ voice: x.voice, quote: x.quote ? unescapeTwice(x.quote) : null, url: x.url, date: x.date?.toISOString() || null, stance: x.stance }));
     const area = classify(`${l[0].entity} ${quotes.map((q) => q.quote || "").join(" ")}`).area;
     out.push({ entity: l[0].entity, slug: slugify(l[0].entity), kind, area, voices, quotes, score, votes: 0, companyId: coMap.get(l[0].entity.toLowerCase()) || null });
   }

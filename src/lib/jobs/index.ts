@@ -26,7 +26,7 @@ export const JOBS: Record<string, { label: string; hourUtc: number; weekday?: nu
   culture: { label: "Culture", hourUtc: 12, run: cultureJob },
   trends: { label: "Trends", hourUtc: 13, run: trendsJob },
   sponsors: { label: "Sponsor Radar", hourUtc: 14, run: sponsorsJob },
-  "monday-brief": { label: "Monday brief", hourUtc: 15, weekday: 1, run: (c) => mondayBrief(c) },
+  "monday-brief": { label: "IC Meeting brief", hourUtc: 4, weekday: 1, run: (c) => mondayBrief(c) },
   weekly: { label: "Weekly upkeep", hourUtc: 6, weekday: 0, run: weeklyJob },
 };
 

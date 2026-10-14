@@ -13,10 +13,29 @@ import type { CompanyCard } from "@/lib/queries";
 
 const AREAS = ["health", "sports", "media", "gaming", "lifestyle"];
 const AREA_NAME: Record<string, string> = { health: "Health", sports: "Sports", media: "Media", gaming: "Gaming", lifestyle: "Lifestyle" };
-type Filters = { q: string; area: string; stage: string; signal: string; score: string; seen: string; rating: string; status: string };
+export type Filters = { q: string; area: string; stage: string; signal: string; score: string; seen: string; rating: string; status: string };
 const EMPTY: Filters = { q: "", area: "", stage: "", signal: "", score: "", seen: "", rating: "", status: "" };
 const PAGE = 20;
 const DAY = 86400000;
+
+/** Does a card pass every filter except the thesis-area chips? One predicate for the list and for the option counts. */
+export function matches(c: CompanyCard, f: Filters, now: number): boolean {
+  const q = f.q.trim().toLowerCase();
+  if (q && !`${c.name} ${c.domain || ""} ${c.descSegs.map((s) => (typeof s === "string" ? s : s.t)).join("")}`.toLowerCase().includes(q)) return false;
+  if (f.stage === "past" ? !["series-b", "later"].includes(c.stage) : f.stage && c.stage !== f.stage) return false;
+  if (f.signal && !c.signals.some((s) => s.type === f.signal)) return false;
+  if (f.score && c.score < Number(f.score)) return false;
+  if (f.seen && now) {
+    const age = now - new Date(c.firstSeen).getTime();
+    if (f.seen === "today" && age > DAY) return false;
+    if (f.seen === "week" && age > 7 * DAY) return false;
+    if (f.seen === "month" && age > 30 * DAY) return false;
+  }
+  if (f.rating === "up" && c.votes <= 0) return false;
+  if (f.rating === "down" && c.votes >= 0) return false;
+  if (f.status && c.status !== f.status) return false;
+  return true;
+}
 
 function Sel({ label, value, onChange, opts }: { label: string; value: string; onChange: (v: string) => void; opts: [string, string][] }) {
   return (
@@ -72,26 +91,10 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
     setPage(0);
   };
 
-  const base = useMemo(() => {
-    const q = f.q.trim().toLowerCase();
-    return items.filter((c) => {
-      if (q && !`${c.name} ${c.domain || ""} ${c.descSegs.map((s) => (typeof s === "string" ? s : s.t)).join("")}`.toLowerCase().includes(q)) return false;
-      if (f.stage === "past" ? !["series-b", "later"].includes(c.stage) : f.stage && c.stage !== f.stage) return false;
-      if (f.signal && !c.signals.some((s) => s.type === f.signal)) return false;
-      if (f.score && c.score < Number(f.score)) return false;
-      if (f.seen && now) {
-        const age = now - new Date(c.firstSeen).getTime();
-        if (f.seen === "today" && age > DAY) return false;
-        if (f.seen === "week" && age > 7 * DAY) return false;
-        if (f.seen === "month" && age > 30 * DAY) return false;
-      }
-      if (f.rating === "up" && c.votes <= 0) return false;
-      if (f.rating === "down" && c.votes >= 0) return false;
-      if (f.status && c.status !== f.status) return false;
-      return true;
-    });
-  }, [items, f, now]);
+  const base = useMemo(() => items.filter((c) => matches(c, f, now)), [items, f, now]);
   const shown = f.area ? base.filter((c) => c.thesisArea === f.area) : base;
+  // A dropdown option that would show nothing is not offered (Adrian, 10-14-26); the chosen one always stays.
+  const live = (k: keyof Filters, opts: [string, string][]) => opts.filter(([v]) => v === f[k] || items.some((c) => matches(c, { ...f, [k]: v }, now) && (!f.area || c.thesisArea === f.area)));
   const counts = Object.fromEntries(AREAS.map((a) => [a, base.filter((c) => c.thesisArea === a).length]));
   const active = Object.values(f).some(Boolean);
   const newToday = now ? items.filter((c) => now - new Date(c.firstSeen).getTime() < DAY).length : 0;
@@ -150,6 +153,7 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
         </div>
       </div>
       <div className="filters">
+        <div className="frow">
         <label className="fsearch">
           <Search className="ico" />
           <input
@@ -166,15 +170,18 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
           />
           <ClearX show={!!f.q} onClear={() => set("q")("")} />
         </label>
-        <Sel label="Stage" value={f.stage} onChange={set("stage")} opts={[["pre-seed", "Pre-Seed"], ["seed", "Seed"], ["series-a", "Series A"], ["unknown", "Unknown"], ["past", "Past Courtside's stage"]]} />
-        <Sel label="Signal" value={f.signal} onChange={set("signal")} opts={[["formd", "Form D"], ["formc", "Form C"], ["yc", "Y Combinator"], ["hn", "Show HN"], ["producthunt", "Product Hunt"], ["appstore", "App Store"], ["news", "News"]]} />
-        <Sel label="Score" value={f.score} onChange={set("score")} opts={[[String(threshold), `Worth a Look (${threshold}+)`], ["50", "50+"], ["40", "40+"], ["30", "30+"]]} />
-        <Sel label="Seen" value={f.seen} onChange={set("seen")} opts={[["today", "Today"], ["week", "This week"], ["month", "This month"]]} />
-        <Sel label="Rating" value={f.rating} onChange={set("rating")} opts={[["up", "Voted up"], ["down", "Voted down"]]} />
-        <Sel label="Status" value={f.status} onChange={set("status")} opts={STATUSES.map((s) => [s, STATUS_LABEL[s]])} />
         <button className="fclear" disabled={!active} onClick={() => setF(EMPTY)} title="Clear every filter">
           Clear Filters
         </button>
+        </div>
+        <div className="frow sels">
+        <Sel label="Stage" value={f.stage} onChange={set("stage")} opts={live("stage", [["pre-seed", "Pre-Seed"], ["seed", "Seed"], ["series-a", "Series A"], ["unknown", "Unknown"], ["past", "Past Courtside's stage"]])} />
+        <Sel label="Signal" value={f.signal} onChange={set("signal")} opts={live("signal", [["formd", "Form D"], ["formc", "Form C"], ["yc", "Y Combinator"], ["hn", "Show HN"], ["producthunt", "Product Hunt"], ["appstore", "App Store"], ["news", "News"]])} />
+        <Sel label="Score" value={f.score} onChange={set("score")} opts={live("score", [[String(threshold), `Worth a Look (${threshold}+)`], ["50", "50+"], ["40", "40+"], ["30", "30+"]])} />
+        <Sel label="Seen" value={f.seen} onChange={set("seen")} opts={live("seen", [["today", "Today"], ["week", "This week"], ["month", "This month"]])} />
+        <Sel label="Rating" value={f.rating} onChange={set("rating")} opts={live("rating", [["up", "Voted up"], ["down", "Voted down"]])} />
+        <Sel label="Status" value={f.status} onChange={set("status")} opts={live("status", STATUSES.map((s) => [s, STATUS_LABEL[s]] as [string, string]))} />
+        </div>
       </div>
       <div className="rule" />
       <div className="lanes" role="group" aria-label="Thesis area">

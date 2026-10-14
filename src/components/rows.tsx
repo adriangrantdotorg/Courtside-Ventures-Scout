@@ -51,7 +51,7 @@ export function VelocityItem({ t }: { t: TrendCard }) {
 export function SponsorTile({ s }: { s: SponsorCard }) {
   return (
     <Link href={`/sponsors#${s.key}`} title={`Open ${s.brand} in Sponsor Radar`}>
-      {s.domain ? <img src={favicon(s.domain)} alt="" width={30} height={30} /> : <span />}
+      {s.domain ? <img src={favicon(s.domain)} alt="" width={30} height={30} /> : <span className="lmark" aria-hidden="true">{s.brand.trim().charAt(0).toUpperCase()}</span>}
       <span>
         <b>{s.brand}</b>
         {s.whatItIs && <span>{s.whatItIs}</span>}

@@ -105,7 +105,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <section className="sec" aria-label="Signals">
             <div className="h">
               <h2>Signals</h2>
-              <span className="note-h">Newest first</span>
             </div>
             <div className="tl">
               {c.signals.map((s) => (

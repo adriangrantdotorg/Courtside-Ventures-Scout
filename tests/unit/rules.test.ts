@@ -171,3 +171,45 @@ describe("guards on the source", () => {
     for (const c of v.crons) expect(c.schedule).toMatch(/^\d+ \d+ \* \* (\*|\d)$/);
   });
 });
+
+describe("round 1 fixes (10-14-26)", () => {
+  it("double-encoded entities never reach the screen", async () => {
+    const { unescapeTwice, cleanCopy } = await import("@/lib/copy");
+    expect(unescapeTwice("You&amp;#8217;ll &amp;amp; me")).toBe("You’ll & me");
+    expect(cleanCopy("won&#8217;t")).toBe("won’t");
+  });
+  it("a why-it-fits line never starts with punctuation", () => {
+    for (const description of ["Tailblaze Longevity.", "Park Boys Soccer", "", "Mochi is."]) {
+      const l = whyFitsLine({ name: "X", description, thesisArea: "health", stage: "pre-seed", amount: 300000, currency: "$", lastSignal: null });
+      expect(l, description).toMatch(/^[A-Z]/);
+    }
+  });
+  it("the portfolio check never calls an adjective shared ground", () => {
+    const r = portfolioCheck({ name: "Alpha", description: "A focused mobile sleep tracking app for athletes", thesisArea: "health" }, [{ name: "Beta", sector: "health", description: "A focused mobile recovery tracking app for athletes" }]);
+    expect(r?.reason || "").not.toMatch(/focused|mobile/);
+  });
+  it("the six weights always add up to 100 after one moves", async () => {
+    const { rebalance } = await import("@/components/settings/SettingsView");
+    const w = { thesis: 34, stage: 28, signal: 20, culture: 15, team: 10, geo: 5 };
+    for (const n of [0, 12, 45, 60]) {
+      const r = rebalance(w, "thesis", n);
+      expect(Object.values(r).reduce((a, b) => a + b, 0)).toBe(100);
+      expect(r.thesis).toBe(n);
+      expect(Object.values(r).every((v) => v >= 0 && v <= 60)).toBe(true);
+    }
+  });
+  it("no live slot is followed by punctuation (the period would float)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const bad: string[] = [];
+    const walk = (d: string) => {
+      for (const f of fs.readdirSync(d)) {
+        const p = path.join(d, f);
+        if (fs.statSync(p).isDirectory()) walk(p);
+        else if (/\.tsx$/.test(f) && /<(Until|Ago|Clock)\b[^>]*\/>\s*[.,;:)]/.test(fs.readFileSync(p, "utf8"))) bad.push(p);
+      }
+    };
+    walk("src");
+    expect(bad).toEqual([]);
+  });
+});

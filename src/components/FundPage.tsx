@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { fundFeed } from "@/lib/queries";
 import { FundItemRow } from "./rows";
 import { RowFilter } from "./ListHead";
@@ -18,9 +19,17 @@ export async function FundPage({ kind }: { kind: "neighborhood" | "synergistic" 
         </span>
       </div>
       <p className="ph-lede">
-        {nb
-          ? "Funds that have backed a company alongside Courtside, and what they just backed. Specialist funds show every deal; broad funds only deals inside Courtside's thesis. Funds from the most recent shared deal come first."
-          : "Funds that invest where Courtside invests but haven't shared a deal with it yet, and what they're doing: new deals, new funds raised, and their posts and videos. When one co-invests with Courtside, it moves to the Neighborhood."}
+        {nb ? (
+          "Funds that have backed a company alongside Courtside, and what they just backed. Specialist funds show every deal; broad funds only deals inside Courtside's thesis. Funds from the most recent shared deal come first."
+        ) : (
+          <>
+            Funds with a thesis like Courtside&apos;s that aren&apos;t co-investors yet. Once one co-invests, it moves to the{" "}
+            <Link href="/neighborhood" title="Open the Neighborhood">
+              Neighborhood
+            </Link>
+            .
+          </>
+        )}
       </p>
       <RowFilter placeholder={nb ? "Search co-investor deals" : "Search synergistic funders"} areas={areas} target="#fund-feed" />
       <div className="list" id="fund-feed">

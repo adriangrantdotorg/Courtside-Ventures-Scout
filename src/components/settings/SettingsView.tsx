@@ -17,7 +17,7 @@ type Data = any;
 
 type Sec = { id: string; label: string; key: string; group: "Yours" | "Shared" | "Record"; words: string };
 const SECTIONS: Sec[] = [
-  { id: "appearance", label: "Appearance", key: "a", group: "Yours", words: "theme night day density compact roomy text size" },
+  { id: "appearance", label: "Appearance", key: "a", group: "Yours", words: "theme night day density compact roomy text size motion animation" },
   { id: "shortcuts", label: "Shortcuts", key: "k", group: "Yours", words: "keyboard keys rebind" },
   { id: "home", label: "Home Sections", key: "h", group: "Yours", words: "today sections order show hide" },
   { id: "thesis", label: "Thesis", key: "t", group: "Shared", words: "thesis keyword search queries stage check" },
@@ -30,7 +30,6 @@ const SECTIONS: Sec[] = [
   { id: "alerts", label: "Alerts", key: "l", group: "Shared", words: "alerts rules" },
   { id: "slack", label: "Slack", key: "s", group: "Shared", words: "slack connect channel" },
   { id: "ai", label: "AI", key: "g", group: "Shared", words: "ai drafting memo gateway cap" },
-  { id: "feedback", label: "Feedback Inbox", key: "b", group: "Shared", words: "feedback flag problem inbox" },
   { id: "phase2", label: "Phase II", key: "p", group: "Shared", words: "phase ii together" },
   { id: "log", label: "Change Log", key: "o", group: "Record", words: "change log undo history" },
 ];
@@ -177,7 +176,6 @@ export function SettingsView({ data }: { data: Data }) {
   }, [q]);
 
   const badge = (id: string) => {
-    if (id === "feedback") return data.feedback.filter((f: any) => f.status === "open").length || 0;
     if (id === "sources") return data.health.filter((h: any) => h.last_error && (!h.last_ok || h.last_error > h.last_ok)).length || 0;
     return 0;
   };
@@ -324,8 +322,6 @@ function Pane({ id, data, refresh }: { id: string; data: Data; refresh: () => vo
       return <SlackPane data={data} refresh={refresh} />;
     case "ai":
       return <AiPane data={data} refresh={refresh} />;
-    case "feedback":
-      return <FeedbackPane data={data} refresh={refresh} />;
     case "phase2":
       return <Phase2Pane />;
     case "log":
@@ -339,10 +335,12 @@ function Appearance() {
   const [theme, setTheme] = useState("dark");
   const [density, setDensity] = useState("roomy");
   const [text, setText] = useState("normal");
+  const [motion, setMotion] = useState(true);
   useEffect(() => {
     setTheme(document.documentElement.dataset.theme || "dark");
     setDensity(document.documentElement.dataset.density || "roomy");
     setText(document.documentElement.dataset.text || "normal");
+    setMotion(document.documentElement.dataset.motion !== "off");
   }, []);
   const save = (k: string, v: string) => {
     try {
@@ -380,6 +378,12 @@ function Appearance() {
         <div className="trow">
           <span className="lbl">Text size</span>
           <Seg label="Text size" value={text} opts={[["normal", "Normal"], ["large", "Large"]]} onChange={(v) => (setText(v), save("text", v))} />
+        </div>
+        <div className="trow">
+          <span className="lbl">
+            Motion<small>The ticker, the live light, the sweeps and the glows. On by default, whatever the Mac&apos;s Reduce Motion switch says.</small>
+          </span>
+          <Toggle label="Motion" on={motion} onChange={(v) => (setMotion(v), save("motion", v ? "on" : "off"))} />
         </div>
       </Card>
     </>
@@ -576,21 +580,42 @@ function useShared(initial: Record<string, unknown>, refresh: () => void) {
   return { draft, setDraft, count, save, discard: () => setDraft(base), busy, savedAt };
 }
 
+/** Set one weight and scale the other five so the six still add up to 100 (each stays within 0 to 60). */
+export function rebalance(w: Record<string, number>, k: string, n: number): Record<string, number> {
+  const MAX = 60;
+  n = Math.max(0, Math.min(MAX, Math.round(n)));
+  const others = Object.keys(w).filter((x) => x !== k);
+  const rest = 100 - n;
+  const cur = others.reduce((a, x) => a + (w[x] || 0), 0);
+  const next: Record<string, number> = { ...w, [k]: n };
+  others.forEach((x) => (next[x] = Math.max(0, Math.min(MAX, Math.round(cur > 0 ? ((w[x] || 0) / cur) * rest : rest / others.length)))));
+  let diff = 100 - Object.values(next).reduce((a, b) => a + b, 0);
+  for (const x of [...others].sort((a, b) => next[b] - next[a])) {
+    if (!diff) break;
+    const v = Math.max(0, Math.min(MAX, next[x] + diff));
+    diff -= v - next[x];
+    next[x] = v;
+  }
+  return next;
+}
+
 function Scoring({ data, refresh }: { data: Data; refresh: () => void }) {
   const s = useShared({ scoreWeights: data.weights, worthThreshold: data.threshold }, refresh);
   const w = s.draft.scoreWeights as Record<string, number>;
   const sum = Object.values(w).reduce((a, b) => a + b, 0);
+  const setWeight = (k: string, n: number) => s.setDraft({ ...s.draft, scoreWeights: rebalance(w, k, n) });
   return (
     <>
       <p className="sub">The thesis-fit score is computed every morning from these six parts, minus penalties. Votes nudge it by at most 15 points.</p>
-      <Card title="Weights" note="Must add up to 100">
+      <Card title="Weights" note="Always add up to 100">
         {WLABEL.map(([k, l, sub]) => (
-          <SliderRow key={k} label={l} sub={sub} value={w[k]} min={0} max={60} onChange={(n) => s.setDraft({ ...s.draft, scoreWeights: { ...w, [k]: n } })} />
+          <SliderRow key={k} label={l} sub={sub} value={w[k]} min={0} max={60} onChange={(n) => setWeight(k, n)} />
         ))}
         <div className="total" data-testid="weights-total">
           <span>Total</span>
           <b className={sum === 100 ? "" : "bad"}>{sum}</b>
-          {sum === 100 ? <Check className="ico" style={{ color: "var(--green)" }} /> : <span>Save stays off until the six add up to 100.</span>}
+          {sum === 100 ? <Check className="ico" style={{ color: "var(--green)" }} /> : null}
+          <span>Move one weight and the other five rebalance to keep 100.</span>
         </div>
       </Card>
       <Card title="Worth a Look">
@@ -1003,48 +1028,6 @@ function AiPane({ data, refresh }: { data: Data; refresh: () => void }) {
         <SliderRow label="Daily cap" sub="AI calls a day, at most" value={s.draft.aiDailyCap as number} min={10} max={500} onChange={(n) => s.setDraft({ aiDailyCap: n })} />
       </Card>
       <SaveBar count={s.count} onSave={s.save} onDiscard={s.discard} savedAt={s.savedAt} busy={s.busy} />
-    </>
-  );
-}
-
-function FeedbackPane({ data, refresh }: { data: Data; refresh: () => void }) {
-  const ui = useUI();
-  async function patch(id: number, body: object, msg: string) {
-    const r = await fetch("/api/feedback", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, ...body }) });
-    if (!r.ok) return ui.error("That didn't save", `${r.status}`);
-    ui.toast(msg);
-    refresh();
-  }
-  return (
-    <>
-      <p className="sub">Reports from &quot;Flag a UI problem&quot; (the footer link, ⌘K or the ! key), each with the page, the element, the viewport, theme and browser.</p>
-      <Card title="Reports" note={`${data.feedback.length} reports`}>
-        {data.feedback.length ? (
-          data.feedback.map((f: any) => (
-            <div className="trow" key={f.id}>
-              <span className="lbl">
-                {f.chips.join(", ") || "Report"} on {f.page}
-                <small>
-                  {f.note ? `"${f.note}" · ` : ""}
-                  {f.element} · <Ago date={f.createdAt} ch={8} /> · {f.meToo} me too · {f.status}
-                </small>
-              </span>
-              <span style={{ display: "flex", gap: 6 }}>
-                <button className="btn" onClick={() => patch(f.id, { action: "metoo" }, "Me Too Added")} title="Add a me too">
-                  Me Too
-                </button>
-                {f.status === "open" && (
-                  <button className="btn" onClick={() => patch(f.id, { status: "fixed" }, "Marked Fixed")} title="Mark this report fixed">
-                    Mark Fixed
-                  </button>
-                )}
-              </span>
-            </div>
-          ))
-        ) : (
-          <p className="sub">No reports yet.</p>
-        )}
-      </Card>
     </>
   );
 }
