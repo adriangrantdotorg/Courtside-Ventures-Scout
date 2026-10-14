@@ -114,7 +114,7 @@ export async function stageSec(ctx: Ctx, opts: { days?: number; maxDocs?: number
       if (!f) continue;
       ctx.item();
       const amt = doc.amountSold || doc.amountOffered;
-      const bigEnough = form === "C" ? (amt || 0) >= 100_000 : (amt || 0) >= 250_000 && Math.max(nameArea.confidence, indArea ? 0.6 : 0) >= 0.57;
+      const bigEnough = form === "C" ? (amt || 0) >= 100_000 : (amt || 0) >= 250_000 && Math.max(nameArea.confidence, indArea ? 0.6 : 0) >= 0.42;
       if (area && bigEnough && !isGenericName(issuer)) {
         const up = await upsertCompany({
           name: issuer,
@@ -148,7 +148,7 @@ export async function stageQuick(ctx: Ctx) {
   for (const h of await F.hnShow()) {
     const t = h.title.replace(/^Show HN:\s*/i, "");
     const c = classify(t);
-    if (!c.area || c.confidence < 0.7 || !h.url || NOT_CONSUMER.test(t)) continue;
+    if (!c.area || c.confidence < 0.57 || !h.url || NOT_CONSUMER.test(t)) continue;
     const name = t.split(/\s[–—:-]\s|:\s/)[0].trim();
     if (isGenericName(name) || name.split(" ").length > 4) continue;
     const r = await upsertCompany({ name, domain: h.url, thesisArea: c.area, description: t, descriptionUrl: `https://news.ycombinator.com/item?id=${h.id}`, signal: { type: "hn", source: "Hacker News", title: h.title, url: `https://news.ycombinator.com/item?id=${h.id}`, date: new Date(h.date) } });
@@ -160,7 +160,7 @@ export async function stageQuick(ctx: Ctx) {
   for (const p of await F.productHunt()) {
     const text = `${p.title}. ${p.content.replace(/<[^>]+>/g, " ")}`;
     const c = classify(text);
-    if (!c.area || c.confidence < 0.7 || NOT_CONSUMER.test(text)) continue;
+    if (!c.area || c.confidence < 0.57 || NOT_CONSUMER.test(text)) continue;
     const name = p.title.replace(/^Launched on Product Hunt:\s*/i, "").split(/\s[–—:-]\s/)[0].trim();
     if (INCUMBENT.test(name)) continue;
     const r = await upsertCompany({ name, thesisArea: c.area, description: p.content.replace(/<[^>]+>/g, " ").trim().slice(0, 300), descriptionUrl: p.link, signal: { type: "producthunt", source: "Product Hunt", title: p.title, url: p.link, date: p.date ? new Date(p.date) : null } });
@@ -204,7 +204,7 @@ export async function stageAppStore(ctx: Ctx) {
       if (!rel || Date.now() - rel > 150 * DAY) continue; // new apps, not incumbents
       if (INCUMBENT.test(a.name) || INCUMBENT.test(a.developer) || /[^\x00-\u024f\s\p{P}\p{S}]/u.test(a.name)) continue;
       const cl = classify(`${a.name}. ${a.summary}. ${a.category}`);
-      if (!cl.area || cl.confidence < 0.7 || lookups > 12) continue;
+      if (!cl.area || cl.confidence < 0.57 || lookups > 12) continue;
       lookups++;
       const lk = await F.appLookup(a.id);
       const r = await upsertCompany({

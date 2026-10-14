@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && vitest run && playwright test",
+    "check": "npm run typecheck && npm run lint && vitest run && next build && playwright test",
     "smoke": "playwright test tests/e2e/smoke.spec.ts",
     "verify:live": "tsx scripts/verify-live.ts",
     "pipeline:all": "tsx scripts/pipeline-all.ts",

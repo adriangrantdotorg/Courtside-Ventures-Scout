@@ -10,6 +10,8 @@ export default defineConfig({
   fullyParallel: true,
   workers: 4,
   reporter: "line",
+  globalSetup: "./tests/e2e/setup.ts",
+  globalTeardown: "./tests/e2e/teardown.ts",
   use: {
     baseURL: LIVE || `http://localhost:${PORT}`,
     actionTimeout: 3_000,

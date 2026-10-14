@@ -7,13 +7,21 @@ import { cultureJob, sponsorsJob, trendsJob } from "./media-jobs";
 import { fundsJob } from "./funds";
 import { alertsJob, mondayBrief, weeklyJob, refreshNow } from "./other";
 import { refreshSpotlight } from "../spotlight";
+import { checkAi } from "../ai";
 
 export const JOBS: Record<string, { label: string; hourUtc: number; weekday?: number; run: (ctx: Ctx) => Promise<void> }> = {
   "funds-neighborhood": { label: "Co-investor watch", hourUtc: 6, run: (c) => fundsJob(c, "neighborhood") },
   "funds-synergistic": { label: "Synergistic funder watch", hourUtc: 7, run: (c) => fundsJob(c, "synergistic") },
   "collect-media": { label: "Creators and shows", hourUtc: 8, run: (c) => collectMedia(c) },
   "collect-signals": { label: "Startup signals", hourUtc: 9, run: collectSignals },
-  score: { label: "Scoring", hourUtc: 10, run: scoreAll },
+  score: {
+    label: "Scoring",
+    hourUtc: 10,
+    run: async (c) => {
+      await scoreAll(c);
+      await checkAi(); // one cheap call a day decides whether the AI features turn on
+    },
+  },
   alerts: { label: "Alerts", hourUtc: 11, run: alertsJob },
   culture: { label: "Culture", hourUtc: 12, run: cultureJob },
   trends: { label: "Trends", hourUtc: 13, run: trendsJob },

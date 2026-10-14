@@ -40,17 +40,17 @@ function count(text: string, term: string): number {
 
 export type Classified = { area: Area | null; confidence: number; hits: string[]; scores: Record<Area, number> };
 
-/** Confidence 0.27 + 0.15 per hit (strong = 2 hits); an area needs 0.4. One weak keyword is not a thesis area. */
+/** Confidence 0.27 + 0.15 per hit (a weak keyword is half a hit); an area needs 0.4. One weak keyword is not a thesis area. */
 export function classify(text: string, extra?: Partial<Record<Area, string[]>>): Classified {
   const t = norm(text || "");
   const scores = { sports: 0, gaming: 0, lifestyle: 0, health: 0, media: 0 } as Record<Area, number>;
   const hitsBy: Record<string, string[]> = {};
   for (const a of Object.keys(TERMS) as Area[]) {
     const strong = [...TERMS[a].strong, ...(extra?.[a] || [])];
-    for (const k of strong) if (count(t, k)) ((scores[a] += 2), (hitsBy[a] ||= []).push(k));
-    for (const k of TERMS[a].weak) if (count(t, k)) ((scores[a] += 1), (hitsBy[a] ||= []).push(k));
+    for (const k of strong) if (count(t, k)) ((scores[a] += 1), (hitsBy[a] ||= []).push(k));
+    for (const k of TERMS[a].weak) if (count(t, k)) ((scores[a] += 0.5), (hitsBy[a] ||= []).push(k));
   }
-  if (/\b(pharma|pharmaceuticals?|biotech|drug discovery|clinical trials?|therapeutics|medical devices?|hospitals?|oncology|diagnostics lab)\b/.test(t)) scores.health = Math.max(0, scores.health - 4);
+  if (/\b(pharma|pharmaceuticals?|biotech|drug discovery|clinical trials?|therapeutics|medical devices?|hospitals?|oncology|diagnostics lab)\b/.test(t)) scores.health = Math.max(0, scores.health - 2);
   let best: Area | null = null;
   for (const a of Object.keys(scores) as Area[]) if (!best || scores[a] > scores[best]) best = a;
   if (!best || scores[best] === 0) return { area: null, confidence: 0, hits: [], scores };

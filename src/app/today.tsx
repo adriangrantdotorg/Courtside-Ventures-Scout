@@ -29,6 +29,7 @@ export async function Today() {
     getSetting<string | null>("learnedSummary", null),
     db().select({ t: S.jobRuns.startedAt }).from(S.jobRuns).where(eq(S.jobRuns.job, "refresh")).orderBy(desc(S.jobRuns.startedAt)).limit(1),
   ]);
+  const hits = await db().select().from(S.alertHits).orderBy(desc(S.alertHits.createdAt)).limit(3);
   const wins = tests.filter((t) => t.verdict === "win");
   const overlaps = culture.filter((o) => o.voices.length >= 2);
   const cultureShow = overlaps.length ? overlaps : culture.slice(0, 4);
@@ -125,6 +126,26 @@ export async function Today() {
                     <SponsorTile key={s.id} s={s} />
                   ))}
                 </div>
+              </section>
+            )}
+            {hits.length > 0 && (
+              <section aria-label="Alert Hits" style={{ marginTop: 28 }}>
+                <div className="h">
+                  <h2>Alert Hits</h2>
+                  <Link className="more" href="/alerts" title="Open Alerts">
+                    All Alerts
+                  </Link>
+                </div>
+                {hits.map((h) => (
+                  <p key={h.id} style={{ margin: "0 0 10px", fontSize: 15 }}>
+                    <a href={h.url} target="_blank" rel="noopener noreferrer" title={`Opens ${h.source || "the source"} in a new window`}>
+                      {h.title}
+                    </a>{" "}
+                    <span className="mono" style={{ fontSize: 13, color: "var(--text-3)" }}>
+                      {h.source}
+                    </span>
+                  </p>
+                ))}
               </section>
             )}
           </div>

@@ -16,6 +16,8 @@ const store = { counts: {} as Record<string, number>, mine: {} as Record<string,
 const listeners = new Set<() => void>();
 const pending = new Set<string>();
 let timer: ReturnType<typeof setTimeout> | null = null;
+const loaded = new Set<string>();
+let inflight: Promise<void> | null = null;
 function emit() {
   store.v++;
   listeners.forEach((l) => l());
@@ -23,6 +25,8 @@ function emit() {
 function want(key: string) {
   pending.add(key);
   if (timer) return;
+  let done: () => void = () => {};
+  inflight = new Promise<void>((res) => (done = res));
   timer = setTimeout(async () => {
     timer = null;
     const keys = [...pending];
@@ -35,6 +39,8 @@ function want(key: string) {
       }
       emit();
     }
+    keys.forEach((k) => loaded.add(k));
+    done();
   }, 60);
 }
 function useVoteStore() {
@@ -66,6 +72,9 @@ export function Vote({ k, initial = 0, row, upTitle = "This fits Courtside", dow
   const count = store.counts[k] ?? initial;
   const mine = store.mine[k] || 0;
   async function press(v: 1 | -1) {
+    if (!loaded.has(k) && inflight) await inflight; // know this browser's own vote before changing it
+    const count = store.counts[k] ?? initial;
+    const mine = store.mine[k] || 0;
     const before = { c: count, m: mine };
     const next = mine === v ? 0 : v;
     store.mine[k] = next;

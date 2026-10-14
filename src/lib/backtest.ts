@@ -30,13 +30,16 @@ const ENTERTAINMENT = /\b(movie|film|album|song|novel|book|tv series|season \d|e
 
 /** The company must be the headline's subject: its name inside the first clause, on word boundaries. */
 export function isSubject(name: string, title: string): boolean {
-  const first = title.split(/\s[–—|:-]\s|[:;]\s/)[0];
+  const first = title.replace(/^(exclusive|scoop|breaking|report|funding)\s*[:|-]\s*/i, "").split(/\s[–—|:-]\s|[:;]\s/)[0];
   const re = new RegExp(`(^|[^\\w])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=[^\\w]|$)`, "i");
   const m = re.exec(first);
   if (!m) return false;
   // "Doom Eternal" is not Eternal: a capitalized word right before the name makes it another title
   const prev = first.slice(0, m.index + m[1].length).trim().split(/\s+/).pop() || "";
   if (/^[A-Z][a-z]+$/.test(prev) && !/^(The|A|An|How|Why|Startup|Exclusive|New|Meet|Inside)$/.test(prev)) return false;
+  // "Rival league takes aim at Baller League" is about the rival, not Baller League
+  const before = first.slice(0, m.index + m[1].length).trim().split(/\s+/).slice(-2).join(" ");
+  if (/\b(at|against|vs\.?|than|like|rivals?|beats?|over|unlike|copies|copy|takes on)$/i.test(before)) return false;
   return true;
 }
 

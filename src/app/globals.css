@@ -658,3 +658,7 @@ html[data-theme="light"] .ov { box-shadow:0 30px 80px rgba(26,27,31,.25); }
   .tools { padding:0 10px; gap:6px; }
 }
 @media (max-width:1320px) { .tools .chip .lbl-long, .tools .chip .kbd { display:none; } .brand span { display:none; } }
+@media (max-width:1180px) {
+  .nav > a, .nav .dd > button { padding:22px 5px 20px; font-size:13px; letter-spacing:.03em; }
+  .tools .chip span:not(.kbd) { display:none; }
+}
