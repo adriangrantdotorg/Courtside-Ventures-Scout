@@ -1,7 +1,7 @@
 {
  "name": "Courtside Ventures Scout launch seed",
- "exportedAt": "2026-10-14T20:12:58.826Z",
- "source": "this Scout's database (https://courtside-ventures-scout-v5.vercel.app)",
+ "exportedAt": "2026-10-14T20:58:32.575Z",
+ "source": "this Scout's database (https://courtside-ventures-scout.vercel.app)",
  "counts": {
   "portfolio": 73,
   "voices": 143,
@@ -22148,7 +22148,7 @@
     "domain": "sec.gov"
    },
    "itemKey": "filing:33",
-   "computedAt": "2026-10-14T20:01:38.778Z"
+   "computedAt": "2026-10-14T20:58:07.901Z"
   },
   "lanes": [
    {
