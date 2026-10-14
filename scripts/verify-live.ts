@@ -3,7 +3,8 @@ import { config } from "dotenv";
 import { execFileSync } from "node:child_process";
 config({ path: ".env.local", quiet: true });
 
-const url = (process.argv[2] || process.env.SITE_URL || "").replace(/\/$/, "");
+const LIGHT = process.argv.includes("--light"); // the launch's check: pages and sources only; the browser suite and residue run in `npm run release`
+const url = (process.argv.slice(2).find((a) => !a.startsWith("--")) || process.env.SITE_URL || "").replace(/\/$/, "");
 if (!url) throw new Error("usage: npm run verify:live -- <url>");
 const fails: string[] = [];
 const ok = (c: boolean, m: string) => (c ? console.log("✓ " + m) : (fails.push(m), console.log("✗ " + m)));
@@ -46,6 +47,7 @@ for (const l of links) {
   const r = await fetch(l, { method: "GET", redirect: "follow", headers: { "user-agent": "Mozilla/5.0" } }).catch(() => null);
   ok(!!r && (r.ok || [401, 403, 429].includes(r.status)), `source link answers: ${l.slice(0, 70)}`);
 }
+if (!LIGHT) {
 // residue is measured as rows the browser suite ADDS, never against zero: the team's own clicks
 // (a status change, a tracked trend) are real use, not residue (10-14-26, Adrian's review left three rows).
 const { neon } = await import("@neondatabase/serverless");
@@ -63,5 +65,6 @@ try {
 const after = await counts();
 const d = { v: after.v - before.v, t: after.t - before.t, tt: after.tt - before.tt, c: after.c - before.c };
 ok(d.v === 0 && d.t === 0 && d.tt === 0 && d.c === 0, `residue left by the suite: votes ${d.v}, trackers ${d.t}, tracked trends ${d.tt}, change_log ${d.c}`);
+}
 console.log(fails.length ? `\n${fails.length} live check(s) failed` : "\nall live checks green");
 process.exit(fails.length ? 1 : 0);

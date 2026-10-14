@@ -7,7 +7,7 @@ const { execFileSync } = await import("node:child_process");
 const order = process.argv.slice(2).length ? process.argv.slice(2) : ["collect-media", "collect-signals", "culture", "sponsors", "trends", "funds-neighborhood", "funds-synergistic", "score", "alerts", "monday-brief"];
 const note = (t: string) => {
   try {
-    execFileSync("npx", ["tsx", "scripts/step.ts", "4", "Jobs and first pull", "--note", t], { stdio: "ignore" });
+    execFileSync("npx", ["tsx", "scripts/step.ts", "5", "Open", "--note", t], { stdio: "ignore" });
   } catch {
     /* progress is best-effort */
   }

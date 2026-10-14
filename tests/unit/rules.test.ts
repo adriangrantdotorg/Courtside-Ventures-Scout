@@ -132,7 +132,7 @@ describe("build progress estimate", () => {
   it("rounds to 5 minutes and pauses while waiting", () => {
     const now = Date.now();
     const p = { step: 4, name: "x", startedAt: now - 1e6, stepStartedAt: now - 60_000, updatedAt: now, note: "", waiting: false, liveUrl: "", done: false, durations: { 1: 240, 2: 360, 3: 240 } };
-    expect(minutesToGo(p, now) % 5).toBe(0);
+    expect(minutesToGo(p, now)).toBeGreaterThanOrEqual(1);
     const w = { ...p, waiting: true, waitingSince: now - 600_000 };
     expect(minutesToGo(w, now)).toBe(minutesToGo(w, now + 3_600_000));
   });

@@ -1,18 +1,9 @@
 // One producer for the build-progress view. Used by scripts/step.ts (inlined into the
 // local file:// page) and by the live Building page. Plain JS so both can load it.
 
-export const STEPS = [
-  "Setup",
-  "Shell",
-  "Sources and seed",
-  "Jobs and first pull",
-  "Pages",
-  "Scoring and truth",
-  "Tests",
-  "Live",
-  "Handoff",
-];
-export const BUDGETS = [4, 6, 4, 16, 16, 8, 10, 4, 2]; // minutes
+// The five steps of `npm run launch` (v6, 10-14-26): the finished site is installed, not rebuilt.
+export const STEPS = ["Setup", "Database", "Build and tests", "Deploy", "Open"];
+export const BUDGETS = [3, 1, 4, 2, 1]; // minutes, measured on the v5 run and the 10-14-26 dry run
 
 export function clock(sec) {
   sec = Math.max(0, Math.floor(sec));
@@ -42,7 +33,7 @@ export function minutesToGo(p, now) {
   const inStep = Math.max(0, (effectiveNow - (p.stepStartedAt || now)) / 60000);
   let left = Math.max(0, BUDGETS[cur] * ratio - inStep);
   for (let i = cur + 1; i < BUDGETS.length; i++) left += BUDGETS[i] * ratio;
-  return Math.max(5, Math.round(left / 5) * 5);
+  return Math.max(1, Math.round(left)); // a ten-minute launch is told to the minute
 }
 
 export function isStale(p, now) {
@@ -56,7 +47,7 @@ export function stepRows(p) {
     const state = p && p.done ? "done" : n < cur ? "done" : n === cur ? "now" : "todo";
     const d = p && p.durations ? p.durations[n] : undefined;
     let label = name;
-    if (n === 2 && p && p.liveUrl) label = name + " · live at " + p.liveUrl.replace(/^https?:\/\//, "");
+    if (n === STEPS.length - 1 && p && p.liveUrl) label = name + " · live at " + p.liveUrl.replace(/^https?:\/\//, "");
     const time = state === "done" && typeof d === "number" ? clock(d) : state === "now" ? "about " + BUDGETS[i] + " min" : "about " + BUDGETS[i] + " min";
     return { n, num: String(n).padStart(2, "0"), name: label, state, time, mark: state === "done" ? "✓" : state === "now" ? "→" : "·" };
   });
@@ -64,6 +55,6 @@ export function stepRows(p) {
 
 export function noteLine(p) {
   if (!p) return "Starting";
-  const base = "Step " + p.step + " of 9 · " + p.name;
+  const base = "Step " + p.step + " of " + STEPS.length + " · " + p.name;
   return p.note ? (p.waiting ? p.note : base + " · " + p.note) : base;
 }

@@ -1,0 +1,22 @@
+# Main stays green by itself: every push runs the typecheck, the lint and the unit tests.
+# (The browser suite needs the database and runs in `npm run release` before a push.)
+name: check
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      SITE_URL: https://courtside-ventures-scout.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx vitest run

@@ -6,6 +6,16 @@ Deal sourcing for Courtside Ventures: startups, trends, sponsors, culture and fu
 
 A prototype built by Adrian Grant to start a conversation with Courtside.
 
+## Run it
+
+One command from a fresh clone to a live, filled, verified Scout on your own free Vercel and Neon accounts:
+
+```bash
+npm run launch
+```
+
+Five steps (about ten minutes), each on the progress page that opens and in the terminal: Setup, Database, Build and tests, Deploy, Open. Later, `npm run update` pulls the newest version and redeploys it. The only moment it may need you: approving the Vercel login page once.
+
 ## Three things to try
 
 1. **Today:** the Spotlight (the day's one call, picked by rules) and the top five picks, each with its thesis-fit gauge, signals and a one-line "why it fits Courtside".

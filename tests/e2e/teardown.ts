@@ -15,6 +15,11 @@ export default async function teardown() {
     if (kind === "company" && l.before && "tracked" in l.before) await sql`update companies set tracked = ${!!l.before.tracked} where id = ${Number(id)}`;
     if (kind === "trend" && l.before && "tracked" in l.before) await sql`update trends set tracked = ${!!l.before.tracked} where id = ${Number(id)}`;
   }
+  // rows the Tracking add tests create by name (10-14-26)
+  await sql`delete from people where name like 'Test Person %'`;
+  await sql`delete from alerts where title like '%Test rule %'`;
+  await sql`delete from companies where name like 'Test Co %'`;
+  await sql`delete from trends where term like 'Test trend %'`;
   await sql`delete from change_log where created_at >= ${since}`;
   await sql`delete from votes where created_at >= ${since}`;
   await sql`delete from notes where created_at >= ${since}`;

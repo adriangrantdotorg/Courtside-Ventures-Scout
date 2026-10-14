@@ -16,7 +16,12 @@
     "verify:live": "tsx scripts/verify-live.ts",
     "pipeline:all": "tsx scripts/pipeline-all.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx scripts/load-seed.ts"
+    "seed": "tsx scripts/load-seed.ts",
+    "launch": "bash scripts/launch.sh",
+    "update": "bash scripts/update.sh",
+    "release": "bash scripts/release.sh",
+    "seed:export": "tsx scripts/export-seed.ts",
+    "verify:light": "tsx scripts/verify-live.ts --light"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -44,5 +49,8 @@
     "typescript": "^5",
     "vitest": "^5.0.4"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  }
 }
