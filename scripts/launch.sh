@@ -17,6 +17,7 @@ say() { printf '\n▶ %s\n' "$1"; }
 openurl() { case "$(uname -s)" in Darwin) open "$1" ;; Linux) xdg-open "$1" > /dev/null 2>&1 || true ;; *) true ;; esac; }
 fail() { printf '\n❌ %s\n   The way past it: %s\n' "$1" "$2"; exit 1; }
 step() { npx tsx scripts/step.ts "$@"; }
+pre() { bash scripts/prestart.sh state "$@"; }   # the plain page's moments before the full page exists
 V() { npx --yes vercel@latest "$@"; }
 
 # ---------- pre-flight (every run) ----------
@@ -33,12 +34,26 @@ if [ "$FROM" -le 1 ]; then
   # Installing takes about a minute and needs nobody, so it runs in the background while the person signs in (10-14-26).
   npm ci --no-audit --no-fund > "$LOG/npm.log" 2>&1 &
   NPM_PID=$!
+  bash scripts/prestart.sh open   # the progress page, from second zero: it says whose turn it is
+  export SCOUT_STARTED_AT; SCOUT_STARTED_AT=$(cat "$HOME/.courtside-ventures-scout/started-at" 2>/dev/null || echo "")
   say "Before you walk away: one or two pages open in your browser now"
   if ! V whoami > "$LOG/whoami.log" 2>&1; then
     # No sign-in on this machine. The CLI opens Vercel's device page and waits; that page signs in an existing account
     # or creates a free one (email code, or GitHub / GitLab / Bitbucket). Nothing else to do here (10-14-26).
     say "Vercel needs you once: sign in on the page that opens (no account yet? the same page lets you create a free one)"
-    V login > "$LOG/login.log" 2>&1 || fail "Vercel login did not complete (see .logs/login.log)" "run: npx vercel@latest login, sign in or create a free account on the page, then npm run launch again"
+    pre signin
+    V login > "$LOG/login.log" 2>&1 &
+    LOGIN_PID=$!
+    # While the CLI waits for the person, pick the sign-in link and code out of its output for the progress page
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      LURL=$(grep -oE 'https://vercel\.com/[^ ]+' "$LOG/login.log" 2>/dev/null | head -1)
+      [ -n "$LURL" ] && break
+      sleep 1
+    done
+    LCODE=$(printf '%s' "$LURL" | grep -oE 'code=[A-Za-z0-9-]+' | cut -d= -f2)
+    [ -n "$LURL" ] && pre signin "$LURL" "$LCODE"
+    wait "$LOGIN_PID" || fail "Vercel login did not complete (see .logs/login.log)" "run: npx vercel@latest login, sign in or create a free account on the page, then npm run launch again"
+    pre start
     say "Signed in to Vercel"
   fi
   ACCOUNT=$(V whoami 2>/dev/null | tail -1)
@@ -60,6 +75,7 @@ if [ "$FROM" -le 1 ]; then
       TERMS=$(grep -oE 'https://vercel\.com/[^" ]*accept-terms[^" ]*' "$LOG/neon.log" | head -1)
       [ -n "$TERMS" ] || fail "the free Neon database was not created (see .logs/neon.log)" "read .logs/neon.log; if Vercel asks for a payment card, add none and say so in the handoff; otherwise run: npx vercel@latest integration add neon --plan free_v3 --name $NAME-db -m region=iad1 -m auth=false --no-claim, then npm run launch again"
       say "Neon needs you once: accept its terms on the page that opens ($TERMS)"
+      pre terms "$TERMS"
       openurl "$TERMS"
       tries=0
       while ! neon_add; do
@@ -67,11 +83,13 @@ if [ "$FROM" -le 1 ]; then
         [ "$tries" -lt 30 ] || fail "the database terms were not accepted within 5 minutes (see .logs/neon.log)" "open $TERMS, accept the terms, then npm run launch again"
         sleep 10
       done
+      pre start
       say "Terms accepted"
     fi
     V env pull .env.local --yes > "$LOG/env.log" 2>&1
     grep -q '^DATABASE_URL=' .env.local || fail "DATABASE_URL did not arrive from Neon (see .logs/env.log)" "open the project on vercel.com, Storage, connect the Neon database to all environments, then npm run launch again"
   fi
+  pre walk
   printf '\n🚶 Nothing more is needed from you. You can walk away: the site opens in your browser by itself in about 10 minutes.\n'
   wait "$NPM_PID" || fail "npm install failed (see .logs/npm.log)" "rm -rf node_modules && npm run launch"
   (npx playwright install chromium > "$LOG/playwright.log" 2>&1 &)

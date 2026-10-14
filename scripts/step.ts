@@ -62,9 +62,12 @@ if (s && (n === -1 || n < s.step)) {
 }
 if (n === -1) n = 1;
 if (!s || n === 1 && !arg("--note") && s.step !== 1) {
-  s = { step: 1, name: STEPS[0], startedAt: now, stepStartedAt: now, updatedAt: now, note: "", waiting: false, liveUrl: "", done: false, durations: {} };
+  // The clock starts when the launch did, not when this page took over from the plain one (scripts/prestart.sh)
+  const startedAt = Number(process.env.SCOUT_STARTED_AT) || now;
+  s = { step: 1, name: STEPS[0], startedAt, stepStartedAt: now, updatedAt: now, note: "", waiting: false, liveUrl: "", done: false, durations: {} };
 }
-const firstCallOfStep1 = n === 1 && !existsSync(PAGE + ".opened-" + PAGE_VERSION);
+// the plain page from second zero marks the tab as open (".opened-pre"), so no second tab is opened here
+const firstCallOfStep1 = n === 1 && !existsSync(PAGE + ".opened-" + PAGE_VERSION) && !existsSync(PAGE + ".opened-pre");
 
 if (n !== s.step) {
   if (n > s.step) {
@@ -97,13 +100,14 @@ if (n === STEPS.length && process.argv.includes("--done")) {
 s.updatedAt = now;
 writeFileSync(STATE, JSON.stringify({ ...s, build: PAGE_VERSION }, null, 2));
 
-// progress.js: the state, re-read by the page every 5 s (a script tag works on file://)
-writeFileSync(JS, "window.__progress = " + JSON.stringify(s) + ";\n");
-
-// progress.html: written once per build version; never reloads itself
+// progress.html: written once per build version; never reloads itself. Written BEFORE progress.js, so when the
+// plain page from second zero (scripts/prestart.sh) sees the rich state and reloads once, this page is already there.
 if (!existsSync(PAGE) || !readFileSync(PAGE, "utf8").includes(`data-build="${PAGE_VERSION}"`)) {
   writeFileSync(PAGE, renderPage());
 }
+
+// progress.js: the state, re-read by the page every 5 s (a script tag works on file://)
+writeFileSync(JS, "window.__progress = " + JSON.stringify(s) + ";\n");
 
 // database (optional until the schema exists)
 async function writeDb() {
