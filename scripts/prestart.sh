@@ -64,11 +64,11 @@ h1{font:600 clamp(24px,4vw,34px)/1.1 Oswald,sans-serif;letter-spacing:.02em;marg
 <p><a class="btn" id="termsBtn" href="#" target="_blank" rel="noopener">Open the Terms Page</a></p></section>
 
 <section class="card walk" id="walk" hidden><p class="kicker">Nothing more is needed from you</p><h2>You Can Walk Away</h2>
-<p>The install, build, tests and deploy run on their own now. The site opens in this browser by itself in about 10 minutes, and this page shows every step until then.</p></section>
+<p>The install, build, tests and deploy run on their own now. The site opens in this browser by itself in a few minutes, and this page shows every step until then.</p></section>
 
 <div class="stats">
   <div class="stat"><b id="since">0:00</b><span>Since start</span></div>
-  <div class="stat"><b id="waitFor" hidden>0:00</b><b id="togo">~10 min</b><span id="togoLabel">Roughly to go, after your part</span></div>
+  <div class="stat"><b id="waitFor" hidden>0:00</b><b id="togo">~7 min</b><span id="togoLabel">Roughly to go, after your part</span></div>
 </div>
 <ul class="steps"><li>1 Setup · 2 Database · 3 Build and tests · 4 Deploy · 5 Open</li><li>Each step gets its own line on the full page, with the time it took.</li></ul>
 </main>

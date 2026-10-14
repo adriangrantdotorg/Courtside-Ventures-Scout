@@ -61,9 +61,15 @@ if [ "$FROM" -le 1 ]; then
   if [ -f .vercel/project.json ]; then
     NAME=$(node -p 'require("./.vercel/project.json").projectName' 2>/dev/null || echo "$NAME")
   else
-    EXISTING=$(V project ls 2>/dev/null | awk 'NR>1 {print $1}')
+    # Ask Vercel about each name. CLI 64 prints `project ls` to stderr, so parsing it saw no projects and the
+    # 10-14-26 dry run linked the live reference project. Free only on project_not_found; any other answer stops.
+    taken() {
+      V project inspect "$1" > "$LOG/name.log" 2>&1 && return 0
+      grep -q 'project_not_found' "$LOG/name.log" && return 1
+      fail "Vercel could not say whether the project name $1 is free (see .logs/name.log)" "check the network, then npm run launch again"
+    }
     BASE=$NAME; i=2
-    while printf '%s\n' "$EXISTING" | grep -qx "$NAME"; do NAME="$BASE-$i"; i=$((i + 1)); done
+    while taken "$NAME"; do NAME="$BASE-$i"; i=$((i + 1)); done
     V link --yes --project "$NAME" > "$LOG/link.log" 2>&1 || fail "Vercel could not create or link the project $NAME (see .logs/link.log)" "run: npx vercel link --yes --project $NAME, then npm run launch again"
   fi
   V env pull .env.local --yes > "$LOG/env.log" 2>&1
@@ -90,7 +96,7 @@ if [ "$FROM" -le 1 ]; then
     grep -q '^DATABASE_URL=' .env.local || fail "DATABASE_URL did not arrive from Neon (see .logs/env.log)" "open the project on vercel.com, Storage, connect the Neon database to all environments, then npm run launch again"
   fi
   pre walk
-  printf '\n🚶 Nothing more is needed from you. You can walk away: the site opens in your browser by itself in about 10 minutes.\n'
+  printf '\n🚶 Nothing more is needed from you. You can walk away: the site opens in your browser by itself in a few minutes.\n'
   wait "$NPM_PID" || fail "npm install failed (see .logs/npm.log)" "rm -rf node_modules && npm run launch"
   (npx playwright install chromium > "$LOG/playwright.log" 2>&1 &)
   step 1 Setup --note "signed in, project $NAME linked, database created; setting the environment"

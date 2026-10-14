@@ -28,7 +28,7 @@ const DIR = join(homedir(), ".courtside-ventures-scout");
 const STATE = join(DIR, "progress-state.json");
 const PAGE = join(DIR, "progress.html");
 const JS = join(DIR, "progress.js");
-const PAGE_VERSION = "v6-1";
+const PAGE_VERSION = "v6-2";
 
 function arg(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
@@ -116,7 +116,10 @@ async function writeDb() {
   try {
     const { neon } = await import("@neondatabase/serverless");
     const sql = neon(url);
-    await sql`insert into settings (key, value, updated_at) values ('build_progress', ${JSON.stringify(s)}::jsonb, now())
+    // At the last step the site is deployed: switch its Building page off now, so the live checks see the real site
+    // (they ran before --done and failed on every fresh launch, 10-14-26)
+    const site = n === STEPS.length ? { ...s, done: true } : s;
+    await sql`insert into settings (key, value, updated_at) values ('build_progress', ${JSON.stringify(site)}::jsonb, now())
       on conflict (key) do update set value = excluded.value, updated_at = now()`;
   } catch {
     /* table not there yet: the local page still updates */
@@ -127,7 +130,7 @@ function block(st: State) {
   const bar = STEPS.map((_, i) => (i < st.step - (st.done ? 0 : 1) || st.done ? "▰" : i === st.step - 1 ? "▰" : "▱")).join("");
   const since = clock((now - st.startedAt) / 1000);
   const done = STEPS.slice(0, st.step - 1)
-    .map((nm, i) => `✓ ${i + 1} ${nm}${i === STEPS.length - 2 && st.liveUrl ? ` (live: ${st.liveUrl})` : ""}`)
+    .map((nm, i) => `✓ ${i + 1} ${nm}${i === STEPS.length - 2 && st.done && st.liveUrl ? ` (live: ${st.liveUrl})` : ""}`)
     .join("   ");
   const later = STEPS.map((nm, i) => ({ nm, i }))
     .filter(({ i }) => i > st.step - 1)
@@ -147,7 +150,14 @@ function renderPage() {
   return `<!doctype html><html lang="en" data-build="${PAGE_VERSION}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Scout Launch Progress</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>body{margin:0;background:#0a0a0c;padding:40px 16px 100px}${css}.pg-open{display:inline-flex;align-items:center;min-height:48px;padding:0 22px;border-radius:10px;background:#cc003d;color:#fff;font:600 16px/1 Montserrat,sans-serif;text-decoration:none}.pg-open:hover{background:#e0004a}</style></head>
+<style>body{margin:0;background:#0a0a0c;padding:40px 16px 100px}${css}.pg-open{display:inline-flex;align-items:center;min-height:64px;padding:0 36px;border-radius:14px;background:#0a0a0c;color:#fff;font:700 22px/1 Montserrat,sans-serif;text-decoration:none;box-shadow:0 10px 30px rgba(0,0,0,.35)}.pg-open:hover{background:#1c1c22}
+.pg-done{margin:22px 0 0;padding:34px 36px 30px;border-radius:18px;background:linear-gradient(135deg,#cc003d,#ff4d7a);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 20px 60px rgba(204,0,61,.45)}
+.pg-done[hidden]{display:none}
+.pg-done-k{font:700 14px/1 Oswald,sans-serif;letter-spacing:.24em;text-transform:uppercase;margin:0 0 10px;opacity:.95}
+.pg-done-t{margin:0 0 12px;font:700 clamp(34px,5vw,52px)/1.05 Oswald,sans-serif;text-transform:uppercase;letter-spacing:.03em}
+.pg-done-u{margin:0 0 20px;font:600 20px/1.4 "IBM Plex Mono",monospace;overflow-wrap:anywhere}
+.pg-done-s{margin:18px 0 0;font:500 15px/1.5 Montserrat,sans-serif;opacity:.95}
+.pg.is-done .pg-title{opacity:.55}</style></head>
 <body><main class="pg" id="pg">
 <div class="pg-eyebrow">Courtside Ventures Scout</div>
 <h1 class="pg-title">Scout is launching</h1>
@@ -159,8 +169,13 @@ function renderPage() {
 </div>
 <div class="pg-bar" id="bar">${STEPS.map(() => "<i></i>").join("")}</div>
 <div class="pg-list" id="list">${STEPS.map((nm, i) => `<div class="pg-row todo" data-n="${i + 1}"><span class="mk">·</span><span class="k">${String(i + 1).padStart(2, "0")}</span><span class="n">${nm}</span><span class="t">about ${BUDGETS[i]} min</span></div>`).join("")}</div>
-<p class="pg-foot" id="foot"></p>
-<p id="openRow" hidden><a class="pg-open" id="openBtn" href="#" target="_blank" rel="noopener">Open Scout</a></p>
+<section class="pg-done" id="doneCard" hidden>
+  <div class="pg-done-k">🎉 It is live</div>
+  <h2 class="pg-done-t">Scout is ready for you</h2>
+  <p class="pg-done-u" id="doneUrl"></p>
+  <p><a class="pg-open" id="openBtn" href="#" target="_blank" rel="noopener">Open Scout</a></p>
+  <p class="pg-done-s">Finished in <b class="pg-live" id="doneIn">0:00</b>. The first pull of fresh sources is running behind the site; the daily jobs take over tomorrow.</p>
+</section>
 </main>
 <script>
 ${core}
@@ -185,9 +200,12 @@ function render(){
   var rows = stepRows(p), els = document.getElementById("list").children;
   for (var j=0;j<rows.length;j++){ var r = rows[j], e = els[j], cls = "pg-row " + r.state; if (e.className !== cls) e.className = cls;
     set(e.children[0], r.mark); set(e.children[2], r.name); set(e.children[3], r.time); }
-  set(document.getElementById("foot"), p.liveUrl ? "Live site: " + p.liveUrl.replace(/^https?:\\/\\//, "") : "");
-  var row = document.getElementById("openRow"), btn = document.getElementById("openBtn");
-  if (p.done && p.liveUrl){ if (btn.getAttribute("href") !== p.liveUrl) btn.setAttribute("href", p.liveUrl); if (row.hidden) row.hidden = false; }
+  /* the address shows only with the Open Scout button, once the launch is done (Adrian, 10-14-26): before that it is not a site yet */
+  var card = document.getElementById("doneCard"), btn = document.getElementById("openBtn");
+  var ready = !!(p.done && p.liveUrl);
+  if (card.hidden === ready) card.hidden = !ready;
+  document.getElementById("pg").classList.toggle("is-done", ready);
+  if (ready){ if (btn.getAttribute("href") !== p.liveUrl) btn.setAttribute("href", p.liveUrl); set(document.getElementById("doneUrl"), p.liveUrl.replace(/^https?:\\/\\//, "")); set(document.getElementById("doneIn"), clock((p.updatedAt - p.startedAt)/1000)); }
 }
 function pull(){ var s = document.createElement("script"); s.src = "progress.js?t=" + Date.now(); s.onload = s.onerror = function(){ s.remove(); render(); }; document.head.appendChild(s); }
 pull(); setInterval(pull, 5000); setInterval(render, 1000);

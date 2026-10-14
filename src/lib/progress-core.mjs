@@ -3,7 +3,7 @@
 
 // The five steps of `npm run launch` (v6, 10-14-26): the finished site is installed, not rebuilt.
 export const STEPS = ["Setup", "Database", "Build and tests", "Deploy", "Open"];
-export const BUDGETS = [3, 1, 4, 2, 1]; // minutes, measured on the v5 run and the 10-14-26 dry run
+export const BUDGETS = [2, 1, 2, 1, 1]; // minutes; the 10-14-26 dry run measured 0:04 · 0:16 · 1:54 · 0:14 · 0:40 on a warm machine, so a fresh one gets room
 
 export function clock(sec) {
   sec = Math.max(0, Math.floor(sec));
@@ -47,7 +47,8 @@ export function stepRows(p) {
     const state = p && p.done ? "done" : n < cur ? "done" : n === cur ? "now" : "todo";
     const d = p && p.durations ? p.durations[n] : undefined;
     let label = name;
-    if (n === STEPS.length - 1 && p && p.liveUrl) label = name + " · live at " + p.liveUrl.replace(/^https?:\/\//, "");
+    // the address appears only once the launch is done, together with the Open Scout button (Adrian, 10-14-26)
+    if (n === STEPS.length - 1 && p && p.done && p.liveUrl) label = name + " · live at " + p.liveUrl.replace(/^https?:\/\//, "");
     const time = state === "done" && typeof d === "number" ? clock(d) : state === "now" ? "about " + BUDGETS[i] + " min" : "about " + BUDGETS[i] + " min";
     return { n, num: String(n).padStart(2, "0"), name: label, state, time, mark: state === "done" ? "✓" : state === "now" ? "→" : "·" };
   });
