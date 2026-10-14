@@ -62,6 +62,24 @@ test("Add on the Tracking page tracks a typed name", async ({ page }) => {
   await page.goto("/tracking");
   const name = `Test Co ${Date.now()}`;
   await page.locator("#panel-companies .tabadd input").fill(name);
+  const before = Number((await page.locator('.tabs [role="tab"]').first().locator("b").innerText()) || 0);
   await page.locator('#panel-companies .tabadd button[data-act="add"]').click();
-  await expect(page.locator("#panel-companies .tabadd")).toContainText(`Tracked: ${name}`);
+  await expect(page.locator('#panel-companies [data-added-item]').first()).toContainText(name);
+  await expect(page.locator('.tabs [role="tab"]').first().locator("b")).toHaveText(String(before + 1));
 });
+
+test("a new person and a new rule appear at once, with the tab counts moving", async ({ page }) => {
+  test.skip(!!process.env.LIVE_URL, "writes run locally only");
+  await page.goto("/tracking#people");
+  const who = `Test Person ${Date.now()}`;
+  await page.locator('#panel-people input[aria-label="Name"]').fill(who);
+  await page.locator("#panel-people button", { hasText: "Track Person" }).click();
+  await expect(page.locator('#panel-people [data-added-item]').first()).toContainText(who);
+  await page.locator('.tabs [role="tab"]', { hasText: "Rules" }).click();
+  const n = Number(await page.locator('.tabs [role="tab"]', { hasText: "Rules" }).locator("b").innerText());
+  await page.locator('#panel-rules input[aria-label="Who or what"]').fill(`Test rule ${Date.now()}`);
+  await page.locator('#panel-rules form button.btn.red').click();
+  await expect(page.locator('#panel-rules [data-added-item]').first()).toBeVisible();
+  await expect(page.locator('.tabs [role="tab"]', { hasText: "Rules" }).locator("b")).toHaveText(String(n + 1));
+});
+

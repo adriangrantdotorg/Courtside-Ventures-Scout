@@ -4,10 +4,10 @@ import { desc, eq } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import { companyCards, trendCards } from "@/lib/queries";
 import { Dossier, LockChip, Vote } from "@/components/cards";
-import { Tabs } from "@/components/Tabs";
+import { AddedProvider, TrackingTabs, AddedList, AddPersonAdded, NewAlertAdded } from "@/components/Added";
 import { AddTracked } from "@/components/AddTracked";
 import { TrackTrend } from "@/components/TrackTrend";
-import { NewAlert, AlertToggle, AddPerson } from "@/components/forms";
+import { AlertToggle } from "@/components/forms";
 import { Phase2Link } from "@/components/Phase2Link";
 import { Ago, Until } from "@/components/Live";
 import { velPill } from "@/components/rows";
@@ -53,7 +53,8 @@ export default async function Page() {
           Want this in Slack? Connect Slack
         </Link>
       </p>
-      <Tabs
+      <AddedProvider>
+      <TrackingTabs
         tabs={[
           { id: "companies", label: "Companies", count: cos.length },
           { id: "trends", label: "Trends", count: trends.length },
@@ -64,6 +65,7 @@ export default async function Page() {
       >
         <div>
           <AddTracked kind="company" placeholder="Add a company by name or site" />
+          <AddedList kind="companies" />
           <div className="list">
             {cos.map((c, i) => (
               <Dossier key={c.id} c={{ ...c, rank: i + 1 }} showRank={false} />
@@ -73,6 +75,7 @@ export default async function Page() {
         </div>
         <div>
           <AddTracked kind="trend" placeholder="Add a trend by name" />
+          <AddedList kind="trends" />
           <div className="list">
             {trends.map((t) => (
               <article key={t.id} className="rowcard" id={`tr-${t.slug}`} data-item>
@@ -97,8 +100,9 @@ export default async function Page() {
         </div>
         <div>
           <div className="tabadd">
-            <AddPerson />
+            <AddPersonAdded />
           </div>
+          <AddedList kind="people" />
           <div className="list">
             {people.map((p) => {
               const mine = items.filter((i) => i.personId === p.id);
@@ -137,8 +141,9 @@ export default async function Page() {
         </div>
         <div>
           <div className="tabadd">
-            <NewAlert ai={ai} />
+            <NewAlertAdded ai={ai} />
           </div>
+          <AddedList kind="rules" />
           <p className="explain" style={{ margin: "14px 32px 0" }}>
             Each rule is who or what, the event, keywords and sources. Hits land here and on Today. Watching all day, with email and text alerts, is <Phase2Link />, built together.
           </p>
@@ -187,7 +192,8 @@ export default async function Page() {
             {!hits.length && <p className="empty">No hits yet. The rules run every morning.</p>}
           </div>
         </div>
-      </Tabs>
+      </TrackingTabs>
+      </AddedProvider>
     </div>
   );
 }

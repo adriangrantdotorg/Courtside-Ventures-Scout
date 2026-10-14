@@ -8,7 +8,7 @@ import { postJSON } from "@/lib/client";
 
 const ATTRS = { autoComplete: "off", autoCorrect: "off", autoCapitalize: "off", spellCheck: false } as const;
 
-export function AddPerson() {
+export function AddPerson({ onAdded }: { onAdded?: (p: { id: number; name: string; role: string | null }) => void } = {}) {
   const ui = useUI();
   const router = useRouter();
   const [f, setF] = useState({ name: "", youtube: "", blog: "", github: "" });
@@ -17,12 +17,13 @@ export function AddPerson() {
     e.preventDefault();
     if (!f.name.trim()) return;
     setBusy(true);
-    const r = await postJSON("/api/people", f);
+    const r = await postJSON<{ person: { id: number; name: string; role: string | null } }>("/api/people", f);
     setBusy(false);
     if (!r.ok) return ui.error("That person wasn't added", r.error || "The server did not answer.");
     ui.toast(`${f.name} Tracked`);
     setF({ name: "", youtube: "", blog: "", github: "" });
-    router.refresh();
+    if (onAdded && r.data?.person) onAdded(r.data.person);
+    else router.refresh();
   }
   return (
     <form className="scard" onSubmit={save} aria-label="Track a person">
@@ -43,7 +44,7 @@ export function AddPerson() {
   );
 }
 
-export function NewAlert({ ai }: { ai: boolean }) {
+export function NewAlert({ ai, onAdded }: { ai: boolean; onAdded?: (a: { id: number; title: string }) => void }) {
   const ui = useUI();
   const router = useRouter();
   const [f, setF] = useState({ subject: "", event: "mention", keywords: "" });
@@ -51,12 +52,13 @@ export function NewAlert({ ai }: { ai: boolean }) {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const r = await postJSON("/api/alerts", f);
+    const r = await postJSON<{ alert: { id: number; title: string } }>("/api/alerts", f);
     setBusy(false);
     if (!r.ok) return ui.error("The alert wasn't saved", r.error || "The server did not answer.");
     ui.toast("Alert Saved");
     setF({ subject: "", event: "mention", keywords: "" });
-    router.refresh();
+    if (onAdded && r.data?.alert) onAdded(r.data.alert);
+    else router.refresh();
   }
   return (
     <form className="scard" id="new" onSubmit={save} aria-label="New alert">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { useUI, ClearX } from "./ui";
 import { postJSON } from "@/lib/client";
+import { useAdded } from "./Added";
 
 type Hit = { kind: string; id?: number; title: string; sub?: string; href: string };
 
@@ -12,7 +13,8 @@ export function AddTracked({ kind, placeholder }: { kind: "company" | "trend"; p
   const ui = useUI();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
-  const [added, setAdded] = useState<Hit[]>([]);
+  const { add: addItem } = useAdded();
+  const listKind = kind === "company" ? "companies" : "trends";
   useEffect(() => {
     if (!q.trim()) return setHits([]);
     const ctl = new AbortController();
@@ -35,7 +37,7 @@ export function AddTracked({ kind, placeholder }: { kind: "company" | "trend"; p
     const r = await postJSON("/api/track", { kind, id: h.id, on: true });
     if (!r.ok) return ui.error("Track didn't save", r.error || "The server did not answer.");
     ui.toast(`${h.title.replace(/^Trend: /, "")} Tracked`);
-    setAdded((a) => [h, ...a]);
+    addItem(listKind, { id: h.id!, title: h.title.replace(/^Trend: /, ""), sub: h.sub });
     setQ("");
     setHits([]);
   }
@@ -50,7 +52,7 @@ export function AddTracked({ kind, placeholder }: { kind: "company" | "trend"; p
     setBusy(false);
     if (!r.ok) return ui.error(kind === "company" ? "That company wasn't added" : "That trend wasn't added", r.error || "The server did not answer.");
     ui.toast(`${r.data!.name} Tracked`);
-    setAdded((a) => [{ kind, id: r.data!.id, title: r.data!.name, href: "#" }, ...a]);
+    addItem(listKind, { id: r.data!.id, title: r.data!.name });
     setQ("");
     setHits([]);
   }
@@ -86,11 +88,6 @@ export function AddTracked({ kind, placeholder }: { kind: "company" | "trend"; p
             </button>
           ))}
         </div>
-      )}
-      {added.length > 0 && (
-        <p className="mono" style={{ margin: "8px 0 0", fontSize: 13, color: "var(--green)" }}>
-          Tracked: {added.map((h) => h.title.replace(/^Trend: /, "")).join(", ")}. It appears in the list on the next visit.
-        </p>
       )}
     </div>
   );
