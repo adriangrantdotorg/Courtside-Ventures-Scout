@@ -58,9 +58,8 @@ nav a, .ticker a, a.seg, a.btn, a.lane-chip, a.src, a.src2, .evi a, .views a, .b
 .chip { display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:0 12px; border:1px solid var(--border); border-radius:6px; background:transparent; font:600 12px/1 Oswald, sans-serif; letter-spacing:.1em; text-transform:uppercase; color:var(--text-2); white-space:nowrap; cursor:pointer; }
 .chip:hover { color:var(--heading); border-color:var(--text-3); }
 .chip.red { border-color:var(--red); color:var(--red-ink); }
-/* Keycaps in the top bar show only on hover or focus (Adrian, 10-14-26). */
+/* Keycaps never show in the top bar; the tooltip names the key (Adrian, 10-14-26: the hover reveal jumped). */
 .tools .chip .kbd { display:none; }
-.tools .chip:hover .kbd, .tools .chip:focus-visible .kbd { display:inline-block; }
 .kbd { font:500 12px/1 "IBM Plex Mono", monospace; padding:3px 6px; border:1px solid var(--border); border-radius:5px; color:var(--text-3); letter-spacing:0; text-transform:none; }
 .ico { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 
@@ -70,7 +69,6 @@ nav a, .ticker a, a.seg, a.btn, a.lane-chip, a.src, a.src2, .evi a, .views a, .b
 .ticker .lbl i { width:10px; height:10px; border-radius:50%; background:#fff; box-shadow:0 0 6px #fff, 0 0 14px #fff; animation:liveglow 2.4s ease-in-out infinite; }
 @keyframes liveglow { 0%,100% { box-shadow:0 0 4px #fff, 0 0 8px rgba(255,255,255,.6); opacity:.8; } 50% { box-shadow:0 0 8px #fff, 0 0 18px #fff, 0 0 32px rgba(255,255,255,.9); opacity:1; } }
 .ticker .track { display:flex; white-space:nowrap; padding-left:96px; animation:tick 60s linear infinite; will-change:transform; }
-.ticker:hover .track, .ticker:focus-within .track { animation-play-state:paused; }
 @keyframes tick { from { transform:translateX(0); } to { transform:translateX(-50%); } }
 .ticker .track a { padding:0 22px; height:44px; display:inline-flex; align-items:center; gap:8px; border-right:1px solid rgba(255,255,255,.14); color:#eaeaf0; text-transform:uppercase; }
 .ticker .track a:hover { background:rgba(255,255,255,.08); color:#fff; }
@@ -698,3 +696,16 @@ table.t tr[hidden] { display:none; }
 .tabs button b { font:500 12px/1 "IBM Plex Mono", monospace; color:var(--text-3); }
 .tabs button[aria-selected="true"] { color:var(--heading); border-bottom-color:var(--red-ink); }
 .tabs button:hover { color:var(--heading); }
+
+/* ---- round 3b (10-14-26) ---- */
+/* Deep links land under the sticky top bar unless every target keeps room for it; the landed item gets a red edge. */
+[id] { scroll-margin-top:84px; }
+article:target, tr:target, .tile:target, .card2:target, .rowcard:target { box-shadow:inset 3px 0 0 var(--red); }
+.band h2 a { color:#fff; }
+.band h2 a:hover, .cname a:hover, .rowcard h3 a:hover, table.t .fund:hover, table.t .co a:hover { text-decoration:underline dotted; text-decoration-color:var(--red-ink); text-underline-offset:5px; }
+button.p2 { background:none; border:0; padding:0; margin:0; font:inherit; color:var(--red-ink); cursor:pointer; }
+button.p2:hover, button.p2:focus-visible { text-decoration:underline dotted; text-underline-offset:4px; }
+.grid2 table.t td.m { white-space:normal; }
+.grid2 table.t th, .grid2 table.t td { padding-left:6px; padding-right:6px; }
+.foot .left { display:flex; gap:22px; }
+.foot .right { margin-left:auto; display:flex; gap:22px; align-items:center; }

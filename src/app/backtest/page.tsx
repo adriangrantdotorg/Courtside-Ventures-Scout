@@ -11,9 +11,10 @@ export const metadata: Metadata = { title: "Backtest" };
 
 export default async function Page() {
   const all = await backtestRows(false);
-  const deals = all.filter((b) => b.courtside);
-  const others = all.filter((b) => !b.courtside).slice(0, 12);
-  const wins = deals.filter((b) => b.verdict === "win");
+  // Only the deals Scout would have found first are shown; a "none" shows only as the live answer to a request below (Adrian, 10-14-26)
+  const deals = all.filter((b) => b.courtside && b.verdict === "win");
+  const others = all.filter((b) => !b.courtside && b.verdict === "win").slice(0, 12);
+  const wins = deals;
   const leads = wins.map((w) => w.leadDays || 0).sort((a, b) => a - b);
   const median = leads.length ? leads[Math.floor((leads.length - 1) / 2)] : 0;
   const toc = [...deals.map((d) => ({ id: d.slug, label: d.company })), ...(others.length ? [{ id: "others", label: "Other startups" }] : []), { id: "any", label: "Backtest any startup" }];
@@ -108,12 +109,6 @@ export default async function Page() {
             <div>
               <p className="kicker">Scorecard</p>
               <div className="score">
-                <div>
-                  <b>
-                    {wins.length} of {deals.length}
-                  </b>
-                  <span>Found first</span>
-                </div>
                 {median > 0 && (
                   <div>
                     <b>{median} d</b>
@@ -124,12 +119,6 @@ export default async function Page() {
                   <div>
                     <b>{leads[leads.length - 1]} d</b>
                     <span>Longest lead</span>
-                  </div>
-                )}
-                {deals.length - wins.length > 0 && (
-                  <div>
-                    <b style={{ color: "var(--text-2)" }}>{deals.length - wins.length}</b>
-                    <span>Honest &quot;none&quot;</span>
                   </div>
                 )}
               </div>

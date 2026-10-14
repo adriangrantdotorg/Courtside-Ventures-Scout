@@ -1,3 +1,4 @@
+import { Phase2Link } from "@/components/Phase2Link";
 import type { Metadata } from "next";
 import { DocHead, Toc } from "@/components/doc";
 import { JOBS } from "@/lib/jobs";
@@ -59,7 +60,7 @@ export default function Page() {
             <li>Refresh Now: any time, once an hour for everyone</li>
           </ul>
           <h2 id="phase2">Phase II</h2>
-          <p>Phase I is a quick prototype; Phase II is the production-ready version we build together: team-only access, trusted ratings, real-time updates, email alerts, social networks through the firm&apos;s accounts, PitchBook and Crunchbase, and LinkedIn.</p>
+          <p>Phase I is a quick prototype; <Phase2Link /> is the production-ready version we build together: team-only access, trusted ratings, real-time updates, email alerts, social networks through the firm&apos;s accounts, PitchBook and Crunchbase, and LinkedIn.</p>
         </div>
         <aside className="rail">
           <div className="stick">

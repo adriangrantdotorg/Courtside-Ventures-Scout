@@ -54,8 +54,15 @@ export function SponsorTile({ s }: { s: SponsorCard }) {
       {s.domain ? <img src={favicon(s.domain)} alt="" width={30} height={30} /> : <span className="lmark" aria-hidden="true">{s.brand.trim().charAt(0).toUpperCase()}</span>}
       <span>
         <b>{s.brand}</b>
-        {s.whatItIs && <span>{s.whatItIs}</span>}
-        <small>{s.fresh ? <em>{s.stamp}</em> : s.stamp}</small>
+        <small>
+          {s.stamp.includes(" · new on ") ? (
+            <>
+              {s.stamp.split(" · new on ")[0]} · <em>new on {s.stamp.split(" · new on ")[1]}</em>
+            </>
+          ) : (
+            s.stamp
+          )}
+        </small>
       </span>
     </Link>
   );
@@ -212,9 +219,9 @@ export function FilingTable({ rows, compact }: { rows: Filing[]; compact?: boole
             <th>Company</th>
             <th>Sold</th>
             <th>Area · fit</th>
-            <th>Notes</th>
+            {!compact && <th>Notes</th>}
             {!oneDate && <th>Filed</th>}
-            <th>Source</th>
+            {!compact && <th>Source</th>}
             <th aria-label="Votes" />
           </tr>
         </thead>
@@ -224,23 +231,37 @@ export function FilingTable({ rows, compact }: { rows: Filing[]; compact?: boole
               <td>
                 <span className="fund">{f.companyId ? <Link href={`/company/${f.companyId}`} data-act="open" title={`Open ${f.issuer} in Scout`}>{f.issuer}</Link> : f.issuer}</span>
                 {!compact && f.related.length > 0 && <span className="sub">People named: {f.related.join(", ")}</span>}
+                {compact && (
+                  <span className="sub">
+                    <a href={f.url} target="_blank" rel="noopener noreferrer" title="Opens the filing at sec.gov in a new window" data-act="source">
+                      SEC EDGAR
+                    </a>
+                  </span>
+                )}
               </td>
               <td className="m">
                 {f.amountSold ? <b>{fmtMoney(f.amountSold, f.currency)}</b> : "—"}
                 {f.amountOffered ? <> of {fmtMoney(f.amountOffered, f.currency)}</> : null}
               </td>
-              <td className="m">{f.thesisArea ? <span className="ok">{areaLabel(f.thesisArea)}{f.confidence ? ` · ${Math.round(f.confidence * 100)}%` : ""}</span> : "—"}</td>
               <td className="m">
-                {f.beforePress && <span className="gold">before any press</span>}
-                {!compact && f.industry && <span className="sub">Industry group: {f.industry}</span>}
-                {!compact && f.firstSale && <span className="sub">First sale {fmtDate(f.firstSale)}</span>}
+                {f.thesisArea ? <span className="ok">{areaLabel(f.thesisArea)}{f.confidence ? ` · ${Math.round(f.confidence * 100)}%` : ""}</span> : "—"}
+                {compact && f.beforePress && <span className="sub gold">before any press</span>}
               </td>
+              {!compact && (
+                <td className="m">
+                  {f.beforePress && <span className="gold">before any press</span>}
+                  {f.industry && <span className="sub">Industry group: {f.industry}</span>}
+                  {f.firstSale && <span className="sub">First sale {fmtDate(f.firstSale)}</span>}
+                </td>
+              )}
               {!oneDate && <td className="m">{f.filedAt ? fmtDate(f.filedAt) : "—"}</td>}
-              <td className="m">
-                <a href={f.url} target="_blank" rel="noopener noreferrer" title="Opens the filing at sec.gov in a new window" data-act="source">
-                  SEC EDGAR
-                </a>
-              </td>
+              {!compact && (
+                <td className="m">
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" title="Opens the filing at sec.gov in a new window" data-act="source">
+                    SEC EDGAR
+                  </a>
+                </td>
+              )}
               <td>
                 <Vote k={`filing:${f.id}`} initial={f.votes} name={f.issuer} row />
               </td>
@@ -276,14 +297,14 @@ export function FundItemTable({ items, compact }: { items: FundItem[]; compact?:
         <tr>
           <th>Fund</th>
           <th>Backed</th>
-          {compact ? <th>Round</th> : <><th>Round</th><th>Amount</th><th>Area</th></>}
+          {compact ? <th>Amount</th> : <><th>Round</th><th>Amount</th><th>Area</th></>}
           <th>Source</th>
           <th aria-label="Votes" />
         </tr>
       </thead>
       <tbody>
         {items.map((i) => (
-          <tr key={i.id} data-item data-filter={`${i.title} ${i.fund.name} ${i.company || ""}`} data-area={i.thesisArea || ""}>
+          <tr key={i.id} id={`fi${i.id}`} data-item data-filter={`${i.title} ${i.fund.name} ${i.company || ""}`} data-area={i.thesisArea || ""}>
             <td>
               <Link className="fund" href={`/${i.fund.kind === "neighborhood" ? "neighborhood" : "synergistic-funders"}#${i.fund.slug}`} title={`Open ${i.fund.name}`}>
                 {i.fund.name}
@@ -292,7 +313,10 @@ export function FundItemTable({ items, compact }: { items: FundItem[]; compact?:
             </td>
             <td>{backed(i)}</td>
             {compact ? (
-              <td className="m">{round(i)}{round(i) && amount(i) ? " · " : ""}{amount(i)}</td>
+              <td className="m">
+                {amount(i) || "—"}
+                {round(i) && <span className="sub">{round(i)}</span>}
+              </td>
             ) : (
               <>
                 <td className="m">{round(i) || "—"}</td>

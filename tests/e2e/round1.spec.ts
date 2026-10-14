@@ -26,13 +26,12 @@ test("the top bar stays put while the page scrolls", async ({ page }) => {
   expect(top).toBe(0);
 });
 
-test("keycaps in the top bar show only on hover, and the theme chip is a symbol", async ({ page }) => {
+test("the theme chip is a symbol with no keycap (the key lives in its tooltip)", async ({ page }) => {
   await page.goto(HOME);
   const chip = page.locator("[data-theme-chip]");
   expect((await chip.innerText()).trim()).toBe("");
   expect(await chip.locator(".kbd").evaluate((el) => getComputedStyle(el).display)).toBe("none");
-  await chip.hover();
-  expect(await chip.locator(".kbd").evaluate((el) => getComputedStyle(el).display)).not.toBe("none");
+  expect(await chip.getAttribute("title")).toMatch(/⇧T/);
 });
 
 test("links carry no underline at rest and a dotted one on hover", async ({ page }) => {

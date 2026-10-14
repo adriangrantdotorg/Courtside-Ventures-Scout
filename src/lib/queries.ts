@@ -577,7 +577,7 @@ export async function tickerItems(): Promise<TickerItem[]> {
   }
   for (const f of fitems) {
     const amt = fmtMoney(f.amount, f.currency);
-    out.push({ href: `/${f.fundKind === "neighborhood" ? "neighborhood" : "synergistic-funders"}#${f.slug}`, where: `${f.fund}`, label: `${f.fund} · ${f.company || "deal"}`, delta: amt || f.kind, tone: "gd" });
+    out.push({ href: `/${f.fundKind === "neighborhood" ? "neighborhood" : "synergistic-funders"}#fi${f.id}`, where: `that deal under ${f.fund}`, label: `${f.fund} · ${f.company || "deal"}`, delta: amt || f.kind, tone: "gd" });
   }
   for (const b of wins) out.push({ href: `/backtest#${b.slug}`, where: "that card on Backtest", label: `Backtest · ${b.company}`, delta: `${b.leadDays} d early`, tone: "up", domain: b.domain || undefined });
   return out;

@@ -112,7 +112,19 @@ export async function sponsorsJob(ctx: Ctx) {
       .where(eq(S.sponsors.id, s.id));
     ctx.tick();
   }
+  // brands with no site yet get one from the keyless lookup, a few per run
+  const { findSite } = await import("../sources/sites");
+  const nosite = await db().select({ id: S.sponsors.id, brand: S.sponsors.brand }).from(S.sponsors).where(sql`${S.sponsors.site} is null`).limit(25);
+  if (nosite.length) await ctx.stage("finding brand sites", 0, nosite.length);
+  for (const sp of nosite) {
+    if (ctx.outOfTime()) break;
+    const site = await findSite(sp.brand).catch(() => null);
+    if (site) await db().update(S.sponsors).set({ site }).where(eq(S.sponsors.id, sp.id));
+    ctx.tick();
+  }
 }
+
+
 
 /* ---------- Trends ---------- */
 export async function trendsJob(ctx: Ctx) {

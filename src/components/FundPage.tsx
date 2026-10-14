@@ -1,3 +1,4 @@
+import { Phase2Link } from "./Phase2Link";
 import Link from "next/link";
 import { fundFeed } from "@/lib/queries";
 import { FundItemTable } from "./rows";
@@ -41,7 +42,7 @@ export async function FundPage({ kind }: { kind: "neighborhood" | "synergistic" 
           <h2>{nb ? "Co-Investors" : "The Funds"}</h2>
           {!nb && <LockChip door="pitchbook">PitchBook, X and LinkedIn</LockChip>}
         </div>
-        {!nb && <p className="explain">PitchBook, X and LinkedIn are links only in this prototype. Reading them is Phase II, through the firm&apos;s accounts.</p>}
+        {!nb && <p className="explain">PitchBook, X and LinkedIn are links only in this prototype. Reading them is <Phase2Link />, through the firm&apos;s accounts.</p>}
         <div className="brands wide4">
           {sorted.map((f) => (
             <div className="tile" key={f.id} id={f.slug || slugify(f.name)}>

@@ -1,3 +1,4 @@
+import { Phase2Link } from "@/components/Phase2Link";
 import { cleanCopy } from "@/lib/copy";
 import type { Metadata } from "next";
 import { and, desc, gte, inArray } from "drizzle-orm";
@@ -35,8 +36,8 @@ export default async function Page() {
         </span>
       </div>
       <p className="ph-lede">
-        Every day Scout reads the new episodes, videos and posts from {sources.filter((s) => s.status === "active").length} creators and shows and pulls out every company, brand and startup they mention, with the
-        sentence it came from and the sentiment: recommend, like, discuss or criticize. The taste map below ranks who overlaps on what. Once a day in this prototype; real-time is Phase II, built together.
+        Every day Scout reads the new episodes, videos and posts from {sources.filter((s) => s.status === "active").length} creators and shows and pulls out every company, brand and startup they mention. The
+        taste map below highlights the overlap. Info pulled once a day during this prototype phase, with real-time coming in <Phase2Link />.
       </p>
       <Tabs
         tabs={[
@@ -64,7 +65,7 @@ export default async function Page() {
           <h2>Tracked by Name</h2>
         </div>
         <p className="explain">
-          These influencers live mainly on Instagram, TikTok or Twitch. Reading their own posts takes the firm&apos;s accounts, so that is Phase II work. Today Scout follows them through news mentions by name,
+          These influencers live mainly on Instagram, TikTok or Twitch. Reading their own posts takes the firm&apos;s accounts, so that is <Phase2Link /> work. Today Scout follows them through news mentions by name,
           appearances on the tracked shows and channels, and the brands they&apos;re tied to.
         </p>
         <div className="brands wide4">

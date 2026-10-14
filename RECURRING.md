@@ -19,3 +19,8 @@ One line per defect fixed, so the next session can find the first report.
 - 10-14-26 · verify:live called the team's own clicks "residue" (a status change and a tracked trend from Adrian's review) → residue is now the rows the browser suite ADDS, measured before and after (`scripts/verify-live.ts`).
 - 10-14-26 · Unit tests failed in a fresh shell because SITE_URL was not exported (the User-Agent check) → vitest loads `.env.local` itself (`vitest.config.ts`).
 - 10-14-26 · Culture quotes started mid-word ("cott Galloway: …") → the cut came in with the launch seed (v4-era mentions); `scripts/fix-quotes.ts` re-extracted 7 from their feed items and removed 20 with no feed item; today's extractor keeps the first letter (unit test). Re-export the seed before v6 so the fixed rows travel.
+- 10-14-26 · Deep links landed under the sticky top bar (a few pixels "below" the item) → `[id] { scroll-margin-top }` for every target, a red edge on the landed item; e2e measures the landing.
+- 10-14-26 · The ticker froze when the pointer crossed it (a hover pause) → no pause; e2e checks the play state under the pointer.
+- 10-14-26 · "Kai Bond" news showed a marine safety officer → people news is searched with the firm's name; the 5 rows removed.
+- 10-14-26 · 40 sponsors had no site, so no logo (Claude, DraftKings…) → keyless site lookup with exact-name matching plus a known-brands map; 29 filled; the sponsors job fills new ones.
+- 10-14-26 · The home filings table spilled into the next column → compact tables fold Source and Notes under the cells and wrap mono text.

@@ -383,7 +383,7 @@ export function Facts({ c }: { c: CompanyCard }) {
         Stage <b>{c.stageText}</b>
       </span>
       <span>
-        Check size <b className={c.check.tone === "ok" ? "ok" : c.check.tone === "warn" ? "warn" : ""}>{c.check.text}</b>
+        Check Size <b className={c.check.tone === "ok" ? "ok" : c.check.tone === "warn" ? "warn" : ""}>{c.check.text}</b>
       </span>
       {c.portfolio && (
         <span>

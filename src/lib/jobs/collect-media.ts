@@ -100,7 +100,10 @@ export async function peopleStage(ctx: Ctx) {
       if (!e.trackViewUrl || !`${e.trackName} ${e.description || ""}`.toLowerCase().includes(p.name.toLowerCase())) continue;
       items.push({ kind: "appearance", title: `${e.collectionName}: ${e.trackName}`, url: e.trackViewUrl, date: e.releaseDate || null, source: "Apple Podcasts" });
     }
-    for (const n of (await F.googleNews(`"${p.name}"`, "14d")).slice(0, 5)) items.push({ kind: "news", title: n.title, url: n.url, date: n.date, source: n.outlet || "News" });
+    // a name alone collides with strangers (10-14-26: "Kai Bond" matched a marine safety officer), so the firm rides along
+    const firm = (p.role || "").split(",").pop()?.trim() || "";
+    const q = firm ? `"${p.name}" "${firm.replace(/ (Ventures|Capital|Partners|Fund)$/i, "")}"` : `"${p.name}"`;
+    for (const n of (await F.googleNews(q, "14d")).slice(0, 5)) items.push({ kind: "news", title: n.title, url: n.url, date: n.date, source: n.outlet || "News" });
     for (const it of items)
       await db()
         .insert(S.personItems)

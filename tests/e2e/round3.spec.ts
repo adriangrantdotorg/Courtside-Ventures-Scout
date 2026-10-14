@@ -37,9 +37,12 @@ test("Filings and deals are tables with the picked columns", async ({ page }) =>
   await page.goto(HOME);
   const f = page.locator('table[data-table="filings"]').first();
   const heads = async (t: typeof f) => (await t.locator("th").allInnerTexts()).map((x) => x.trim().toLowerCase());
-  if (await f.count()) expect(await heads(f)).toEqual(expect.arrayContaining(["company", "sold", "area · fit", "notes", "source"]));
+  if (await f.count()) expect(await heads(f)).toEqual(expect.arrayContaining(["company", "sold", "area · fit"]));
+  await page.goto("/throw-some-ds");
+  expect(await heads(page.locator('table[data-table="filings"]'))).toEqual(expect.arrayContaining(["company", "sold", "area · fit", "notes", "source"]));
+  await page.goto(HOME);
   const d = page.locator('table[data-table="deals"]').first();
-  if (await d.count()) expect(await heads(d)).toEqual(expect.arrayContaining(["fund", "backed", "round", "source"]));
+  if (await d.count()) expect(await heads(d)).toEqual(expect.arrayContaining(["fund", "backed", "amount", "source"]));
   await page.goto("/neighborhood");
   expect(await heads(page.locator('table[data-table="deals"]'))).toEqual(expect.arrayContaining(["fund", "backed", "round", "amount", "area", "source"]));
   await expect(page.locator("body")).not.toContainText("Clear Filters");

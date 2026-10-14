@@ -571,24 +571,26 @@ function Footer() {
   const ui = useUI();
   return (
     <footer className="foot">
-      <span>
-        Built by{" "}
-        <a href="https://www.linkedin.com/in/adriangrant3/" target="_blank" rel="noopener noreferrer" title="Opens Adrian Grant on LinkedIn in a new window">
-          Adrian Grant
-        </a>
-      </span>
-      <button className="linkish" onClick={() => ui.door("team")} title="What Phase II adds, built together">
-        Phase II
-      </button>
-      <button className="linkish" onClick={ui.openSheet} title="Show every keyboard shortcut (?)">
-        Shortcuts
-      </button>
-      <span className="sp" style={{ display: "flex", gap: 22 }}>
+      <span className="left">
         {MORE.map((m) => (
           <Link key={m.href} href={m.href} title={`Open ${m.label}`}>
             {m.label}
           </Link>
         ))}
+      </span>
+      <span className="right">
+        <span>
+          Built by{" "}
+          <a href="https://www.linkedin.com/in/adriangrant3/" target="_blank" rel="noopener noreferrer" title="Opens Adrian Grant on LinkedIn in a new window">
+            Adrian Grant
+          </a>
+        </span>
+        <button className="linkish" onClick={() => ui.door("team")} title="What Phase II adds, built together">
+          Phase II
+        </button>
+        <button className="linkish" onClick={ui.openSheet} title="Show every keyboard shortcut (?)">
+          Shortcuts
+        </button>
       </span>
     </footer>
   );

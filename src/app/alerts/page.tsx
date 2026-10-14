@@ -1,3 +1,4 @@
+import { Phase2Link } from "@/components/Phase2Link";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
@@ -30,7 +31,9 @@ export default async function Page() {
       <ul className="ph-lede" style={{ paddingLeft: 50, marginTop: 6 }}>
         <li>Checked once a day, around 8 AM ET, against everything new.</li>
         <li>Hits land here and on Today, each with its source.</li>
-        <li>Watching all day, with email and text alerts, is Phase II, built together.</li>
+        <li>
+          Watching all day, with email and text alerts, is <Phase2Link />, built together.
+        </li>
       </ul>
       <p className="ph-lede mono" style={{ fontSize: 14, color: "var(--text-2)", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         {last[0]?.t && (

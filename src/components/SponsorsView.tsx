@@ -27,11 +27,17 @@ export function SponsorsView({ cards }: { cards: SponsorCard[] }) {
   return (
     <>
       <div className="filters">
+        <div className="frow">
         <label className="fsearch">
           <Search className="ico" />
           <input data-search value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Escape" && setQ("")} placeholder="Search brands" aria-label="Search brands" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} />
           <ClearX show={!!q} onClear={() => setQ("")} />
         </label>
+        <button className="fclear" disabled={!q && !show && !fit && !seen} onClick={() => (setQ(""), setShow(""), setFit(""), setSeen(""))} title="Clear every filter">
+          Clear Filters
+        </button>
+        </div>
+        <div className="frow sels">
         <label className={"fsel" + (show ? " on" : "")}>
           Show
           <select value={show} onChange={(e) => setShow(e.target.value)} aria-label="Show">
@@ -63,9 +69,7 @@ export function SponsorsView({ cards }: { cards: SponsorCard[] }) {
             <option value="90">Last 90 days</option>
           </select>
         </label>
-        <button className="fclear" disabled={!q && !show && !fit && !seen} onClick={() => (setQ(""), setShow(""), setFit(""), setSeen(""))} title="Clear every filter">
-          Clear Filters
-        </button>
+        </div>
       </div>
       <div className="rule" />
       <div className="list">

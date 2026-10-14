@@ -36,7 +36,7 @@ ok(nb.status === 200, "Neighborhood answers");
 const sy = await get("/synergistic-funders");
 ok(sy.status === 200, "Synergistic Funders answers");
 const bt = await get("/backtest");
-ok(count(bt.html, /class="card2 (win|none)"/g) >= 6 && bt.html.includes("No earlier public signal found"), "backtest rows with honest verdicts");
+ok(count(bt.html, /class="card2 win"/g) >= 2 && !/class="card2 none"/.test(bt.html), "backtest shows only the deals found first");
 const ab = await get("/about");
 ok(ab.html.includes("https://www.linkedin.com/in/adriangrant3/") && ab.html.includes("A prototype deal-sourcing site for Courtside Ventures built by Adrian Grant."), "About: Talk to Adrian and the prototype line");
 for (const p of ["/icon.png", "/favicon.ico"]) ok((await fetch(url + p)).status === 200, `${p} answers`);
