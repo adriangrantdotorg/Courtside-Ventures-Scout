@@ -18,3 +18,4 @@ One line per defect fixed, so the next session can find the first report.
 - 10-14-26 · Pipeline dropdowns wrapped to two lines and offered empty options → search row + one dropdown row; options with zero matches are not offered (`Pipeline.tsx`); e2e test.
 - 10-14-26 · verify:live called the team's own clicks "residue" (a status change and a tracked trend from Adrian's review) → residue is now the rows the browser suite ADDS, measured before and after (`scripts/verify-live.ts`).
 - 10-14-26 · Unit tests failed in a fresh shell because SITE_URL was not exported (the User-Agent check) → vitest loads `.env.local` itself (`vitest.config.ts`).
+- 10-14-26 · Culture quotes started mid-word ("cott Galloway: …") → the cut came in with the launch seed (v4-era mentions); `scripts/fix-quotes.ts` re-extracted 7 from their feed items and removed 20 with no feed item; today's extractor keeps the first letter (unit test). Re-export the seed before v6 so the fixed rows travel.

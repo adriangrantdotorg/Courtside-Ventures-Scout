@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { Pin, PenLine, Mail, Copy, Download, Plus, Lock, Sparkles } from "lucide-react";
+import { Pin, PenLine, Mail, Copy, Download, Plus, Lock, Sparkles, Check } from "lucide-react";
 import { useUI, Overlay, Kbd } from "./ui";
 import { Ago } from "./Live";
 import { Rich } from "./Rich";
@@ -345,7 +345,7 @@ export function Actions({ c, onNote }: { c: CompanyCard; onNote?: (n: { id: numb
   return (
     <div className="acts">
       <button className="btn track" data-act="track" aria-pressed={a.tracked} onClick={a.track} title={a.tracked ? `Stop tracking ${c.name}` : `Track ${c.name}: a daily check of news, filings and shows, on its timeline`}>
-        <Pin className="ico" />
+        {a.tracked ? <Check className="ico" /> : <Pin className="ico" />}
         {a.tracked ? "Tracking" : "Track"}
       </button>
       <button className="btn" data-act="memo" onClick={a.memo} title="Draft Investment Memo: copies Courtside's eight-part outline filled with every fact Scout has, for your AI">

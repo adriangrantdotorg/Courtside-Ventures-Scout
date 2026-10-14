@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { fundFeed } from "@/lib/queries";
-import { FundItemRow } from "./rows";
+import { FundItemTable } from "./rows";
 import { RowFilter } from "./ListHead";
 import { LockChip } from "./cards";
 import { AREA_LABEL, fmtDate, slugify } from "@/lib/format";
@@ -31,13 +31,9 @@ export async function FundPage({ kind }: { kind: "neighborhood" | "synergistic" 
           </>
         )}
       </p>
-      <RowFilter placeholder={nb ? "Search co-investor deals" : "Search synergistic funders"} areas={areas} target="#fund-feed" />
+      <RowFilter placeholder={nb ? "Search co-investor deals" : "Search synergistic funders"} areas={areas} target="#fund-feed" clear={false} />
       <div className="list" id="fund-feed">
-        {items.map((i) => (
-          <div key={i.id} data-filter={`${i.title} ${i.fund.name} ${i.company || ""}`} data-area={i.thesisArea || ""}>
-            <FundItemRow i={i} />
-          </div>
-        ))}
+        <FundItemTable items={items} />
         {!items.length && <p className="empty">No new items from these funds in the last two weeks. The fund watch runs every morning.</p>}
       </div>
       <section className="list" aria-label="The funds">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { filingRows } from "@/lib/queries";
-import { FilingRow } from "@/components/rows";
+import { FilingTable } from "@/components/rows";
 import { RowFilter } from "@/components/ListHead";
 import { AREA_LABEL } from "@/lib/format";
 
@@ -14,7 +14,7 @@ export default async function Page() {
     <div>
       <div className="ph">
         <h1>Throw Some D&apos;s on It</h1>
-        <span className="count">{rows.length} Form D and Form C filings inside the thesis · newest first</span>
+        <span className="count">{rows.length} Form D and Form C filings inside the thesis</span>
       </div>
       <p className="ph-lede">
         Every day Scout reads the SEC&apos;s daily filing index, drops pooled funds, real estate, oil and gas and banking, and keeps the companies inside the thesis by industry group, name, website and keyword
@@ -22,11 +22,7 @@ export default async function Page() {
       </p>
       <RowFilter placeholder="Search filings" areas={areas} target="#filings" />
       <div className="list" id="filings">
-        {rows.map((f) => (
-          <div key={f.id} data-filter={`${f.issuer} ${f.related.join(" ")}`} data-area={f.thesisArea || ""}>
-            <FilingRow f={f} />
-          </div>
-        ))}
+        <FilingTable rows={rows} />
       </div>
     </div>
   );

@@ -213,3 +213,11 @@ describe("round 1 fixes (10-14-26)", () => {
     expect(bad).toEqual([]);
   });
 });
+
+describe("round 3 fixes (10-14-26)", () => {
+  it("a mention keeps the first letter of its sentence", async () => {
+    const { extractMentions } = await import("@/lib/extract");
+    const m = extractMentions("Scott Galloway: This is Where Nike Went Wrong.\nWith Nike's stock down, Scott breaks it down.", "Pivot", ["Nike"]);
+    expect(m[0]?.quote.startsWith("Scott")).toBe(true);
+  });
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pin } from "lucide-react";
+import { Pin, Check } from "lucide-react";
 import { useUI } from "./ui";
 import { postJSON } from "@/lib/client";
 
@@ -22,7 +22,7 @@ export function TrackTrend({ id, term, initial }: { id: number; term: string; in
   }
   return (
     <button className="btn track" data-act="track" aria-pressed={on} onClick={press} title={on ? `Stop tracking "${term}"` : `Track "${term}": a daily check and a timeline (up to 30 tracked trends)`}>
-      <Pin className="ico" />
+      {on ? <Check className="ico" /> : <Pin className="ico" />}
       {on ? "Tracking" : "Track"}
     </button>
   );

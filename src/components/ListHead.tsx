@@ -19,7 +19,7 @@ export function ListHead({ title, count, lede, children }: { title: string; coun
 }
 
 /** Client-side filter over server-rendered rows: rows carry data-filter text and data-area. */
-export function RowFilter({ placeholder, areas, target }: { placeholder: string; areas?: { key: string; label: string; n: number }[]; target: string }) {
+export function RowFilter({ placeholder, areas, target, clear = true }: { placeholder: string; areas?: { key: string; label: string; n: number }[]; target: string; clear?: boolean }) {
   const [q, setQ] = useState("");
   const [area, setArea] = useState("");
   useEffect(() => {
@@ -50,9 +50,11 @@ export function RowFilter({ placeholder, areas, target }: { placeholder: string;
           />
           <ClearX show={!!q} onClear={() => setQ("")} />
         </label>
-        <button className="fclear" disabled={!q && !area} onClick={() => (setQ(""), setArea(""))} title="Clear every filter">
-          Clear Filters
-        </button>
+        {clear && (
+          <button className="fclear" disabled={!q && !area} onClick={() => (setQ(""), setArea(""))} title="Clear every filter">
+            Clear Filters
+          </button>
+        )}
       </div>
       <div className="rule" />
       {areas && areas.length > 0 && (

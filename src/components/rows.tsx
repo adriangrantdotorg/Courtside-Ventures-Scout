@@ -196,3 +196,125 @@ export function FundItemRow({ i, compact }: { i: FundItem; compact?: boolean }) 
 }
 
 export { domainOf, slugify };
+
+
+/* ---------- round 3 (10-14-26): tables instead of pill rows ---------- */
+/** Filings as a table: Company · Sold · Area and fit · Notes · Source (Adrian's pick B). */
+export function FilingTable({ rows, compact }: { rows: Filing[]; compact?: boolean }) {
+  const dates = new Set(rows.map((f) => (f.filedAt ? fmtDate(f.filedAt) : "")));
+  const oneDate = compact && dates.size === 1 ? [...dates][0] : null;
+  return (
+    <>
+      {oneDate && <p className="explain">Filed {oneDate}, inside the thesis.</p>}
+      <table className="t" data-table="filings">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Sold</th>
+            <th>Area · fit</th>
+            <th>Notes</th>
+            {!oneDate && <th>Filed</th>}
+            <th>Source</th>
+            <th aria-label="Votes" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((f) => (
+            <tr key={f.id} id={`f${f.id}`} data-item data-filter={`${f.issuer} ${f.related.join(" ")}`} data-area={f.thesisArea || ""}>
+              <td>
+                <span className="fund">{f.companyId ? <Link href={`/company/${f.companyId}`} data-act="open" title={`Open ${f.issuer} in Scout`}>{f.issuer}</Link> : f.issuer}</span>
+                {!compact && f.related.length > 0 && <span className="sub">People named: {f.related.join(", ")}</span>}
+              </td>
+              <td className="m">
+                {f.amountSold ? <b>{fmtMoney(f.amountSold, f.currency)}</b> : "—"}
+                {f.amountOffered ? <> of {fmtMoney(f.amountOffered, f.currency)}</> : null}
+              </td>
+              <td className="m">{f.thesisArea ? <span className="ok">{areaLabel(f.thesisArea)}{f.confidence ? ` · ${Math.round(f.confidence * 100)}%` : ""}</span> : "—"}</td>
+              <td className="m">
+                {f.beforePress && <span className="gold">before any press</span>}
+                {!compact && f.industry && <span className="sub">Industry group: {f.industry}</span>}
+                {!compact && f.firstSale && <span className="sub">First sale {fmtDate(f.firstSale)}</span>}
+              </td>
+              {!oneDate && <td className="m">{f.filedAt ? fmtDate(f.filedAt) : "—"}</td>}
+              <td className="m">
+                <a href={f.url} target="_blank" rel="noopener noreferrer" title="Opens the filing at sec.gov in a new window" data-act="source">
+                  SEC EDGAR
+                </a>
+              </td>
+              <td>
+                <Vote k={`filing:${f.id}`} initial={f.votes} name={f.issuer} row />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+/** Fund items as a table: Fund · Backed · Round · Amount · Area · Source (Adrian's pick C). The home page's compact form folds Round and Amount together and drops Area. */
+export function FundItemTable({ items, compact }: { items: FundItem[]; compact?: boolean }) {
+  const backed = (i: FundItem) => {
+    const name = i.kind === "newfund" ? "New fund raised" : i.kind === "said" ? "A post" : i.company || "—";
+    const link = i.companyId ? <Link href={`/company/${i.companyId}`} data-act="open" title={`Open ${i.company} in Scout`}>{name}</Link> : name;
+    return (
+      <>
+        <span className="co">{link}</span>
+        {i.inPipeline && (i.companyId ? (
+          <span className="sub"><Link href={`/company/${i.companyId}`} title={`Open ${i.company} in the Pipeline`}>In the Pipeline{i.score !== null ? ` · ${i.score}%` : ""}</Link></span>
+        ) : (
+          <span className="sub">In the Pipeline{i.score !== null ? ` · ${i.score}%` : ""}</span>
+        ))}
+      </>
+    );
+  };
+  const round = (i: FundItem) => (i.round && i.round !== "unknown" ? stageLabel(i.round) : "");
+  const amount = (i: FundItem) => (i.amount ? <b className="ok">{fmtMoney(i.amount, i.currency)}</b> : null);
+  return (
+    <table className="t" data-table="deals">
+      <thead>
+        <tr>
+          <th>Fund</th>
+          <th>Backed</th>
+          {compact ? <th>Round</th> : <><th>Round</th><th>Amount</th><th>Area</th></>}
+          <th>Source</th>
+          <th aria-label="Votes" />
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((i) => (
+          <tr key={i.id} data-item data-filter={`${i.title} ${i.fund.name} ${i.company || ""}`} data-area={i.thesisArea || ""}>
+            <td>
+              <Link className="fund" href={`/${i.fund.kind === "neighborhood" ? "neighborhood" : "synergistic-funders"}#${i.fund.slug}`} title={`Open ${i.fund.name}`}>
+                {i.fund.name}
+              </Link>
+              {i.role === "lead" && <span className="sub">led</span>}
+            </td>
+            <td>{backed(i)}</td>
+            {compact ? (
+              <td className="m">{round(i)}{round(i) && amount(i) ? " · " : ""}{amount(i)}</td>
+            ) : (
+              <>
+                <td className="m">{round(i) || "—"}</td>
+                <td className="m">{amount(i) || "—"}</td>
+                <td className="m">{i.thesisArea ? areaLabel(i.thesisArea) : "—"}</td>
+              </>
+            )}
+            <td>
+              <a href={i.url} target="_blank" rel="noopener noreferrer" title={`Opens the story${i.source ? ` from ${i.source}` : ""} in a new window`} data-act="source">
+                {i.title}
+              </a>
+              <span className="sub">
+                {i.source ? `${i.source} · ` : ""}
+                {i.date && <Ago date={i.date} ch={7} />}
+              </span>
+            </td>
+            <td>
+              <Vote k={`fund_item:${i.id}`} initial={i.votes} name={i.company || i.fund.name} row />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}

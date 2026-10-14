@@ -9,7 +9,7 @@ import { Masthead } from "@/components/Masthead";
 import { HomePrefs } from "@/components/client-bits";
 import { Ago } from "@/components/Live";
 import { Rich } from "@/components/Rich";
-import { VelocityItem, SponsorTile, CultureRow, FilingRow, FundItemRow, SpotlightPill } from "@/components/rows";
+import { VelocityItem, SponsorTile, CultureRow, FilingTable, FundItemTable, SpotlightPill } from "@/components/rows";
 import { favicon, fmtDate } from "@/lib/format";
 
 export async function Today() {
@@ -199,10 +199,7 @@ export async function Today() {
                   All Filings
                 </Link>
               </div>
-              <p className="explain">New SEC Form D and Form C fundraising filings inside the thesis.</p>
-              {filings.map((f) => (
-                <FilingRow key={f.id} f={f} compact />
-              ))}
+              <FilingTable rows={filings} compact />
             </section>
           )}
           {nb.items.length > 0 && (
@@ -214,9 +211,7 @@ export async function Today() {
                 </Link>
               </div>
               <p className="explain">Funds that have backed a company alongside Courtside, and what they just backed.</p>
-              {nb.items.map((i) => (
-                <FundItemRow key={i.id} i={i} compact />
-              ))}
+              <FundItemTable items={nb.items} compact />
             </section>
           )}
           {syn.items.length > 0 && (
@@ -228,9 +223,7 @@ export async function Today() {
                 </Link>
               </div>
               <p className="explain">Funds that invest where Courtside invests but haven&apos;t shared a deal with it yet, and what they just did.</p>
-              {syn.items.map((i) => (
-                <FundItemRow key={i.id} i={i} compact />
-              ))}
+              <FundItemTable items={syn.items} compact />
             </section>
           )}
           {posts.length > 0 && (

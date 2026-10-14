@@ -6,6 +6,7 @@ import { cultureOverlaps } from "@/lib/queries";
 import { CultureRow } from "@/components/rows";
 import { LockChip } from "@/components/cards";
 import { RowFilter } from "@/components/ListHead";
+import { Tabs } from "@/components/Tabs";
 import { AREA_LABEL, fmtDate, slugify } from "@/lib/format";
 
 export const revalidate = 300;
@@ -37,6 +38,14 @@ export default async function Page() {
         Every day Scout reads the new episodes, videos and posts from {sources.filter((s) => s.status === "active").length} creators and shows and pulls out every company, brand and startup they mention, with the
         sentence it came from and the sentiment: recommend, like, discuss or criticize. The taste map below ranks who overlaps on what. Once a day in this prototype; real-time is Phase II, built together.
       </p>
+      <Tabs
+        tabs={[
+          { id: "taste", label: "The Taste Map", count: overlaps.length },
+          { id: "named", label: "Tracked by Name", count: named.length },
+          { id: "shows", label: "Creators and Shows", count: sources.length },
+        ]}
+      >
+      <div>
       <RowFilter placeholder="Search brands and startups" areas={areas} target="#taste" />
       <section className="list" id="taste" aria-label="The taste map">
         <div className="h" style={{ marginTop: 18 }}>
@@ -49,6 +58,7 @@ export default async function Page() {
           </div>
         ))}
       </section>
+      </div>
       <section className="list" aria-label="Tracked by name">
         <div className="h" style={{ marginTop: 18 }}>
           <h2>Tracked by Name</h2>
@@ -108,6 +118,7 @@ export default async function Page() {
           ))}
         </div>
       </section>
+      </Tabs>
     </div>
   );
 }
