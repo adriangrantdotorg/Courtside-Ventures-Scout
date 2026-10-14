@@ -1,11 +1,11 @@
 # Courtside Ventures Scout
 
-A deal-sourcing site for Courtside Ventures (a non-commercial demo by Adrian Grant). Live: https://courtside-ventures-scout.vercel.app
+A deal-sourcing site for Courtside Ventures (a non-commercial demo by Adrian Grant). Live: https://courtside-ventures-scout-v5.vercel.app
 
 ## Stack
 - Next.js 16 App Router + TypeScript (`src/app`), Cache Components OFF: pages use `export const revalidate = 300` and every write calls `revalidatePath("/", "layout")`.
 - Drizzle ORM on Neon Postgres (`src/db/schema.ts`, migrations in `drizzle/`). Plain CSS on tokens (`src/app/globals.css`); the look of record is `design/*.html`.
-- Vercel Hobby project `courtside-ventures-scout` (team `adriangrantdotorgs-projects`), deployed from the CLI, not from git.
+- Vercel Hobby project `courtside-ventures-scout-v5` (team `adriangrantdotorgs-projects`), deployed from the CLI, not from git.
 
 ## Commands
 - `npm run check`: typecheck, lint, vitest, `next build`, Playwright (starts its own server on :4601; kill stray servers by PID first).

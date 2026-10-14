@@ -1,6 +1,6 @@
 # Courtside Ventures Scout
 
-**Live:** https://courtside-ventures-scout.vercel.app
+**Live:** https://courtside-ventures-scout-v5.vercel.app
 
 Deal sourcing for Courtside Ventures: startups, trends, sponsors, culture and funds inside Courtside's thesis (Sports, Gaming, Lifestyle, Health, Media), found every morning from free public sources. Every fact links to its source.
 
@@ -67,7 +67,7 @@ Designed and specified by Adrian Grant ([LinkedIn](https://www.linkedin.com/in/a
 ## Build notes (for the agent and for Adrian)
 
 - **Accounts:** Vercel `adriangrantdotorg` (team `adriangrantdotorgs-projects`); GitHub `adriangrantdotorg` (not used: the repo is local only). The site, the Neon database (`courtside-ventures-scout-3-db`, free plan, iad1) and the 11 cron jobs live on that Vercel account.
-- **Name:** this build started as `courtside-ventures-scout-3` (two stopped runs held the plain name). On 10-14-26 those two projects were deleted and this project renamed to `courtside-ventures-scout`; the database keeps its first name, `courtside-ventures-scout-3-db`. The code lives at the top of `Courtside Ventures - DEMO - v5/` (moved up from its `courtside-ventures-scout-3` subfolder the same day).
+- **Name:** this build started as `courtside-ventures-scout-3` (two stopped runs held the plain name). On 10-14-26 those two projects were deleted and this project renamed, finally to `courtside-ventures-scout-v5` (GitHub: `BoltHub973/courtside-ventures-scout-v5`); the database keeps its first name, `courtside-ventures-scout-3-db`. The code lives at the top of `Courtside Ventures - DEMO - v5/` (moved up from its `courtside-ventures-scout-3` subfolder the same day).
 - **Stack:** Next.js 16 App Router (Cache Components turned off; pages use 5-minute ISR and are revalidated after every write and job), Drizzle ORM on Neon, plain CSS on the tokens from the six mockups in `design/`. Where the brief's color table and the mockups differ, the mockups' values are used (as the brief says).
 - **Launch seed:** loaded from the Gist (73 portfolio, 143 creators and shows, 83 sponsors, 118 companies, 6 backtests, 19 trends, 106 funds, 350 fund items, 400 mentions). Older wording in the seed ("lane", "pattern", "Context only") is cleaned on screen. Backtest evidence that only had a Google News redirect URL was dropped (the brief requires the article's own URL).
 - **Hand-verified backtest links:** Entrackr and World Soccer Talk load for scripts; Axios (403) and Business Wire block automated requests but open in a browser.

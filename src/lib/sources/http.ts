@@ -3,7 +3,7 @@
 import { sql } from "drizzle-orm";
 import { db, hasDb } from "@/db";
 
-const SITE = () => process.env.SITE_URL || "https://courtside-ventures-scout.vercel.app";
+const SITE = () => process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "local");
 export const UA = () => `CourtsideVenturesScout/1.0 (+${SITE()})`;
 const SEC_UA = () => `CourtsideVenturesScout/1.0 ${process.env.SEC_CONTACT_EMAIL || "hello@courtsidevc.com"}`;
 
