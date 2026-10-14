@@ -25,3 +25,4 @@ One line per defect fixed, so the next session can find the first report.
 - 10-14-26 · 40 sponsors had no site, so no logo (Claude, DraftKings…) → keyless site lookup with exact-name matching plus a known-brands map; 29 filled; the sponsors job fills new ones.
 - 10-14-26 · The home filings table spilled into the next column → compact tables fold Source and Notes under the cells and wrap mono text.
 - 10-14-26 · A plain nav click on Pipeline came back with the last search preselected → filters come only from the URL; no saved filters (`Pipeline.tsx`); e2e clicks the nav link and expects an empty search.
+- 10-14-26 · On an account that never accepted Neon's terms, the agent-run Vercel CLI prints the terms page and quits instead of asking yes, so the launch would have stopped → launch.sh opens the terms page itself and retries for 5 min; the sign-in step names the create-an-account path; one openurl helper.
