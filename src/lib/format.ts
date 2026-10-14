@@ -42,13 +42,23 @@ export function pastStage(s?: string | null): boolean {
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
+// Every shown date is New York time, on the server and in the browser alike.
+const NY = (x: Date) => {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "2-digit", month: "2-digit", day: "2-digit", hour: "numeric", minute: "2-digit", hour12: true })
+      .formatToParts(x)
+      .map((p) => [p.type, p.value]),
+  );
+  return parts as Record<string, string>;
+};
 
 /** MM-DD-YY */
 export function fmtDate(d: Date | string | number | null | undefined): string {
   if (d === null || d === undefined || d === "") return "";
   const x = d instanceof Date ? d : new Date(typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d + "T12:00:00Z" : d);
   if (isNaN(x.getTime())) return "";
-  return `${pad(x.getMonth() + 1)}-${pad(x.getDate())}-${String(x.getFullYear()).slice(2)}`;
+  const p = NY(x);
+  return `${p.month}-${p.day}-${p.year}`;
 }
 
 /** MM-DD-YY h:mm AM */
@@ -56,10 +66,8 @@ export function fmtExact(d: Date | string | number | null | undefined): string {
   if (d === null || d === undefined || d === "") return "";
   const x = d instanceof Date ? d : new Date(d);
   if (isNaN(x.getTime())) return "";
-  let h = x.getHours();
-  const am = h < 12 ? "AM" : "PM";
-  h = h % 12 || 12;
-  return `${fmtDate(x)} ${h}:${pad(x.getMinutes())} ${am}`;
+  const p = NY(x);
+  return `${p.month}-${p.day}-${p.year} ${p.hour}:${p.minute} ${p.dayPeriod}`;
 }
 
 /** Relative time at every age: just now · 5m · 3h · 2d · 3w · 4mo · 1y ago */

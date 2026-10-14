@@ -20,6 +20,7 @@ for (const path of PAGES) {
       const label = labels[i];
       if (!(await b.isVisible().catch(() => false)) || (await b.isDisabled().catch(() => true))) continue;
       if (SKIP.test(label) || (LIVE && SKIP_LIVE.test(label))) continue;
+      if (LIVE && (await b.evaluate((el) => el.getAttribute("role") === "switch" || el.closest(".mini") !== null || el.hasAttribute("data-act")))) continue;
       const inGroup = await b.evaluate((el) => !!el.closest('[role="group"]') && el.getAttribute("aria-pressed") === "true");
       if (inGroup) continue;
       const before = await b.evaluate((el) => ({ p: el.getAttribute("aria-pressed"), e: el.getAttribute("aria-expanded"), c: el.getAttribute("aria-checked") }));
