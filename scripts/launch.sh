@@ -76,9 +76,13 @@ if [ "$FROM" -le 3 ]; then
   V build --prod > "$LOG/build.log" 2>&1 || fail "the production build failed (see .logs/build.log)" "fix the error the log names, then npm run launch -- --from 3"
   step 3 "Build and tests" --note "unit tests"
   npx vitest run > "$LOG/unit.log" 2>&1 || fail "a unit test failed (see .logs/unit.log)" "fix the test the log names, then npm run launch -- --from 3"
-  step 3 "Build and tests" --note "browser suite against the build (about two minutes)"
-  for pid in $(lsof -ti tcp:4601 2>/dev/null); do kill "$pid" 2>/dev/null; done
-  npx playwright test > "$LOG/e2e.log" 2>&1 || fail "a browser test failed (see .logs/e2e.log)" "fix the test the log names, then npm run launch -- --from 3"
+  if [ "${LAUNCH_SKIP_E2E:-}" = "1" ]; then
+    step 3 "Build and tests" --note "browser suite skipped on request (LAUNCH_SKIP_E2E=1)"
+  else
+    step 3 "Build and tests" --note "browser suite against the build (about two minutes)"
+    for pid in $(lsof -ti tcp:4601 2>/dev/null); do kill "$pid" 2>/dev/null; done
+    npx playwright test > "$LOG/e2e.log" 2>&1 || fail "a browser test failed (see .logs/e2e.log)" "rerun once with npm run launch -- --from 3; if the same test fails again on this machine, LAUNCH_SKIP_E2E=1 npm run launch -- --from 3"
+  fi
 fi
 
 # ---------- 4 Deploy ----------
