@@ -16,3 +16,5 @@ One line per defect fixed, so the next session can find the first report.
 - 10-14-26 · A period floated after a live clock ("in 5d 9h .") → a live slot ends its line, never followed by punctuation; source-scan unit test.
 - 10-14-26 · Weights could not be saved after one slider moved (total left 100) → moving one weight rebalances the other five (`rebalance` in `SettingsView.tsx`); unit and e2e tests.
 - 10-14-26 · Pipeline dropdowns wrapped to two lines and offered empty options → search row + one dropdown row; options with zero matches are not offered (`Pipeline.tsx`); e2e test.
+- 10-14-26 · verify:live called the team's own clicks "residue" (a status change and a tracked trend from Adrian's review) → residue is now the rows the browser suite ADDS, measured before and after (`scripts/verify-live.ts`).
+- 10-14-26 · Unit tests failed in a fresh shell because SITE_URL was not exported (the User-Agent check) → vitest loads `.env.local` itself (`vitest.config.ts`).

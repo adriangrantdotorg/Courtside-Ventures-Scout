@@ -38,7 +38,7 @@ ok(sy.status === 200, "Synergistic Funders answers");
 const bt = await get("/backtest");
 ok(count(bt.html, /class="card2 (win|none)"/g) >= 6 && bt.html.includes("No earlier public signal found"), "backtest rows with honest verdicts");
 const ab = await get("/about");
-ok(ab.html.includes("https://www.linkedin.com/in/adriangrant3/") && ab.html.includes("No payments, no ads."), "About: Talk to Adrian and the demo line");
+ok(ab.html.includes("https://www.linkedin.com/in/adriangrant3/") && ab.html.includes("A prototype deal-sourcing site for Courtside Ventures built by Adrian Grant."), "About: Talk to Adrian and the prototype line");
 for (const p of ["/icon.png", "/favicon.ico"]) ok((await fetch(url + p)).status === 200, `${p} answers`);
 // source links on the top picks answer
 const links = [...home.html.matchAll(/class="evi"><a href="(https?:[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&")).slice(0, 5);
@@ -46,6 +46,12 @@ for (const l of links) {
   const r = await fetch(l, { method: "GET", redirect: "follow", headers: { "user-agent": "Mozilla/5.0" } }).catch(() => null);
   ok(!!r && (r.ok || [401, 403, 429].includes(r.status)), `source link answers: ${l.slice(0, 70)}`);
 }
+// residue is measured as rows the browser suite ADDS, never against zero: the team's own clicks
+// (a status change, a tracked trend) are real use, not residue (10-14-26, Adrian's review left three rows).
+const { neon } = await import("@neondatabase/serverless");
+const sql = neon(process.env.DATABASE_URL!);
+const counts = async () => ((await sql`select (select count(*) from votes)::int v, (select count(*) from companies where tracked)::int t, (select count(*) from trends where tracked)::int tt, (select count(*) from change_log)::int c`) as { v: number; t: number; tt: number; c: number }[])[0];
+const before = await counts();
 // the browser suite, read-only
 try {
   execFileSync("npx", ["playwright", "test", "tests/e2e/site.spec.ts", "tests/e2e/clicks.spec.ts", "tests/e2e/smoke.spec.ts"], { stdio: "inherit", env: { ...process.env, LIVE_URL: url } });
@@ -54,9 +60,8 @@ try {
   ok(false, "browser suite on the live URL");
 }
 // residue
-const { neon } = await import("@neondatabase/serverless");
-const sql = neon(process.env.DATABASE_URL!);
-const [r] = (await sql`select (select count(*) from votes)::int v, (select count(*) from companies where tracked)::int t, (select count(*) from trends where tracked)::int tt, (select count(*) from change_log)::int c`) as { v: number; t: number; tt: number; c: number }[];
-ok(r.v === 0 && r.t === 0 && r.tt === 0 && r.c === 0, `residue: votes ${r.v}, trackers ${r.t}, tracked trends ${r.tt}, change_log ${r.c}`);
+const after = await counts();
+const d = { v: after.v - before.v, t: after.t - before.t, tt: after.tt - before.tt, c: after.c - before.c };
+ok(d.v === 0 && d.t === 0 && d.tt === 0 && d.c === 0, `residue left by the suite: votes ${d.v}, trackers ${d.t}, tracked trends ${d.tt}, change_log ${d.c}`);
 console.log(fails.length ? `\n${fails.length} live check(s) failed` : "\nall live checks green");
 process.exit(fails.length ? 1 : 0);
