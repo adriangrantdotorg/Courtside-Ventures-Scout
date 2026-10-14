@@ -131,9 +131,9 @@ export async function Today() {
             {hits.length > 0 && (
               <section aria-label="Alert Hits" style={{ marginTop: 28 }}>
                 <div className="h">
-                  <h2>Alert Hits</h2>
-                  <Link className="more" href="/tracking#hits" title="Open Tracking: every hit">
-                    All Hits
+                  <h2>Alerts</h2>
+                  <Link className="more" href="/tracking#alerts" title="Open Tracking: every alert">
+                    All Alerts
                   </Link>
                 </div>
                 {hits.map((h) => (

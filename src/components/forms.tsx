@@ -85,7 +85,7 @@ export function NewAlert({ ai, onAdded }: { ai: boolean; onAdded?: (a: { id: num
         <input className="sinput" placeholder="Keywords, comma separated (optional)" aria-label="Keywords" value={f.keywords} onChange={(e) => setF({ ...f, keywords: e.target.value })} {...ATTRS} />
       </div>
       <div className="acts2" style={{ justifyContent: "flex-start" }}>
-        <button className="btn red" disabled={busy || (!f.subject.trim() && !f.keywords.trim())} title="Save the rule; Scout checks it once a day against everything new">
+        <button className="btn red" disabled={busy || (!f.subject.trim() && !f.keywords.trim())} title="Save the alert; Scout checks it once a day against everything new">
           <Plus className="ico" />
           Save Alert
         </button>

@@ -27,7 +27,7 @@ const SECTIONS: Sec[] = [
   { id: "voices", label: "Creators and Shows", key: "r", group: "Shared", words: "creators shows podcasts youtube add remove quiet" },
   { id: "funds", label: "Funds", key: "f", group: "Shared", words: "funds co-investors synergistic focus specialist broad" },
   { id: "trackers", label: "Trackers", key: "i", group: "Shared", words: "tracked companies trends people" },
-  { id: "alerts", label: "Alerts", key: "l", group: "Shared", words: "alerts rules" },
+  { id: "alerts", label: "Alerts", key: "l", group: "Shared", words: "alerts" },
   { id: "slack", label: "Slack", key: "s", group: "Shared", words: "slack connect channel" },
   { id: "ai", label: "AI", key: "g", group: "Shared", words: "ai drafting memo gateway cap" },
   { id: "phase2", label: "Phase II", key: "p", group: "Shared", words: "phase ii together" },
@@ -307,8 +307,8 @@ function Pane({ id, data, refresh }: { id: string; data: Data; refresh: () => vo
     case "alerts":
       return (
         <>
-          <p className="sub">Each alert is a rule checked once a day, around 8 AM ET, against everything new.</p>
-          <Card title="Alert Rules" note={<Link href="/tracking#rules">Open Tracking</Link>}>
+          <p className="sub">Each alert is checked once a day, around 8 AM ET, against everything new.</p>
+          <Card title="Alerts" note={<Link href="/tracking#configure">Configure Alerts</Link>}>
             {data.alerts.map((a: any) => (
               <div className="trow" key={a.id}>
                 <span className="lbl">{a.title}</span>

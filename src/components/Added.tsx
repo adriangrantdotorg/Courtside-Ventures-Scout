@@ -8,12 +8,12 @@ import { Tabs } from "./Tabs";
 import { AddPerson, NewAlert } from "./forms";
 
 export type AddedItem = { id: number; title: string; sub?: string };
-type Kind = "companies" | "trends" | "people" | "rules";
+type Kind = "companies" | "trends" | "people" | "configure";
 type Ctx = { items: Record<Kind, AddedItem[]>; add: (kind: Kind, item: AddedItem) => void };
 const AddedCtx = createContext<Ctx | null>(null);
 
 export function AddedProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Record<Kind, AddedItem[]>>({ companies: [], trends: [], people: [], rules: [] });
+  const [items, setItems] = useState<Record<Kind, AddedItem[]>>({ companies: [], trends: [], people: [], configure: [] });
   const add = (kind: Kind, item: AddedItem) => setItems((x) => ({ ...x, [kind]: [item, ...x[kind].filter((i) => i.id !== item.id)] }));
   return <AddedCtx.Provider value={{ items, add }}>{children}</AddedCtx.Provider>;
 }
@@ -40,14 +40,14 @@ export function AddedList({ kind }: { kind: Kind }) {
       {list.map((i) => (
         <article className="rowcard" key={i.id} data-item data-added-item>
           <div style={{ minWidth: 0 }}>
-            <h3 style={kind === "rules" || kind === "trends" ? { textTransform: "none", letterSpacing: 0, fontFamily: "Montserrat, sans-serif", fontSize: 17 } : undefined}>{i.title}</h3>
+            <h3 style={kind === "configure" || kind === "trends" ? { textTransform: "none", letterSpacing: 0, fontFamily: "Montserrat, sans-serif", fontSize: 17 } : undefined}>{i.title}</h3>
             <div className="meta">
               {i.sub && <span>{i.sub}</span>}
               <span style={{ color: "var(--green)" }}>added just now</span>
-              <span>{kind === "rules" ? "On · checked every morning" : "Scout checks it every morning"}</span>
+              <span>{kind === "configure" ? "On · checked every morning" : "Scout checks it every morning"}</span>
             </div>
           </div>
-          {kind !== "rules" && (
+          {kind !== "configure" && (
             <button className="btn track" aria-pressed="true" disabled title="Tracking">
               <Check className="ico" />
               Tracking
@@ -66,5 +66,5 @@ export function AddPersonAdded() {
 
 export function NewAlertAdded({ ai }: { ai: boolean }) {
   const { add } = useAdded();
-  return <NewAlert ai={ai} onAdded={(a) => add("rules", { id: a.id, title: a.title })} />;
+  return <NewAlert ai={ai} onAdded={(a) => add("configure", { id: a.id, title: a.title })} />;
 }

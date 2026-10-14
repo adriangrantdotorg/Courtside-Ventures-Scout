@@ -10,8 +10,8 @@ test("Tracking replaces Alerts and People in the menu, and the old addresses lan
   expect(labels).not.toContain("alerts");
   expect(labels).not.toContain("people");
   await page.goto("/alerts");
-  await expect(page).toHaveURL(/\/tracking#rules$/);
-  await expect(page.locator("#panel-rules")).toBeVisible();
+  await expect(page).toHaveURL(/\/tracking#configure$/);
+  await expect(page.locator("#panel-configure")).toBeVisible();
   await page.goto("/people");
   await expect(page).toHaveURL(/\/tracking#people$/);
 });
@@ -20,16 +20,16 @@ test("Tracking: five tabs with counts, the Add row right under the tabs, the hit
   await page.goto("/tracking");
   const tabs = page.locator('.tabs [role="tab"]');
   expect(await tabs.count()).toBe(5);
-  expect((await tabs.allInnerTexts()).map((t) => t.replace(/\d+/g, "").trim().toLowerCase())).toEqual(["companies", "trends", "people", "rules", "hits"]);
+  expect((await tabs.allInnerTexts()).map((t) => t.replace(/\d+/g, "").trim().toLowerCase())).toEqual(["companies", "trends", "people", "alerts", "configure alerts"]);
   const tabsBottom = await page.locator(".tabs").evaluate((el) => el.getBoundingClientRect().bottom);
   const addTop = await page.locator("#panel-companies .tabadd").evaluate((el) => el.getBoundingClientRect().top);
   expect(addTop - tabsBottom).toBeLessThan(40);
-  await expect(page.locator(".ph .count")).toContainText(/hits? this week/);
+  await expect(page.locator(".ph .count")).toContainText(/alerts? this week/);
   await expect(page.locator("body")).not.toContainText("Each tab is one list");
   await expect(page.locator('#panel-companies .tabadd button[data-act="add"]')).toBeVisible();
   await expect(page.locator('#panel-companies .tabadd button[data-act="add"]')).toBeDisabled();
-  await tabs.nth(3).click();
-  await expect(page.locator("#panel-rules")).toBeVisible();
+  await tabs.nth(4).click();
+  await expect(page.locator("#panel-configure")).toBeVisible();
 });
 
 test("a nav click on Pipeline lands with nothing preselected", async ({ page }) => {
@@ -75,11 +75,11 @@ test("a new person and a new rule appear at once, with the tab counts moving", a
   await page.locator('#panel-people input[aria-label="Name"]').fill(who);
   await page.locator("#panel-people button", { hasText: "Track Person" }).click();
   await expect(page.locator('#panel-people [data-added-item]').first()).toContainText(who);
-  await page.locator('.tabs [role="tab"]', { hasText: "Rules" }).click();
-  const n = Number(await page.locator('.tabs [role="tab"]', { hasText: "Rules" }).locator("b").innerText());
-  await page.locator('#panel-rules input[aria-label="Who or what"]').fill(`Test rule ${Date.now()}`);
-  await page.locator('#panel-rules form button.btn.red').click();
-  await expect(page.locator('#panel-rules [data-added-item]').first()).toBeVisible();
-  await expect(page.locator('.tabs [role="tab"]', { hasText: "Rules" }).locator("b")).toHaveText(String(n + 1));
+  await page.locator('.tabs [role="tab"]', { hasText: "Configure Alerts" }).click();
+  const n = Number(await page.locator('.tabs [role="tab"]', { hasText: "Configure Alerts" }).locator("b").innerText());
+  await page.locator('#panel-configure input[aria-label="Who or what"]').fill(`Test rule ${Date.now()}`);
+  await page.locator('#panel-configure form button.btn.red').click();
+  await expect(page.locator('#panel-configure [data-added-item]').first()).toBeVisible();
+  await expect(page.locator('.tabs [role="tab"]', { hasText: "Configure Alerts" }).locator("b")).toHaveText(String(n + 1));
 });
 

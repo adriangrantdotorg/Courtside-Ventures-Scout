@@ -46,7 +46,7 @@ test("footer: pages on the left, the person on the right; Check Size on the card
 });
 
 test("every Phase II on the Culture and Alerts pages opens the door", async ({ page }) => {
-  for (const path of ["/culture", "/tracking#rules"]) {
+  for (const path of ["/culture", "/tracking#configure"]) {
     await page.goto(path);
     const links = page.locator("main button.p2");
     expect(await links.count(), path).toBeGreaterThan(0);

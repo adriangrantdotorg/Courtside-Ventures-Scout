@@ -38,7 +38,7 @@ export default async function Page() {
     <div>
       <div className="ph">
         <h1>Tracking</h1>
-        <span className="count">{weekHits} {weekHits === 1 ? "hit" : "hits"} this week</span>
+        <span className="count">{weekHits} {weekHits === 1 ? "alert" : "alerts"} this week</span>
       </div>
       <p className="ph-lede">Everything Scout watches for you in one place: the Companies, Trends and People you follow along with custom alert rules. Checked once a day, around 8 AM ET.</p>
       <p className="ph-lede mono" style={{ fontSize: 14, color: "var(--text-2)", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -59,8 +59,8 @@ export default async function Page() {
           { id: "companies", label: "Companies", count: cos.length },
           { id: "trends", label: "Trends", count: trends.length },
           { id: "people", label: "People", count: people.length },
-          { id: "rules", label: "Rules", count: alerts.length },
-          { id: "hits", label: "Hits", count: hits.length },
+          { id: "alerts", label: "Alerts", count: hits.length },
+          { id: "configure", label: "Configure Alerts", count: alerts.length },
         ]}
       >
         <div>
@@ -140,12 +140,37 @@ export default async function Page() {
           </div>
         </div>
         <div>
+          <div className="list">
+            {hits.map((h) => {
+              const rule = alerts.find((a) => a.id === h.alertId);
+              return (
+                <div key={h.id} className="rowcard" data-item>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 15.5 }}>
+                      <a href={h.url} target="_blank" rel="noopener noreferrer" title={`Opens ${h.source || "the source"} in a new window`} data-act="source">
+                        {h.title}
+                      </a>
+                    </p>
+                    <div className="meta">
+                      {h.source && <span>{h.source}</span>}
+                      <span>{fmtDate(h.date || h.createdAt)}</span>
+                      {rule && <span>alert: {rule.title}</span>}
+                    </div>
+                  </div>
+                  <Vote k={`alert_hit:${h.id}`} row upTitle="Useful hit" downTitle="Not useful" />
+                </div>
+              );
+            })}
+            {!hits.length && <p className="empty">Nothing yet. Scout checks every alert every morning.</p>}
+          </div>
+        </div>
+        <div>
           <div className="tabadd">
             <NewAlertAdded ai={ai} />
           </div>
-          <AddedList kind="rules" />
+          <AddedList kind="configure" />
           <p className="explain" style={{ margin: "14px 32px 0" }}>
-            Each rule is who or what, the event, keywords and sources. Hits land here and on Today. Watching all day, with email and text alerts, is <Phase2Link />, built together.
+            Each alert is who or what, the event, keywords and sources, checked every morning. Matches land on the Alerts tab and on Today. Watching all day, with email and text alerts, is <Phase2Link />, built together.
           </p>
           <div className="list">
             {alerts.map((a) => {
@@ -165,31 +190,6 @@ export default async function Page() {
                 </section>
               );
             })}
-          </div>
-        </div>
-        <div>
-          <div className="list">
-            {hits.map((h) => {
-              const rule = alerts.find((a) => a.id === h.alertId);
-              return (
-                <div key={h.id} className="rowcard" data-item>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 15.5 }}>
-                      <a href={h.url} target="_blank" rel="noopener noreferrer" title={`Opens ${h.source || "the source"} in a new window`} data-act="source">
-                        {h.title}
-                      </a>
-                    </p>
-                    <div className="meta">
-                      {h.source && <span>{h.source}</span>}
-                      <span>{fmtDate(h.date || h.createdAt)}</span>
-                      {rule && <span>rule: {rule.title}</span>}
-                    </div>
-                  </div>
-                  <Vote k={`alert_hit:${h.id}`} row upTitle="Useful hit" downTitle="Not useful" />
-                </div>
-              );
-            })}
-            {!hits.length && <p className="empty">No hits yet. The rules run every morning.</p>}
           </div>
         </div>
       </TrackingTabs>

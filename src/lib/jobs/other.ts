@@ -15,7 +15,7 @@ const DAY = 86400000;
 export async function alertsJob(ctx: Ctx) {
   const rules = await db().select().from(S.alerts).where(eq(S.alerts.active, true));
   const since = new Date(Date.now() - 2 * DAY);
-  await ctx.stage("checking alert rules", 0, rules.length);
+  await ctx.stage("checking alerts", 0, rules.length);
   const port = (await db().select({ n: S.portfolio.name }).from(S.portfolio)).map((p) => p.n);
   for (const a of rules) {
     const r = a.rule;
