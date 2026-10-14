@@ -1,0 +1,116 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scout build progress page (the local progress page and the live Building page)</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e0f12;--bg2:#15161a;--surface:#1a1b1f;--elev:#24262c;--border:rgba(255,255,255,.12);--text:#f4f4f4;--text2:#dcdce0;--text3:#9a9ba3;--red:#cc003d;--ink:#ff4d7a;--gold:#ffbe4c;--green:#3ddc84;--amber:#ffb454}
+*{box-sizing:border-box}
+body{margin:0;background:#0a0a0c;color:var(--text);font:17px/1.55 Montserrat,sans-serif;padding:40px 24px 100px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font:700 40px/1 Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px}
+.lede{max-width:80ch;color:var(--text2);margin:0 0 36px}
+.opt{margin:0 0 64px}
+.opt-head{display:flex;align-items:center;gap:14px;margin:0 0 10px}
+.letter{font:600 20px/1 Oswald,sans-serif;width:52px;height:52px;display:grid;place-items:center;border:1px solid var(--border);border-radius:12px;color:var(--ink);box-shadow:0 0 18px rgba(204,0,61,.25)}
+.opt-head h2{margin:0;font:600 26px/1 Oswald,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.tag{font:500 13px/1 "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);padding:7px 12px;border:1px solid var(--border);border-radius:999px}
+.desc{margin:0 0 14px;color:var(--text2);max-width:88ch}
+.frame{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:var(--bg);padding:44px 48px 48px}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.slot{display:inline-block;text-align:right}
+em.slot{font-style:normal}
+.a .stat b .slot,.c .cell b .slot{display:inline-block;text-align:right}
+.eyebrow{font:600 12px/1 Oswald,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:var(--ink)}
+.title{margin:8px 0 0;font:700 40px/1 Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em;color:#fff}
+.note{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font:500 14px/1.5 "IBM Plex Mono",monospace;color:var(--text)}
+.note i{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:br 2.4s ease-in-out infinite;flex:none}
+.note.wait{border-color:rgba(255,180,84,.55);color:var(--amber)} .note.wait i{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+@keyframes br{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ---- A · Stat Cards ---- */
+.a .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:26px 0 18px}
+.a .stat{padding:16px 18px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.a .stat b{display:block;font:700 40px/1 Oswald,sans-serif;color:#fff;letter-spacing:.02em}
+.a .stat.now b{color:var(--ink)}
+.a .stat > span{display:block;margin-top:8px;font:600 11.5px/1 Oswald,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--text3)}
+.a .stat small{display:block;margin-top:6px;font:500 12.5px/1.4 "IBM Plex Mono",monospace;color:var(--text3)}
+.a .bar{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;margin:0 0 22px}
+.a .bar i{height:10px;border-radius:5px;background:var(--elev)}
+.a .bar i.done{background:var(--red)} .a .bar i.now{background:var(--red);box-shadow:0 0 12px rgba(204,0,61,.7);animation:br 2.4s ease-in-out infinite}
+.a .list{border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:14px}
+.a .row{display:grid;grid-template-columns:36px 44px minmax(0,1fr) 140px;gap:12px;align-items:center;padding:12px 18px;border-top:1px solid var(--border);background:var(--surface)}
+.a .row:first-child{border-top:0}
+.a .row .k{font:600 15px/1 "IBM Plex Mono",monospace;color:var(--text3)}
+.a .row .n{font:500 16px/1.3 Montserrat,sans-serif;color:var(--text2)}
+.a .row .t{text-align:right;font:500 13.5px/1 "IBM Plex Mono",monospace;color:var(--text3)}
+.a .row.done .mk{color:var(--green)} .a .row.done .n{color:var(--text)} .a .row.done .t{color:var(--text2)}
+.a .row.now{background:var(--elev);box-shadow:inset 3px 0 0 var(--red)} .a .row.now .n{color:#fff;font-weight:600} .a .row.now .mk{color:var(--ink)}
+.a .row.todo .n{color:var(--text3)}
+
+/* ---- B · Timeline Rail ---- */
+.b .top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.b .clock{text-align:right}
+.b .clock b{display:block;font:700 56px/1 Oswald,sans-serif;color:#fff;letter-spacing:.02em}
+.b .clock span{display:block;margin-top:6px;font:600 11.5px/1 Oswald,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--text3)}
+.b .est{display:flex;gap:28px;margin:18px 0 26px;font:500 15px/1.5 "IBM Plex Mono",monospace;color:var(--text2)}
+.b .est b{color:#fff;font-weight:600}
+.b .est .lbl{color:var(--text3)}
+.b .rail{position:relative;padding-left:34px}
+.b .rail::before{content:"";position:absolute;left:11px;top:14px;bottom:14px;width:2px;background:var(--border)}
+.b .step{position:relative;padding:10px 0 10px 8px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
+.b .step::before{content:"";position:absolute;left:-29px;top:50%;width:14px;height:14px;border-radius:50%;transform:translateY(-50%);background:var(--bg);border:2px solid var(--text3)}
+.b .step.done::before{background:var(--green);border-color:var(--green)}
+.b .step.now::before{background:var(--red);border-color:var(--red);box-shadow:0 0 14px rgba(204,0,61,.8);animation:br 2.4s ease-in-out infinite}
+.b .step .n{font:500 16px/1.3 Montserrat,sans-serif;color:var(--text3)}
+.b .step.done .n{color:var(--text2)} .b .step.now .n{color:#fff;font:600 20px/1.2 Oswald,sans-serif;text-transform:uppercase;letter-spacing:.04em}
+.b .step .t{font:500 13.5px/1 "IBM Plex Mono",monospace;color:var(--text3)} .b .step.done .t{color:var(--green)}
+.b .step.now{padding:14px 16px;margin:6px 0;border:1px solid rgba(204,0,61,.45);border-radius:12px;background:var(--surface)}
+.b .step.now .t{color:var(--ink)}
+.b .step.now .note{grid-column:1/-1;margin-top:8px}
+
+/* ---- C · Scoreboard ---- */
+.c .board{display:grid;grid-template-columns:1.4fr 1fr 1fr;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:26px 0 20px}
+.c .cell{padding:18px 22px;background:var(--surface);border-left:1px solid var(--border)}
+.c .cell:first-child{border-left:0;background:var(--red);color:#fff}
+.c .cell b{display:block;font:700 44px/1 Oswald,sans-serif;letter-spacing:.02em;color:#fff}
+.c .cell > span{display:block;margin-top:8px;font:600 11.5px/1 Oswald,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--text3)}
+.c .cell:first-child > span{color:rgba(255,255,255,.85)}
+.c .cell small{display:block;margin-top:6px;font:500 12.5px/1.4 "IBM Plex Mono",monospace;color:var(--text3)}
+.c .cell:first-child small{color:rgba(255,255,255,.8)}
+.c .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.c .tile{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center}
+.c .tile .k{grid-row:1/3;font:700 30px/1 Oswald,sans-serif;color:var(--text3)}
+.c .tile .n{font:500 15px/1.3 Montserrat,sans-serif;color:var(--text3)}
+.c .tile .t{font:500 12.5px/1 "IBM Plex Mono",monospace;color:var(--text3)}
+.c .tile.done .k{color:var(--green)} .c .tile.done .n{color:var(--text)} .c .tile.done .t{color:var(--text2)}
+.c .tile.now{border-color:rgba(204,0,61,.6);background:var(--elev);box-shadow:0 0 0 1px rgba(204,0,61,.3),0 0 22px rgba(204,0,61,.25)}
+.c .tile.now .k{color:var(--ink)} .c .tile.now .n{color:#fff;font-weight:600} .c .tile.now .t{color:var(--ink)}
+.c .sweep{position:relative;height:1px;background:var(--border);margin:18px 0 0;overflow:hidden}
+.c .sweep::after{content:"";position:absolute;top:-1px;height:3px;width:28%;background:linear-gradient(90deg,transparent,#fff,transparent);animation:sw 14s linear infinite}
+@keyframes sw{from{transform:translateX(-110%)}to{transform:translateX(400%)}}
+</style></head><body><div class="wrap" style="max-width:1000px">
+<div class="frame a">
+<div class="eyebrow">Courtside Ventures Scout</div><h2 class="title" style="margin-bottom:16px">Scout is being built</h2>
+<div class="note"><i></i>Step 4 of 9 · Jobs and first pull · first pull: <em class="slot mono" style="min-width:3ch">38</em> of 104 feeds</div>
+<div class="stats">
+ <div class="stat now"><b class="mono slot" style="min-width:5ch" data-since>8:12</b><span>Since start</span><small>step 4 began <span class="mono">3:10</span> ago</small></div>
+ <div class="stat"><b>~<em class="mono slot" style="min-width:2ch;text-align:left" data-left>50</em> min</b><span>Roughly to go</span><small>learns from the steps so far</small></div>
+</div>
+<div class="bar"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i></div>
+<div class="list">
+ <div class="row done"><span class="mk">✓</span><span class="k">01</span><span class="n">Setup</span><span class="t">4:02</span></div>
+ <div class="row done"><span class="mk">✓</span><span class="k">02</span><span class="n">Shell · live at courtside-ventures-scout.vercel.app</span><span class="t">5:40</span></div>
+ <div class="row done"><span class="mk">✓</span><span class="k">03</span><span class="n">Sources and seed</span><span class="t">3:21</span></div>
+ <div class="row now"><span class="mk">→</span><span class="k">04</span><span class="n">Jobs and first pull</span><span class="t">about 16 min</span></div>
+ <div class="row todo"><span class="mk">·</span><span class="k">05</span><span class="n">Pages</span><span class="t">about 16 min</span></div>
+ <div class="row todo"><span class="mk">·</span><span class="k">06</span><span class="n">Scoring and truth</span><span class="t">about 8 min</span></div>
+ <div class="row todo"><span class="mk">·</span><span class="k">07</span><span class="n">Tests</span><span class="t">about 10 min</span></div>
+ <div class="row todo"><span class="mk">·</span><span class="k">08</span><span class="n">Live</span><span class="t">about 4 min</span></div>
+ <div class="row todo"><span class="mk">·</span><span class="k">09</span><span class="n">Handoff</span><span class="t">about 2 min</span></div>
+</div>
+</div>
+</div>
+<script>
+var start=Date.now()-(8*60+12)*1000;
+function tick(){var e=(Date.now()-start)/1000,t=Math.floor(e/60)+":"+String(Math.floor(e%60)).padStart(2,"0");document.querySelectorAll("[data-since]").forEach(function(x){x.textContent=t});}
+tick();setInterval(tick,1000);
+</script></body></html>

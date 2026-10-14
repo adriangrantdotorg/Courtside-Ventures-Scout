@@ -1,0 +1,20 @@
+export type P = {
+  step: number;
+  name: string;
+  startedAt: number;
+  stepStartedAt: number;
+  updatedAt: number;
+  note: string;
+  waiting: boolean;
+  waitingSince?: number;
+  liveUrl: string;
+  done: boolean;
+  durations: Record<number, number>;
+};
+export const STEPS: string[];
+export const BUDGETS: number[];
+export function clock(sec: number): string;
+export function minutesToGo(p: P | null, now: number): number;
+export function isStale(p: P | null, now: number): boolean;
+export function stepRows(p: P | null): { n: number; num: string; name: string; state: "done" | "now" | "todo"; time: string; mark: string }[];
+export function noteLine(p: P | null): string;
