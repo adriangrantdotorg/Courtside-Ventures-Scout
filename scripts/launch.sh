@@ -2,7 +2,7 @@
 # npm run launch [-- --from <step>]
 # One command from a fresh clone to a live, filled, verified Courtside Ventures Scout.
 # Five steps, each reported to the progress page and printed as the chat block:
-#   1 Setup      install, Vercel project, free Neon database, environment
+#   1 Setup      the person first (Vercel sign-in, database terms), then install and environment alone
 #   2 Database   migrate, load the launch seed
 #   3 Build      one production build, the unit tests, the browser suite against that build
 #   4 Deploy     upload the build that was just tested (no second build on Vercel)
@@ -28,19 +28,18 @@ for port in 4601 4602; do
   for pid in $(lsof -ti tcp:$port 2>/dev/null); do kill "$pid" 2>/dev/null; done
 done
 
-# ---------- 1 Setup ----------
+# ---------- 1 Setup: everything that needs a person comes FIRST, then the rest runs alone ----------
 if [ "$FROM" -le 1 ]; then
-  say "Installing (about a minute)"
-  npm ci --no-audit --no-fund > "$LOG/npm.log" 2>&1 || fail "npm install failed (see .logs/npm.log)" "rm -rf node_modules && npm run launch"
-  (npx playwright install chromium > "$LOG/playwright.log" 2>&1 &)
-  step 1 Setup --note "installed; linking the Vercel project"
+  # Installing takes about a minute and needs nobody, so it runs in the background while the person signs in (10-14-26).
+  npm ci --no-audit --no-fund > "$LOG/npm.log" 2>&1 &
+  NPM_PID=$!
+  say "Before you walk away: one or two pages open in your browser now"
   if ! V whoami > "$LOG/whoami.log" 2>&1; then
     # No sign-in on this machine. The CLI opens Vercel's device page and waits; that page signs in an existing account
     # or creates a free one (email code, or GitHub / GitLab / Bitbucket). Nothing else to do here (10-14-26).
     say "Vercel needs you once: sign in on the page that opens (no account yet? the same page lets you create a free one)"
-    step 1 Setup --note "Waiting for you: sign in to Vercel on the page that opened, or create a free account there"
     V login > "$LOG/login.log" 2>&1 || fail "Vercel login did not complete (see .logs/login.log)" "run: npx vercel@latest login, sign in or create a free account on the page, then npm run launch again"
-    step 1 Setup --note "signed in; linking the Vercel project"
+    say "Signed in to Vercel"
   fi
   ACCOUNT=$(V whoami 2>/dev/null | tail -1)
   NAME=courtside-ventures-scout
@@ -52,7 +51,6 @@ if [ "$FROM" -le 1 ]; then
     while printf '%s\n' "$EXISTING" | grep -qx "$NAME"; do NAME="$BASE-$i"; i=$((i + 1)); done
     V link --yes --project "$NAME" > "$LOG/link.log" 2>&1 || fail "Vercel could not create or link the project $NAME (see .logs/link.log)" "run: npx vercel link --yes --project $NAME, then npm run launch again"
   fi
-  step 1 Setup --note "project $NAME linked; creating the free database"
   V env pull .env.local --yes > "$LOG/env.log" 2>&1
   if ! grep -q '^DATABASE_URL=' .env.local 2>/dev/null; then
     neon_add() { V integration add neon --plan free_v3 --name "$NAME-db" -m region=iad1 -m auth=false --no-claim < /dev/null > "$LOG/neon.log" 2>&1; }
@@ -62,7 +60,6 @@ if [ "$FROM" -le 1 ]; then
       TERMS=$(grep -oE 'https://vercel\.com/[^" ]*accept-terms[^" ]*' "$LOG/neon.log" | head -1)
       [ -n "$TERMS" ] || fail "the free Neon database was not created (see .logs/neon.log)" "read .logs/neon.log; if Vercel asks for a payment card, add none and say so in the handoff; otherwise run: npx vercel@latest integration add neon --plan free_v3 --name $NAME-db -m region=iad1 -m auth=false --no-claim, then npm run launch again"
       say "Neon needs you once: accept its terms on the page that opens ($TERMS)"
-      step 1 Setup --note "Waiting for you: accept the database terms on the page that opened"
       openurl "$TERMS"
       tries=0
       while ! neon_add; do
@@ -70,11 +67,15 @@ if [ "$FROM" -le 1 ]; then
         [ "$tries" -lt 30 ] || fail "the database terms were not accepted within 5 minutes (see .logs/neon.log)" "open $TERMS, accept the terms, then npm run launch again"
         sleep 10
       done
-      step 1 Setup --note "terms accepted; creating the free database"
+      say "Terms accepted"
     fi
     V env pull .env.local --yes > "$LOG/env.log" 2>&1
     grep -q '^DATABASE_URL=' .env.local || fail "DATABASE_URL did not arrive from Neon (see .logs/env.log)" "open the project on vercel.com, Storage, connect the Neon database to all environments, then npm run launch again"
   fi
+  printf '\n🚶 Nothing more is needed from you. You can walk away: the site opens in your browser by itself in about 10 minutes.\n'
+  wait "$NPM_PID" || fail "npm install failed (see .logs/npm.log)" "rm -rf node_modules && npm run launch"
+  (npx playwright install chromium > "$LOG/playwright.log" 2>&1 &)
+  step 1 Setup --note "signed in, project $NAME linked, database created; setting the environment"
   ENVS=$(V env ls 2>/dev/null)
   SITE_URL="https://$NAME.vercel.app"
   if ! printf '%s' "$ENVS" | grep -q 'CRON_SECRET'; then CS=$(openssl rand -hex 24); for e in production preview development; do printf %s "$CS" | V env add CRON_SECRET "$e" > /dev/null 2>&1; done; fi
