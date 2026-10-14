@@ -26,6 +26,8 @@ test("Tracking: five tabs with counts, the Add row right under the tabs, the hit
   expect(addTop - tabsBottom).toBeLessThan(40);
   await expect(page.locator(".ph .count")).toContainText(/hits? this week/);
   await expect(page.locator("body")).not.toContainText("Each tab is one list");
+  await expect(page.locator('#panel-companies .tabadd button[data-act="add"]')).toBeVisible();
+  await expect(page.locator('#panel-companies .tabadd button[data-act="add"]')).toBeDisabled();
   await tabs.nth(3).click();
   await expect(page.locator("#panel-rules")).toBeVisible();
 });
@@ -43,4 +45,23 @@ test("the Spotlight headline shows its underline at rest", async ({ page }) => {
   await page.goto(HOME);
   const a = page.locator(".band h2 a").first();
   if (await a.count()) expect(await a.evaluate((el) => getComputedStyle(el).textDecorationLine)).toBe("underline");
+});
+
+test("the Spotlight underline does not move on hover", async ({ page }) => {
+  await page.goto(HOME);
+  const a = page.locator(".band h2 a").first();
+  if (!(await a.count())) return;
+  const before = await a.evaluate((el) => [getComputedStyle(el).textUnderlineOffset, getComputedStyle(el).textDecorationStyle]);
+  await a.hover();
+  const after = await a.evaluate((el) => [getComputedStyle(el).textUnderlineOffset, getComputedStyle(el).textDecorationStyle]);
+  expect(after).toEqual(before);
+});
+
+test("Add on the Tracking page tracks a typed name", async ({ page }) => {
+  test.skip(!!process.env.LIVE_URL, "writes run locally only");
+  await page.goto("/tracking");
+  const name = `Test Co ${Date.now()}`;
+  await page.locator("#panel-companies .tabadd input").fill(name);
+  await page.locator('#panel-companies .tabadd button[data-act="add"]').click();
+  await expect(page.locator("#panel-companies .tabadd")).toContainText(`Tracked: ${name}`);
 });

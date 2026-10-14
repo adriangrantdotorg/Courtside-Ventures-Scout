@@ -30,6 +30,7 @@ export function AddTracked({ kind, placeholder }: { kind: "company" | "trend"; p
       ctl.abort();
     };
   }, [q, kind]);
+  const [busy, setBusy] = useState(false);
   async function pick(h: Hit) {
     const r = await postJSON("/api/track", { kind, id: h.id, on: true });
     if (!r.ok) return ui.error("Track didn't save", r.error || "The server did not answer.");
@@ -38,13 +39,44 @@ export function AddTracked({ kind, placeholder }: { kind: "company" | "trend"; p
     setQ("");
     setHits([]);
   }
+  /** Add: an exact match is tracked; anything else is created by name and tracked. */
+  async function add() {
+    const nm = q.trim();
+    if (!nm || busy) return;
+    const exact = hits.find((h) => h.title.replace(/^Trend: /, "").toLowerCase() === nm.toLowerCase());
+    if (exact) return pick(exact);
+    setBusy(true);
+    const r = await postJSON<{ id: number; name: string }>("/api/track", { kind, name: nm, on: true });
+    setBusy(false);
+    if (!r.ok) return ui.error(kind === "company" ? "That company wasn't added" : "That trend wasn't added", r.error || "The server did not answer.");
+    ui.toast(`${r.data!.name} Tracked`);
+    setAdded((a) => [{ kind, id: r.data!.id, title: r.data!.name, href: "#" }, ...a]);
+    setQ("");
+    setHits([]);
+  }
   return (
     <div className="tabadd">
-      <label className="fsearch">
-        <Search className="ico" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Escape" && setQ("")} placeholder={placeholder} aria-label={placeholder} autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-search />
-        <ClearX show={!!q} onClear={() => setQ("")} />
-      </label>
+      <div className="frow">
+        <label className="fsearch" style={{ flex: 1 }}>
+          <Search className="ico" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => (e.key === "Escape" ? setQ("") : e.key === "Enter" ? (e.preventDefault(), add()) : undefined)}
+            placeholder={placeholder}
+            aria-label={placeholder}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-search
+          />
+          <ClearX show={!!q} onClear={() => setQ("")} />
+        </label>
+        <button className="btn red" disabled={!q.trim() || busy} onClick={add} title={kind === "company" ? "Track this company: a daily check of news, filings and shows (↩)" : "Track this trend: a daily count of mentions (↩)"} data-act="add">
+          Add
+        </button>
+      </div>
       {hits.length > 0 && (
         <div className="addhits" role="listbox">
           {hits.map((h) => (
@@ -57,7 +89,7 @@ export function AddTracked({ kind, placeholder }: { kind: "company" | "trend"; p
       )}
       {added.length > 0 && (
         <p className="mono" style={{ margin: "8px 0 0", fontSize: 13, color: "var(--green)" }}>
-          Tracked: {added.map((h) => h.title.replace(/^Trend: /, "")).join(", ")}. It shows in the list after the next check, or on reload.
+          Tracked: {added.map((h) => h.title.replace(/^Trend: /, "")).join(", ")}. It appears in the list on the next visit.
         </p>
       )}
     </div>
