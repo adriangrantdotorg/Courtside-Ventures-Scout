@@ -47,8 +47,8 @@ export const DOORS: Record<string, Door> = {
     later: ["PitchBook and Crunchbase fund profiles", "Every round with its valuation", "LinkedIn posts from fund partners"],
   },
   team: {
-    title: "Team-only access",
-    today: "In this prototype Scout is a public link with shared votes. Locking it to the Courtside team is Phase II work.",
+    title: "Phase II details",
+    today: "",
     now: ["Open link, no sign-in", "One shared pipeline for every visitor", "Anonymous votes, one per browser"],
     later: ["Sign-in for the Courtside team only", "Trusted ratings: only the team's votes train the feed", "Notes and status changes with names"],
   },

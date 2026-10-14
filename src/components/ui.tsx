@@ -224,18 +224,14 @@ export function UIProvider({ children, palette, sheet }: { children: ReactNode; 
       {door && (
         <Overlay className="door" label={`${door.title} is Phase II`} onClose={() => setDoorKey(null)} testid="door">
           <div className="band2">
-            <span className="lk">
-              <Lock className="ico" style={{ width: 14, height: 14 }} />
-              Phase II · if we work together
-            </span>
-            <h2>{door.title}</h2>
-            <span style={{ fontSize: 15 }}>{door.today}</span>
+            <h2>
+              <Lock className="ico" style={{ width: 18, height: 18, marginRight: 10, verticalAlign: "-2px" }} />
+              {door.title}
+            </h2>
+            {door.today && <span style={{ fontSize: 15 }}>{door.today}</span>}
           </div>
           <div className="bd">
-            <p>
-              Scout is a working prototype Adrian built to start a conversation with Courtside. Everything you see runs today. This feature is one that gets built if Courtside and Adrian decide to work
-              together.
-            </p>
+            <p>Scout is a working prototype Adrian built to start a conversation with Courtside. Essentially it&apos;s an alpha that he would love to get production-ready as a Courtside team member. Below&apos;s a recap.</p>
             <div className="cols">
               <div>
                 <b>Phase I · the prototype, running now</b>
