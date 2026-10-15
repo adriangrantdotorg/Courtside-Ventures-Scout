@@ -1,12 +1,12 @@
 // npm run seed:export [out.json]
 // Writes the launch seed from THIS database, in the shape scripts/load-seed.ts reads: everything a fresh
 // launch needs on day one (portfolio, creators and shows, sponsors with evidence, the scored companies with
-// their signals, the hand-verified backtests, trends, funds and their recent items, mentions, Courtside's
-// posts, the shared settings). `npm run release` runs it before every push, so a launch is as current as
+// their signals, the hand-verified backtests, trends, funds and their recent items, mentions, the thesis
+// filings, Courtside's posts, the shared settings). `npm run release` runs it before every push, so a launch is as current as
 // the newest push. Fund items carry `fund_id` as the fund's position in the seed order, as the loader expects.
 import { config } from "dotenv";
 import { writeFileSync } from "node:fs";
-import { and, desc, eq, gte, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import { db, schema as S } from "../src/db";
 import { SEED_ORDER, normName } from "../src/data/funds";
 
@@ -59,6 +59,12 @@ const fundItems = (await x.select().from(S.fundItems).orderBy(desc(S.fundItems.d
 
 const mentions = (await x.select().from(S.mentions).orderBy(desc(S.mentions.date)).limit(400)).map((m) => ({ entity: m.entity, kind: m.kind, stance: m.stance, quote: m.quote, url: m.url, date: m.date, voice: m.voice }));
 const posts = await x.select().from(S.courtsidePosts).orderBy(desc(S.courtsidePosts.date));
+// Form D and Form C filings inside the thesis: a fresh site showed none until the first pull, and the live check
+// "Form D rows" failed on every fresh launch (third dry run, 10-14-26). Ids and company links stay behind.
+const filings = (await x.select().from(S.filings).where(isNotNull(S.filings.thesisArea)).orderBy(desc(S.filings.filedAt)).limit(200)).map((f) => ({
+  accession: f.accession, form: f.form, issuer: f.issuer, cik: f.cik, industry: f.industry, amountSold: f.amountSold, amountOffered: f.amountOffered, currency: f.currency,
+  firstSale: f.firstSale, filedAt: f.filedAt, related: f.related, thesisArea: f.thesisArea, confidence: f.confidence, url: f.url, website: f.website, beforePress: f.beforePress,
+}));
 const settingRows = await x.select().from(S.settings);
 const settings = Object.fromEntries(settingRows.filter((r) => !["build_progress", "seededAt"].includes(r.key)).map((r) => [r.key, r.value]));
 
@@ -66,9 +72,9 @@ const seed = {
   name: "Courtside Ventures Scout launch seed",
   exportedAt: new Date().toISOString(),
   source: `this Scout's database (${process.env.SITE_URL || "local"})`,
-  counts: { portfolio: portfolio.length, voices: voices.length, sponsors: sponsors.length, companies: companyRows.length, signals: signals.length, backtests: backtests.length, trends: trends.length, funds: funds.length, fundItems: fundItems.length, mentions: mentions.length, courtsidePosts: posts.length },
+  counts: { portfolio: portfolio.length, filings: filings.length, voices: voices.length, sponsors: sponsors.length, companies: companyRows.length, signals: signals.length, backtests: backtests.length, trends: trends.length, funds: funds.length, fundItems: fundItems.length, mentions: mentions.length, courtsidePosts: posts.length },
   portfolio: portfolio.map((p) => ({ name: p.name, slug: p.slug, sector: p.sector, description: p.description, descriptionUrl: p.descriptionUrl, site: p.site, exitNote: p.exitNote, updatedAt: p.updatedAt })),
-  voices, sponsors, companies: companyRows, backtests, trends, funds, fundItems, mentions,
+  voices, sponsors, companies: companyRows, backtests, trends, funds, fundItems, mentions, filings,
   courtsidePosts: posts.map((p) => ({ title: p.title, url: p.url, date: p.date, kind: p.kind, summary: p.summary })),
   settings,
 };

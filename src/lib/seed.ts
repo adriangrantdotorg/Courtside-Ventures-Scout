@@ -229,6 +229,19 @@ export async function loadSeed(seed: Seed, log: (s: string) => void = () => {}) 
   await chunked(items as (typeof S.fundItems.$inferInsert)[], 100, (c) => x.insert(S.fundItems).values(c).onConflictDoNothing());
   log(`funds ${seed.funds?.length || 0}, fund items ${items.length}`);
 
+  // filings (Form D and Form C inside the thesis), keyed by accession; the daily job links companies later
+  await chunked(seed.filings || [], 100, (c) =>
+    x
+      .insert(S.filings)
+      .values(c.map((f: any) => ({
+        accession: f.accession, form: f.form, issuer: f.issuer, cik: f.cik ?? null, industry: f.industry ?? null, amountSold: f.amountSold ?? null, amountOffered: f.amountOffered ?? null,
+        currency: f.currency || "$", firstSale: f.firstSale ?? null, filedAt: d(f.filedAt), related: f.related || [], thesisArea: f.thesisArea ?? null, confidence: f.confidence ?? 0,
+        url: f.url, website: f.website ?? null, beforePress: !!f.beforePress,
+      })))
+      .onConflictDoNothing(),
+  );
+  log(`filings ${seed.filings?.length || 0}`);
+
   // mentions
   await chunked(seed.mentions || [], 100, (c) =>
     x

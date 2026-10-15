@@ -10,11 +10,17 @@ const fails: string[] = [];
 const ok = (c: boolean, m: string) => (c ? console.log("✓ " + m) : (fails.push(m), console.log("✗ " + m)));
 const get = async (p: string) => {
   const r = await fetch(url + p, { headers: { "user-agent": "CourtsideVenturesScout/1.0 verify" } });
-  return { status: r.status, html: await r.text() };
+  return { status: r.status, html: await r.text(), landed: r.url };
 };
 const count = (html: string, re: RegExp) => (html.match(re) || []).length;
 
 const home = await get("/");
+// A per-deploy address (project-xxxxxxxxx.vercel.app) is behind Vercel Authentication and lands on vercel.com's login
+// page; every content check would then fail for no reason of the site's (third dry run, 10-14-26). Say it once and stop.
+if (/^https:\/\/vercel\.com\//.test(home.landed)) {
+  console.log(`✗ ${url} is behind Vercel's login wall (it landed on ${home.landed.split("?")[0]}); check the public address, https://<project>.vercel.app`);
+  process.exit(1);
+}
 ok(home.status === 200, "home answers 200");
 ok(!home.html.includes('data-testid="building"'), "the Building page is switched off");
 ok(home.html.includes('aria-label="Spotlight"') && /class="src"[^>]*href="http/.test(home.html), "the Spotlight has a sourced line");

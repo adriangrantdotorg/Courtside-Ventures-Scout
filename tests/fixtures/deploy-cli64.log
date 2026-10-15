@@ -1,0 +1,59 @@
+<claude-code-hint v="1" type="plugin" value="vercel@claude-plugins-official" />
+Vercel CLI 64.1.0
+Deploying courtside-ventures-scout-2
+  Inspect         https://vercel.com/adriangrantdotorgs-projects/courtside-ventures-scout-2/HmUhwnAdp973N4eWydNtNgLhuDUC
+  Production      https://courtside-ventures-scout-2-dudwnyzdu.vercel.app
+Building…
+Building…
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Retrieving list of deployment files...
+Previous build caches not available.
+Downloading 958 deployment files...
+Using prebuilt build artifacts from .vercel/output
+Learn more: https://vercel.link/build-output-api
+Deploying outputs...
+[2K[1A[2K[G  Production      https://courtside-ventures-scout-2-dudwnyzdu.vercel.app
+Completing…
+▲ Aliased         https://courtside-ventures-scout-2.vercel.app
+{
+  "status": "ok",
+  "deployment": {
+    "id": "dpl_HmUhwnAdp973N4eWydNtNgLhuDUC",
+    "url": "https://courtside-ventures-scout-2-dudwnyzdu.vercel.app",
+    "productionUrl": "https://courtside-ventures-scout-2.vercel.app",
+    "inspectorUrl": "https://vercel.com/adriangrantdotorgs-projects/courtside-ventures-scout-2/HmUhwnAdp973N4eWydNtNgLhuDUC",
+    "readyState": "READY",
+    "target": "production",
+    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_HmUhwnAdp973N4eWydNtNgLhuDUC",
+    "buildMachine": {
+      "cores": 2,
+      "memory": 8192,
+      "machine": "basic",
+      "selectionType": "fixed",
+      "selectionSource": "plan-default"
+    },
+    "deploymentProtection": [
+      "vercel_authentication"
+    ]
+  },
+  "message": "Deployment courtside-ventures-scout-2-dudwnyzdu.vercel.app ready. Production URL: https://courtside-ventures-scout-2.vercel.app",
+  "next": [
+    {
+      "command": "vercel git connect",
+      "when": "Automatically deploy changes on every push"
+    },
+    {
+      "command": "vercel curl https://courtside-ventures-scout-2.vercel.app",
+      "when": "Verify deployment, including when Deployment Protection is enabled"
+    },
+    {
+      "command": "vercel inspect courtside-ventures-scout-2-dudwnyzdu.vercel.app",
+      "when": "Inspect deployment"
+    },
+    {
+      "command": "vercel deploy --prod",
+      "when": "Promote to production"
+    }
+  ]
+}

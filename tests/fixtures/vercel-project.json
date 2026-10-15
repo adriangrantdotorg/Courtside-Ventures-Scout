@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_3rDBq2IR7gXQ3fjdhTu7GQHnbuqb",
+  "orgId": "team_eSYA9zp0vRupBACzo0x4Fin4",
+  "projectName": "courtside-ventures-scout-2",
+  "settings": {
+    "createdAt": 1792021421212,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

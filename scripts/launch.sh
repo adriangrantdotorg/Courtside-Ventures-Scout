@@ -142,12 +142,12 @@ fi
 
 # ---------- 5 Open ----------
 NAME=$(node -p 'require("./.vercel/project.json").projectName' 2>/dev/null || echo courtside-ventures-scout)
-URL="https://$NAME.vercel.app"
-ALIAS=$(grep -oE 'https://[a-z0-9.-]+\.vercel\.app' "$LOG/deploy.log" 2>/dev/null | grep -v -- '-[a-z0-9]\{9\}-' | head -1)
-[ -n "$ALIAS" ] && URL="$ALIAS"
-if [ "$(curl -s -o /dev/null -w '%{http_code}' "$URL/")" != "200" ]; then
-  URL=$(grep -oE 'https://[a-z0-9.-]+\.vercel\.app' "$LOG/deploy.log" | head -1)
-fi
+# The PUBLIC address only (scripts/live-url.sh). The per-deploy address is behind Vercel's login wall: the third dry
+# run (10-14-26) checked it, every page answered 302 to vercel.com, and the wall's address leaked into SITE_URL.
+URL=$(bash scripts/live-url.sh "$LOG/deploy.log" .vercel/project.json)
+step 5 Open --live "$URL" --note "waiting for the address to answer"
+for _ in $(seq 1 30); do [ "$(curl -s -o /dev/null -w '%{http_code}' "$URL/")" = "200" ] && break; sleep 3; done
+[ "$(curl -s -o /dev/null -w '%{http_code}' "$URL/")" = "200" ] || fail "the site at $URL is not answering yet (see .logs/deploy.log)" "wait a minute, then npm run launch -- --from 4"
 if ! grep -q "SITE_URL=\"\\?$URL" .env.local 2>/dev/null; then
   for e in production preview development; do V env rm SITE_URL "$e" --yes > /dev/null 2>&1; printf %s "$URL" | V env add SITE_URL "$e" > /dev/null 2>&1; done
 fi

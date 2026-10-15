@@ -1,9 +1,10 @@
 {
  "name": "Courtside Ventures Scout launch seed",
- "exportedAt": "2026-10-14T20:58:32.575Z",
+ "exportedAt": "2026-10-15T00:15:57.897Z",
  "source": "this Scout's database (https://courtside-ventures-scout.vercel.app)",
  "counts": {
   "portfolio": 73,
+  "filings": 12,
   "voices": 143,
   "sponsors": 105,
   "companies": 68,
@@ -21997,6 +21998,274 @@
    "voice": "Jason and Travis Kelce"
   }
  ],
+ "filings": [
+  {
+   "accession": "0002158038-26-000001",
+   "form": "D",
+   "issuer": "Kraken Pop",
+   "cik": "2158038",
+   "industry": "Retailing",
+   "amountSold": 45000,
+   "amountOffered": 45000,
+   "currency": "$",
+   "firstSale": "2026-09-29",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Jared Jones",
+    "Jacob Jones"
+   ],
+   "thesisArea": "lifestyle",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/2158038/000215803826000001/",
+   "website": null,
+   "beforePress": false
+  },
+  {
+   "accession": "0001977208-26-000002",
+   "form": "D",
+   "issuer": "Optain Health",
+   "cik": "1977208",
+   "industry": "Other Technology",
+   "amountSold": 7468988,
+   "amountOffered": 12999965,
+   "currency": "$",
+   "firstSale": "2026-09-16",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Jeff Dunkel",
+    "Mingguang He",
+    "Kathleen O'Donnell",
+    "John Beadle",
+    "Maggie Morse"
+   ],
+   "thesisArea": "health",
+   "confidence": 0.42000000000000004,
+   "url": "https://www.sec.gov/Archives/edgar/data/1977208/000197720826000002/",
+   "website": null,
+   "beforePress": false
+  },
+  {
+   "accession": "0001839187-26-000002",
+   "form": "D",
+   "issuer": "iPill",
+   "cik": "1839187",
+   "industry": "Other Health Care",
+   "amountSold": 1291364,
+   "amountOffered": 1500000,
+   "currency": "$",
+   "firstSale": "2026-10-01",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "John Hsu",
+    "Tobias Fischli",
+    "Robert Saunders",
+    "Arthur Becker",
+    "Michele Leonhart"
+   ],
+   "thesisArea": "health",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/1839187/000183918726000002/",
+   "website": null,
+   "beforePress": false
+  },
+  {
+   "accession": "0002159575-26-000001",
+   "form": "D",
+   "issuer": "Frictionworx",
+   "cik": "2159575",
+   "industry": "Other Health Care",
+   "amountSold": 40000,
+   "amountOffered": 150000,
+   "currency": "$",
+   "firstSale": "2023-07-20",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Xano Sweeting",
+    "Spencer Kirsch",
+    "Donzell Brown"
+   ],
+   "thesisArea": "health",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/2159575/000215957526000001/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0002154650-26-000001",
+   "form": "D",
+   "issuer": "Lagomorph Games",
+   "cik": "2154650",
+   "industry": "Other Technology",
+   "amountSold": 150000,
+   "amountOffered": 350000,
+   "currency": "$",
+   "firstSale": "2026-10-10",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Charles Olson"
+   ],
+   "thesisArea": "gaming",
+   "confidence": 0.42000000000000004,
+   "url": "https://www.sec.gov/Archives/edgar/data/2154650/000215465026000001/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0002159744-26-000001",
+   "form": "D",
+   "issuer": "Soterya",
+   "cik": "2159744",
+   "industry": "Other Health Care",
+   "amountSold": 850000,
+   "amountOffered": 2000000,
+   "currency": "$",
+   "firstSale": "2026-10-01",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Lina Williamson",
+    "Andres Rodriguez",
+    "Valentina Mendez"
+   ],
+   "thesisArea": "health",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/2159744/000215974426000001/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0001548664-26-000005",
+   "form": "D",
+   "issuer": "White Eagle Sonic Technologies",
+   "cik": "1548664",
+   "industry": "Other Health Care",
+   "amountSold": 385000,
+   "amountOffered": 1000000,
+   "currency": "$",
+   "firstSale": "2026-09-24",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Tobias Richard",
+    "Randy Whiting",
+    "Joan Plastiras"
+   ],
+   "thesisArea": "health",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/1548664/000154866426000005/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0002159859-26-000001",
+   "form": "D",
+   "issuer": "Aphrodite Media",
+   "cik": "2159859",
+   "industry": "Other",
+   "amountSold": 10000,
+   "amountOffered": 250000,
+   "currency": "$",
+   "firstSale": "2026-09-30",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Rachael Eckles"
+   ],
+   "thesisArea": "media",
+   "confidence": 0.42000000000000004,
+   "url": "https://www.sec.gov/Archives/edgar/data/2159859/000215985926000001/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0001577355-26-000003",
+   "form": "D",
+   "issuer": "Coeurative",
+   "cik": "1577355",
+   "industry": "Other Health Care",
+   "amountSold": 100000,
+   "amountOffered": 2000000,
+   "currency": "$",
+   "firstSale": "2026-09-27",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "John Schmedtje, Jr."
+   ],
+   "thesisArea": "health",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/1577355/000157735526000003/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0001566819-26-000003",
+   "form": "D/A",
+   "issuer": "ArthroMeda",
+   "cik": "1566819",
+   "industry": "Other Health Care",
+   "amountSold": 8749582,
+   "amountOffered": 11112080,
+   "currency": "$",
+   "firstSale": "2026-08-14",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Mehran Aghazadeh",
+    "PJ Anand",
+    "Edgar Jannotta Jr."
+   ],
+   "thesisArea": "health",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/1566819/000156681926000003/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0001213900-26-108655",
+   "form": "D/A",
+   "issuer": "Hygia Technologies",
+   "cik": "2085068",
+   "industry": "Other Health Care",
+   "amountSold": 125000,
+   "amountOffered": 5000000,
+   "currency": "$",
+   "firstSale": "2026-09-08",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Stanislav Gutkin",
+    "Alexander Shaknovich",
+    "Ayall Schanzer"
+   ],
+   "thesisArea": "health",
+   "confidence": 0.45,
+   "url": "https://www.sec.gov/Archives/edgar/data/2085068/000121390026108655/",
+   "website": null,
+   "beforePress": true
+  },
+  {
+   "accession": "0001901969-26-000003",
+   "form": "D/A",
+   "issuer": "Janus Health Technologies",
+   "cik": "1901969",
+   "industry": "Other",
+   "amountSold": 18777077,
+   "amountOffered": 18777077,
+   "currency": "$",
+   "firstSale": "2024-09-25",
+   "filedAt": "2026-10-13T12:00:00.000Z",
+   "related": [
+    "Brendan Downing",
+    "Won Park",
+    "Todd Doze",
+    "Candice Hoshi",
+    "John Garcia",
+    "Jamie Hill-Walters",
+    "Chris Ellsberry",
+    "Clayton Hatzenbuhler"
+   ],
+   "thesisArea": "health",
+   "confidence": 0.42000000000000004,
+   "url": "https://www.sec.gov/Archives/edgar/data/1901969/000190196926000003/",
+   "website": null,
+   "beforePress": true
+  }
+ ],
  "courtsidePosts": [
   {
    "title": "The Creator Gold Rush Will Create The Next Media Empires",
@@ -22148,7 +22417,7 @@
     "domain": "sec.gov"
    },
    "itemKey": "filing:33",
-   "computedAt": "2026-10-14T20:58:07.901Z"
+   "computedAt": "2026-10-15T00:09:17.594Z"
   },
   "lanes": [
    {
