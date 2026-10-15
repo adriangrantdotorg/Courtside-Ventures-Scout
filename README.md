@@ -1,12 +1,44 @@
-# Courtside Ventures Scout
+# 🏀🔭 Courtside Ventures Scout
 
-**Live:** https://courtside-ventures-scout-v5.vercel.app
+![Courtside Ventures Scout Banner](banner.png)
 
-Deal sourcing for Courtside Ventures: startups, trends, sponsors, culture and funds inside Courtside's thesis (Sports, Gaming, Lifestyle, Health, Media), found every morning from free public sources. Every fact links to its source.
+> A prototype of an AI scout optimized for sourcing and tracking Sports, Gaming, Lifestyle, & Entertainment startups synergistic with Courtside Ventures.
 
-A prototype built by Adrian Grant to start a conversation with Courtside.
+[![Check](https://github.com/adriangrantdotorg/Courtside-Ventures-Scout/actions/workflows/check.yml/badge.svg)](https://github.com/adriangrantdotorg/Courtside-Ventures-Scout/actions/workflows/check.yml) [![Version](https://img.shields.io/badge/Version-0.1.0-orange.svg)](package.json) [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/) [![Neon](https://img.shields.io/badge/Database-Neon_Postgres-00e599.svg)](https://neon.tech/) [![Vercel](https://img.shields.io/badge/Hosted_on-Vercel_Hobby-000000.svg)](https://vercel.com/)
 
-## Run it
+**VIEW LIVE DEMO →** [courtside-ventures-scout.vercel.app](https://courtside-ventures-scout.vercel.app)
+
+---
+
+## ✨ Page Features
+
+![The Today page: the Spotlight, the top picks with their thesis-fit gauges, Velocity and Sponsor Radar](docs/today.png)
+
+- 🎯 **Today** — Your morning coffee read: the one 'Must See' deal + Top 5 cos that should be your radar + startups that are heating up
+- 🗂️ **Pipeline** — Thesis-friendly startups, ranked by fit, with a lightweight CRM to move deals from 'New' to 'Reached Out'
+- 🗓️ **IC Meeting** — Your Monday Partner Meeting Starter Packer, i.e. the week's top startups and trends 
+- 📈 **Trends** — The ideas picking up steam across news, creators, filings and the App Store
+- 📻 **Sponsor Radar** — Brands buying ads on the shows the Courtside world listens to (i.e. often the first sign a company just raised or is scaling)
+- 🎧 **Culture** — The brands and startups 100+ creators and shows are talking about, so you catch taste shifts before the press does
+- 🔔 **Tracking** — The companies, trends and people you follow, plus custom alerts, checked every morning and ready for Slack
+- ⏪ **Backtest** — How many days before the investment announcement would Scout have the deal
+- 💵 **Throw Some D's on It** — Fresh SEC Form D and Form C filings inside the thesis, flagged when no press has covered them yet
+- 🏘️ **Neighborhood** — What Courtside's co-investors just backed, i.e. hear about the next shared deal early
+- 🤝 **Synergistic Funders** — Funds with a Courtside-style thesis that haven't co-invested yet, and who they're backing now
+
+---
+
+## 📋 Prerequisites
+
+- **Node.js** v20+ — [Install here](https://nodejs.org/)
+- **Vercel account** (free Hobby plan) — [Sign up](https://vercel.com/signup)
+- **Neon account** (free plan) — [Sign up](https://neon.com/)
+
+---
+
+## 🚀 Installation
+
+### Quick Start
 
 One command from a fresh clone to a live, filled, verified Scout on your own free Vercel and Neon accounts:
 
@@ -14,18 +46,33 @@ One command from a fresh clone to a live, filled, verified Scout on your own fre
 npm run launch
 ```
 
-Five steps (about ten minutes), each on the progress page that opens and in the terminal: Setup, Database, Build and tests, Deploy, Open. Later, `npm run update` pulls the newest version and redeploys it. The only moment it may need you: approving the Vercel login page once.
+Five steps, each shown on the progress page that opens and in the terminal:
 
-## Three things to try
+| **Step** | **What happens** |
+| -------- | ---------------- |
+| 1. Setup | Signs you in, links the Vercel project, creates the Neon database, sets the environment |
+| 2. Database | Creates the tables and loads the launch seed |
+| 3. Build and tests | One production build, the unit tests, then the browser suite against that build |
+| 4. Deploy | Uploads the build that was just tested |
+| 5. Open | Checks the live site, then opens it |
 
-1. **Today:** the Spotlight (the day's one call, picked by rules) and the top five picks, each with its thesis-fit gauge, signals and a one-line "why it fits Courtside".
-2. **Sponsor Radar:** every brand buying ads on the shows Courtside's world listens to.
-3. **Press `?`** for the keyboard shortcuts (`j`/`k` to move, `u`/`d` to vote, `⌘K` to search everything).
+The only moment it may need you: approving the Vercel login page once.
 
-## What runs each day (New York mornings)
+### Keeping it current
 
-| Job | When |
-|---|---|
+```bash
+npm run update
+```
+
+Pulls the newest version and redeploys it.
+
+---
+
+## 🗓️ What Runs Each Day
+
+
+| **Job** | **When** |
+| ------- | -------- |
 | Co-investor watch (the Neighborhood) | 2 AM ET |
 | Synergistic funder watch | 3 AM ET |
 | Creators and shows (YouTube and podcast feeds), people | 4 AM ET |
@@ -38,50 +85,59 @@ Five steps (about ten minutes), each on the progress page that opens and in the 
 | The Monday brief | Mondays, 11 AM ET |
 | Weekly upkeep: portfolio, link checks, the 90-day podcast rule, new Courtside posts into the backtest | Sundays, 2 AM ET |
 
-**Refresh Now** (on Today) pulls the fastest sources any time, once an hour for everyone. Vercel's free plan runs each job once a day, within the hour.
+---
 
-## Sources
+## 💡 Usage Examples
 
-SEC EDGAR (daily form index, filing details, full-text search), Hacker News, Y Combinator's open company list, Product Hunt, App Store charts, Google News, Google Trends' daily feed, Front Office Sports, Sportico, TechCrunch, Crunchbase News, Passionfruit, Tubefilter, Variety, Deadline, Puck, GamesIndustry.biz, The Verge, 100+ creators and shows (YouTube channel feeds and podcast feeds), fund news, blogs, newsletters and Form D filings for 106 funds, and Courtside's own Medium, portfolio page and The 4th Quarter. GitHub and GDELT are "extra sources", off by default (Settings › Sources).
+Customize via **Settings** on the site and or ask your agent — Scout has you covered either way!
 
-## How to change anything
+### Add a creator or show
 
-Most things change in **Settings** on the site (shared settings are saved for everyone, with a change log and Undo). For anything else, ask your agent, for example:
+```
+"Add a creator or show to Scout"
+```
 
-- "Add a creator or show to Scout" (or paste a YouTube channel URL, podcast name or RSS URL in Settings › Creators and Shows)
-- "Turn off a source"
-- "Change the scoring weights"
+Or paste a YouTube channel URL, podcast name or RSS URL in **Settings › Creators and Shows**.
 
-## Optional extras
+### Tune what Scout reads
 
-- **AI drafting** (memo drafts, written summaries, plain-English alerts): runs on Vercel's free AI credit, which asks for a card on file; nothing is charged on the free credit. Say "turn on AI" to your agent.
-- **Slack** (alert hits and the Monday brief in a channel): about 4 clicks, once. Say "set up Slack".
+```
+"Turn off a source"
+```
 
-## Limits of the free edition
+### Change how picks are ranked
 
-- Jobs run once a day each (Vercel Hobby); real-time is Phase II.
-- YouTube's keyless channel feeds sometimes rate-limit; Scout backs off and the podcast feeds cover those creators meanwhile.
-- Many shows insert ads automatically and leave them out of show notes, so Sponsor Radar sees part of the picture.
-- X, Instagram, TikTok, Twitch, Kick, LinkedIn and PitchBook are links only; reading them needs the firm's accounts.
+```
+"Change the scoring weights"
+```
 
-## Phase II
+The agent will:
 
-Phase I is a quick prototype; Phase II is the production-ready version we build together: team-only access, trusted ratings, real-time updates, email alerts, social networks through the firm's accounts, PitchBook and Crunchbase, and LinkedIn.
-
-## Credit
-
-Designed and specified by Adrian Grant ([LinkedIn](https://www.linkedin.com/in/adriangrant3/)). Built by an AI coding agent from his prompt.
+- Find the setting or rule behind the request
+- Make the change and run the checks
+- Redeploy so the live site picks it up
 
 ---
 
-## Build notes (for the agent and for Adrian)
+## 🧩 Optional Extras
 
-- **Accounts:** Vercel `adriangrantdotorg` (team `adriangrantdotorgs-projects`); GitHub `adriangrantdotorg` (not used: the repo is local only). The site, the Neon database (`courtside-ventures-scout-3-db`, free plan, iad1) and the 11 cron jobs live on that Vercel account.
-- **Name:** this build started as `courtside-ventures-scout-3` (two stopped runs held the plain name). On 10-14-26 those two projects were deleted and this project renamed, finally to `courtside-ventures-scout-v5` (GitHub: `BoltHub973/courtside-ventures-scout-v5`); the database keeps its first name, `courtside-ventures-scout-3-db`. The code lives at the top of `Courtside Ventures - DEMO - v5/` (moved up from its `courtside-ventures-scout-3` subfolder the same day).
-- **Stack:** Next.js 16 App Router (Cache Components turned off; pages use 5-minute ISR and are revalidated after every write and job), Drizzle ORM on Neon, plain CSS on the tokens from the six mockups in `design/`. Where the brief's color table and the mockups differ, the mockups' values are used (as the brief says).
-- **Launch seed:** loaded from the Gist (73 portfolio, 143 creators and shows, 83 sponsors, 118 companies, 6 backtests, 19 trends, 106 funds, 350 fund items, 400 mentions). Older wording in the seed ("lane", "pattern", "Context only") is cleaned on screen. Backtest evidence that only had a Google News redirect URL was dropped (the brief requires the article's own URL).
-- **Hand-verified backtest links:** Entrackr and World Soccer Talk load for scripts; Axios (403) and Business Wire block automated requests but open in a browser.
-- **YouTube fixture:** YouTube's feeds were rate-limiting (404) during the build, so `tests/fixtures/youtube.xml` is written to the documented feed shape; every other fixture is a recorded real response.
-- **Quality rules beyond the brief:** developer and B2B tools, incumbents (Google, Apple, …), pharma, and Form D filings under $250K never become pipeline cards; "Future", "Jump" and other portfolio names that are everyday words only count as a mention in a product context.
-- **Free tiers (re-checked 10-14-26):** Vercel Hobby allows 100 cron jobs, each once a day, timing within the hour; Neon Free gives 1 GB per project and 100 CU-hours a month and sleeps after 5 idle minutes. Unchanged from the brief; nothing here uses a paid plan or key.
-- **Commands:** `npm run check` (typecheck, lint, unit, integration, end-to-end), `npm run verify:live -- <url>`, `npm run smoke`, `npm run pipeline:all`, `npm run seed`, `npm run db:migrate`.
+| **Extra** | **What it adds** | **How to turn it on** |
+| --------- | ---------------- | --------------------- |
+| 🤖 AI drafting | Memo drafts, written summaries, plain-English alerts | Say "turn on AI" to your agent. Runs on Vercel's free AI credit, which asks for a card on file; nothing is charged on the free credit |
+| 💬 Slack | Alert hits and the Monday brief in a channel | Say "set up Slack". About 4 clicks, once |
+
+---
+
+## ⚠️ Prototype Limits 
+
+- **Once a day** — Each job runs once a day (Vercel Hobby)
+- **YouTube rate limits** — The keyless channel feeds sometimes rate-limit; Scout backs off and the podcast feeds cover those creators meanwhile
+- **Partial ad picture** — Many shows insert ads dynamically and leave them out of show notes, so our Sponsor Radar only sees part of the picture
+- **Links only** — X, Instagram, TikTok, Twitch, Kick, LinkedIn and PitchBook are links only
+
+---
+
+
+<div align="center">
+  <sub>Created by [Adrian Grant](https://www.linkedin.com/in/adriangrant3/)</sub>
+</div>

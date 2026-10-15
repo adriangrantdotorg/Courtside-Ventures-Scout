@@ -2,6 +2,12 @@
 
 A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: https://courtside-ventures-scout.vercel.app
 
+## Audience and voice (Adrian, 10-15-26)
+- *Trigger:* you write or edit any words a person reads: page copy, labels, tooltips, empty states, alerts, the Monday brief, Slack posts, the README.
+- *Who reads it:* busy venture capitalists at Courtside Ventures, who invest in pre-seed and seed startups in the entertainment space (sports, gaming, lifestyle, health, media).
+- *Voice:* professional and concise, with a casual startup vibe. Lead with the value to an investor: what they learn or can act on in seconds.
+- *Discrimination:* code comments, commit messages, CLAUDE.md and test names are for developers and keep their own plain style. Existing copy is not rewritten just to match; the rule applies to copy you write or touch from now on.
+
 ## Stack
 - Next.js 16 App Router + TypeScript (`src/app`), Cache Components OFF: pages use `export const revalidate = 300` and every write calls `revalidatePath("/", "layout")`.
 - Drizzle ORM on Neon Postgres (`src/db/schema.ts`, migrations in `drizzle/`). Plain CSS on tokens (`src/app/globals.css`); the look of record is `design/*.html`.
