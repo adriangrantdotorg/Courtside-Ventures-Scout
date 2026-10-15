@@ -14,9 +14,9 @@
 
 ![The Today page: the Spotlight, the top picks with their thesis-fit gauges, Velocity and Sponsor Radar](docs/today.png)
 
-- 🎯 **Today** — Your morning coffee read: the one 'Must See' deal + Top 5 cos that should be your radar + startups that are heating up
+- 🎯 **Today** — Your morning coffee read: the one 'Must See' deal + Top 5 cos that should be on your radar + startups that are heating up
 - 🗂️ **Pipeline** — Thesis-friendly startups, ranked by fit, with a lightweight CRM to move deals from 'New' to 'Reached Out'
-- 🗓️ **IC Meeting** — Your Monday Partner Meeting Starter Packer, i.e. the week's top startups and trends 
+- 🗓️ **IC Meeting** — Your Monday Partner Meeting Starter Pack, i.e. the week's top startups and trends 
 - 📈 **Trends** — The ideas picking up steam across news, creators, filings and the App Store
 - 📻 **Sponsor Radar** — Brands buying ads on the shows the Courtside world listens to (i.e. often the first sign a company just raised or is scaling)
 - 🎧 **Culture** — The brands and startups 100+ creators and shows are talking about, so you catch taste shifts before the press does
