@@ -17,6 +17,7 @@
     "pipeline:all": "tsx scripts/pipeline-all.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/load-seed.ts",
+    "watch": "bash scripts/watch-launch.sh",
     "launch": "bash scripts/launch.sh",
     "update": "bash scripts/update.sh",
     "release": "bash scripts/release.sh",

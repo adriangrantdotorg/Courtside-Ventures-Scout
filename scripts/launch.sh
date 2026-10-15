@@ -36,8 +36,11 @@ if [ "$FROM" -le 1 ]; then
   NPM_PID=$!
   bash scripts/prestart.sh open   # the progress page, from second zero: it says whose turn it is
   export SCOUT_STARTED_AT; SCOUT_STARTED_AT=$(cat "$HOME/.courtside-ventures-scout/started-at" 2>/dev/null || echo "")
-  say "Before you walk away: one or two pages open in your browser now"
-  if ! V whoami > "$LOG/whoami.log" 2>&1; then
+  say "Checking what needs you first: the progress page opens in your browser now"
+  if V whoami > "$LOG/whoami.log" 2>&1; then
+    # Say so: on the fourth dry run (10-14-26) the agent read the launch script to learn why no sign-in page came
+    say "Already signed in to Vercel as $(tail -1 "$LOG/whoami.log"): no sign-in page"
+  else
     # No sign-in on this machine. The CLI opens Vercel's device page and waits; that page signs in an existing account
     # or creates a free one (email code, or GitHub / GitLab / Bitbucket). Nothing else to do here (10-14-26).
     say "Vercel needs you once: sign in on the page that opens (no account yet? the same page lets you create a free one)"
@@ -75,7 +78,10 @@ if [ "$FROM" -le 1 ]; then
   V env pull .env.local --yes > "$LOG/env.log" 2>&1
   if ! grep -q '^DATABASE_URL=' .env.local 2>/dev/null; then
     neon_add() { V integration add neon --plan free_v3 --name "$NAME-db" -m region=iad1 -m auth=false --no-claim < /dev/null > "$LOG/neon.log" 2>&1; }
-    if ! neon_add; then
+    say "Creating the free Neon database $NAME-db"
+    if neon_add; then
+      say "Database created; the terms were already accepted on this account, so no terms page"
+    else
       # An account that never used Neon must accept its terms once. Run by an agent, the CLI does not wait: it prints the
       # accept-terms page and exits. So the launch opens that page itself and retries until the terms are in (10-14-26).
       TERMS=$(grep -oE 'https://vercel\.com/[^" ]*accept-terms[^" ]*' "$LOG/neon.log" | head -1)
