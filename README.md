@@ -273,7 +273,4 @@ Pulls the newest version and redeploys it. With an agent, just say "update Scout
 
 ---
 
-
-<div align="center">
-  <sub>Created by [Adrian Grant](https://www.linkedin.com/in/adriangrant3/)</sub>
-</div>
+Created by [Adrian Grant](https://www.linkedin.com/in/adriangrant3/)
