@@ -41,7 +41,7 @@ nav a, .ticker a, a.seg, a.btn, a.lane-chip, a.src, a.src2, .evi a, .views a, .b
 /* ---- shell ---- */
 .app { min-height:100vh; display:flex; flex-direction:column; }
 .top { display:flex; align-items:stretch; border-bottom:1px solid var(--border); background:var(--bg-2); position:sticky; top:0; z-index:20; }
-.brand { display:flex; align-items:center; gap:12px; padding:0 20px; background:var(--red); color:#fff; font-family:"Bruno Ace", sans-serif; font-size:13px; line-height:1.2; flex:none; min-height:64px; }
+.brand, a.brand { display:flex; align-items:center; gap:12px; padding:0 20px; background:var(--red); color:#fff; font-family:"Bruno Ace", sans-serif; font-size:13px; line-height:1.2; flex:none; min-height:64px; }
 .brand img, .brand svg { height:40px; width:auto; display:block; }
 .nav { display:flex; align-items:center; gap:0; padding:0 8px; flex:1; min-width:0; }
 .nav > a, .nav .dd > button { padding:22px 10px 20px; font:600 15px/1 Oswald, sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); white-space:nowrap; position:relative; background:none; border:0; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }

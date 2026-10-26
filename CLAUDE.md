@@ -20,6 +20,7 @@ A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: 
 - `npm run db:migrate` after `npx drizzle-kit generate --name <x>`; `npm run seed` loads `seed/scout-launch-seed.json`.
 - Deploy: `npx vercel@latest deploy --prod --yes`, then POST `/api/revalidate` with `Authorization: Bearer $CRON_SECRET`.
 - `npx tsx scripts/q.ts "<sql>"`: one-off SQL against the database in `.env.local` (`vercel env pull .env.local`).
+- `python3 design/v2/build.py`: regenerate the V2 mockups in `design/v2/` (fails on a label that isn't Title Case or a link that would take the live red hover underline); `design/v2/NOTES.md` holds the picks and the live-site behaviors to build.
 
 ## Map
 - `src/lib/jobs/`: the 11 cron jobs (`index.ts` registry, `runner.ts` = job_runs rows, 240 s time box, resumable cursor). Routes: `src/app/api/cron/[job]`.
@@ -37,3 +38,6 @@ A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: 
 - The SEC requires a contact email in the User-Agent (`SEC_CONTACT_EMAIL`).
 - `scripts/step.ts` drives the build-progress page (`~/.courtside-ventures-scout/`) and `settings.build_progress`; `done: true` turns the Building page off.
 - `RECURRING.md` is the defect ledger: add one line per fix.
+- Labels are Title Case, in the app AND in every design mockup (*Trigger:* you write a button, chip, menu row, tab or heading, including in `design/`; *Discrimination:* prose, headlines and tooltips stay sentences): `titleCase()` in `src/lib/format.ts` (small words lowercase); `design/v2/build.py` fails on a label that isn't. Reported twice (10-12-26, 10-26-26).
+- V2 redesign (10-26-26): red is the main call to action only (Visit Website); thesis fit is the headline number, then Funds Raised; videos play in Scout's own player, never on YouTube. Decisions and live-site behaviors: `design/v2/NOTES.md`.
+- Scout never recommends a company that has raised $15M or more in total (Today, Pipeline, company pages, IC Meeting; Sponsor Radar and context pages are exempt). Unknown funding reads "Unknown". A tie to a portfolio company is always "Overlaps with …", never "Near", and only real competitors get it: a loose keyword match never shows on any page.
