@@ -20,10 +20,13 @@ beforeAll(async () => {
 describe("the launch seed in the real schema", () => {
   it("loads the portfolio, backtests and settings", async () => {
     const { db, schema: S } = await import("@/db");
-    expect((await db().select().from(S.portfolio)).length).toBe(73);
+    // the counts follow the seed: the weekly job keeps Scout's portfolio in step with Courtside's site (Betty and
+    // Zionverse left it before the 10-27-26 export) and adds a backtest per new Courtside post (Commons Clinic, 10-18-26)
+    expect((await db().select().from(S.portfolio)).length).toBe(seed.portfolio.length);
     const bt = await db().select().from(S.backtests);
-    expect(bt.length).toBe(6);
-    expect(bt.filter((b) => b.verdict === "win").map((b) => b.leadDays).sort()).toEqual([106, 162, 785]);
+    expect(bt.length).toBe(seed.backtests.length);
+    // the three hand-verified wins of the launch stay
+    expect(bt.filter((b) => b.verdict === "win").map((b) => b.leadDays)).toEqual(expect.arrayContaining([106, 162, 785]));
     for (const b of bt) for (const e of b.evidence) {
       expect(e.url).not.toMatch(/news\.google\.com/);
       if (!e.counts) expect(e.note.startsWith("Rejected because")).toBe(true);

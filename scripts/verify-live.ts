@@ -23,10 +23,11 @@ if (/^https:\/\/vercel\.com\//.test(home.landed)) {
 }
 ok(home.status === 200, "home answers 200");
 ok(!home.html.includes('data-testid="building"'), "the Building page is switched off");
-ok(home.html.includes('aria-label="Spotlight"') && /class="src"[^>]*href="http/.test(home.html), "the Spotlight has a sourced line");
-ok(count(home.html, /class="t1"/g) >= 5, "at least 5 top picks");
-ok(count(home.html, /class="item" data-item/g) >= 4, "Velocity shows trends");
-ok(home.html.includes("From Courtside"), "the newest Courtside post");
+// V2's Today (10-27-26): Must See, The Combine, On the Radar. V1's Spotlight, top picks, Velocity and Courtside post are gone.
+ok(count(home.html, /class="x-tile hero/g) === 1, "Must See shows one startup");
+const combine = count(home.html, /class="x-rr"/g);
+ok(combine >= 5 && combine <= 10, `The Combine ranks the top startups (${combine} of 10)`);
+ok(count(home.html, /class="x-tile link"/g) >= 10, "On the Radar shows at least 10 startups");
 const pl = await get("/pipeline");
 ok(pl.status === 200 && count(pl.html, /stageText/g) >= 5, "pipeline cards render");
 const tr = await get("/trends");
@@ -47,11 +48,12 @@ ok(count(bt.html, /class="card2 win"/g) >= 2 && !/class="card2 none"/.test(bt.ht
 const ab = await get("/about");
 ok(ab.html.includes("https://www.linkedin.com/in/adriangrant3/") && ab.html.includes("A prototype deal-sourcing site for Courtside Ventures built by Adrian Grant."), "About: Talk to Adrian and the prototype line");
 for (const p of ["/icon.png", "/favicon.ico"]) ok((await fetch(url + p)).status === 200, `${p} answers`);
-// source links on the top picks answer
-const links = [...home.html.matchAll(/class="evi"><a href="(https?:[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&")).slice(0, 5);
+// the official websites on Today's cards answer (V2's Visit Website)
+const links = [...home.html.matchAll(/class="x-web w1 known" href="(https?:[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&")).slice(0, 5);
+ok(links.length >= 1, `Today's cards link official websites (${links.length})`);
 for (const l of links) {
   const r = await fetch(l, { method: "GET", redirect: "follow", headers: { "user-agent": "Mozilla/5.0" } }).catch(() => null);
-  ok(!!r && (r.ok || [401, 403, 429].includes(r.status)), `source link answers: ${l.slice(0, 70)}`);
+  ok(!!r && (r.ok || [401, 403, 429].includes(r.status)), `website answers: ${l.slice(0, 70)}`);
 }
 if (!LIGHT) {
 // residue is measured as rows the browser suite ADDS, never against zero: the team's own clicks

@@ -93,6 +93,10 @@ describe("why it fits and the portfolio check", () => {
 });
 
 describe("words on screen", () => {
+  it("cleanCopy keeps a company's own words: only Scout's \"the X pattern\" is rewritten (10-27-26)", () => {
+    expect(cleanCopy("Helps users understand their nightly sleep patterns")).toBe("Helps users understand their nightly sleep patterns");
+    expect(cleanCopy("the specialized-marketplace pattern behind StockX")).toBe("the specialized-marketplace play behind StockX");
+  });
   it("cleanCopy removes lanes, patterns and Context only", () => {
     const s = cleanCopy("Media lane: anime, the Camb AI pattern; Context only: a domain can be older. Pre-seed");
     expect(s).not.toMatch(/\blanes?\b|pattern|Context only|Pre-seed/);

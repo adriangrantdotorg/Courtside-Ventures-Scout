@@ -34,7 +34,8 @@ export function cleanCopy(s: string | null | undefined): string {
     .replace(/\s*\(the ([^()]+?) pattern\)/g, ", like $1")
     .replace(/,? the ([A-Z][\w' ]+?) pattern\b/g, ", like $1")
     .replace(/\bthe ([a-z][\w-]*) pattern\b/g, "the $1 play")
-    .replace(/\bpatterns?\b/g, "play")
+    // only Scout's own "the X pattern" is rewritten: a company's words stay ("nightly sleep patterns" read "sleep play"
+    // on the Must See card, 10-27-26)
     .replace(/\bvoices\b/g, "creators and shows")
     .replace(/\bKey Insight\b/gi, "Spotlight")
     .replace(/,\s*,/g, ",");

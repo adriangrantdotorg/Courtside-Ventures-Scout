@@ -46,7 +46,7 @@ A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: 
 - `src/lib/v2.ts` (the $15M cap, Funds Raised text and ranges, New, buckets) and `src/lib/enrich.ts` (rounds, the startup filter, duplicates, the website check, the picture order): pure, tested in `tests/unit/v2.test.ts`.
 
 ## Gotchas
-- Screen words: never "lane", "voices", "pattern", "Key Insight", "Context only", "thesis area" in prose; `cleanCopy()` in `src/lib/copy.ts` cleans seed text. A Playwright test fails on them.
+- Screen words: never "lane", "voices", "Key Insight", "Context only", "thesis area" in prose, nor Scout's own "the X pattern"; `cleanCopy()` in `src/lib/copy.ts` cleans seed text. A company's own words stay ("nightly sleep patterns" once read "sleep play", 10-27-26). A Playwright test fails on the banned words.
 - No `confirm()`/`alert()`, no errors through `toast()`, no ellipsis/line-clamp, no self-reloading pages: `tests/unit/rules.test.ts` greps the source.
 - Every shown date goes through `src/lib/format.ts` (New York time); live times through `<Ago>/<Until>/<Clock>` in `src/components/Live.tsx`.
 - A server component can't call a function exported from a `"use client"` module: shared helpers live in `src/lib/` (e.g. `labels.ts`).
