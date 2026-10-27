@@ -6,7 +6,7 @@
 // the newest push. Fund items carry `fund_id` as the fund's position in the seed order, as the loader expects.
 import { config } from "dotenv";
 import { writeFileSync } from "node:fs";
-import { and, desc, eq, gte, inArray, isNotNull } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db, schema as S } from "../src/db";
 import { SEED_ORDER, normName } from "../src/data/funds";
 
@@ -26,13 +26,17 @@ const sponsors = sponsorRows.map((p) => ({
   sightings: sightings.filter((s) => s.sponsorId === p.id).slice(0, 12).map((s) => ({ show: s.show, date: s.date, url: s.url, evidence: s.evidence })),
 }));
 
-const companies = await x.select().from(S.companies).where(and(eq(S.companies.hidden, false), gte(S.companies.score, 35))).orderBy(desc(S.companies.score)).limit(200);
+// V2 (10-27-26): a duplicate merged into another card is left out; its signals moved over already
+const companies = await x.select().from(S.companies).where(and(eq(S.companies.hidden, false), isNull(S.companies.mergedInto), gte(S.companies.score, 35))).orderBy(desc(S.companies.score)).limit(200);
 const ids = companies.map((c) => c.id);
 const signals = ids.length ? await x.select().from(S.signals).where(inArray(S.signals.companyId, ids)).orderBy(desc(S.signals.date)) : [];
 const companyRows = companies.map((c) => ({
   key: c.key, name: c.name, domain: c.domain, aliases: c.aliases, description: c.description, descriptionUrl: c.descriptionUrl, thesisArea: c.thesisArea, pattern: c.pattern, stage: c.stage,
   amount: c.amount, currency: c.currency, whyFits: c.whyFits, whyFitsManual: c.whyFitsManual, score: c.score, breakdown: c.breakdown, portfolioCheck: c.portfolioCheck, status: c.status,
   firstSeen: c.firstSeen, lastSignal: c.lastSignal,
+  // V2: Funds Raised, the card's picture, the startup filter's verdict, the team's restores and the AI Thesis Check,
+  // so a fresh launch looks like V2 on day one
+  rounds: c.rounds, totalRaised: c.totalRaised, media: c.media, notStartup: c.notStartup, keep: c.keep, thesisCheck: c.thesisCheck, enrichedAt: c.enrichedAt,
   signals: signals.filter((g) => g.companyId === c.id).map((g) => ({ type: g.type, source: g.source, title: g.title, url: g.url, date: g.date, voice: g.voice })),
 }));
 

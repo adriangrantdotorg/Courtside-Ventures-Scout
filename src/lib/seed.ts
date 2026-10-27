@@ -118,6 +118,14 @@ export async function loadSeed(seed: Seed, log: (s: string) => void = () => {}) 
         status: c.status || "new",
         firstSeen: d(c.firstSeen) || new Date(),
         lastSignal: d(c.lastSignal),
+        // V2 (10-27-26): an older seed has none of these, and the daily enrich job fills them in
+        rounds: c.rounds || [],
+        totalRaised: c.totalRaised ?? null,
+        media: c.media ?? null,
+        notStartup: c.notStartup ?? null,
+        keep: !!c.keep,
+        thesisCheck: c.thesisCheck ?? null,
+        enrichedAt: d(c.enrichedAt),
       })
       .onConflictDoNothing()
       .returning({ id: S.companies.id });
