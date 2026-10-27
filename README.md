@@ -12,9 +12,9 @@
 
 ## ✨ Page Features
 
-![The Today page: the Spotlight, the top picks with their thesis-fit gauges, Velocity and Sponsor Radar](docs/today.png)
+![The Today page: Must See, The Combine and On the Radar, every card with its thesis fit and Funds Raised](docs/today.png)
 
-- 🎯 **Today** — Your morning coffee read: the one 'Must See' deal + Top 5 cos that should be on your radar + startups that are heating up
+- 🎯 **Today** — Your morning coffee read: the one 'Must See' startup, The Combine (the top 10 by thesis fit) and everything else On the Radar, each with its fit and Funds Raised
 - 🗂️ **Pipeline** — Thesis-friendly startups, ranked by fit, with a lightweight CRM to move deals from 'New' to 'Reached Out'
 - 🗓️ **IC Meeting** — Your Monday Partner Meeting Starter Pack, i.e. the week's top startups and trends 
 - 📈 **Trends** — The ideas picking up steam across news, creators, filings and the App Store
@@ -42,7 +42,8 @@
 | Culture (mentions and stance) | 8 AM ET |
 | Trends | 9 AM ET |
 | Sponsor Radar | 10 AM ET |
-| The Monday brief | Mondays, 11 AM ET |
+| Funds Raised, websites and pictures, the startup filter, the AI Thesis Check | 11 AM ET |
+| The Monday brief | Mondays, 12 AM ET |
 | Weekly upkeep: portfolio, link checks, the 90-day podcast rule, new Courtside posts into the backtest | Sundays, 2 AM ET |
 
 ---
@@ -229,10 +230,10 @@ The launch stops on the first problem and prints `❌ <what> / The way past it: 
 When the launch prints its ✅ line, send Courtside exactly this kind of message, filled in:
 
 > ✅ **Courtside Ventures Scout is live on your account:** <url> (it is open in your browser)
-> **Try first:** 1) The Spotlight and today's top picks. 2) Sponsor Radar: the brands buying ads on your industry's shows. 3) Tracking: follow a company, a trend or a person, and set an alert.
+> **Try first:** 1) Must See and The Combine: today's best-fit startups. 2) Sponsor Radar: the brands buying ads on your industry's shows. 3) Tracking: follow a company, a trend or a person, and set an alert.
 > **It runs itself:** fresh finds every morning on your Vercel account, a Refresh Now button any time, and the IC Meeting brief every Monday. The first pull of fresh sources is running behind the site right now.
 > **Scout would have flagged Eloelo 785 days, Fanstake 162 days and Baller League 106 days before you announced them:** see Backtest.
-> **Optional, whenever you want:** alerts in Slack (say "set up Slack", about 4 clicks); AI memo drafts (say "turn on AI"; Vercel needs a card on file for its free AI credit, no charge).
+> **Optional, whenever you want:** alerts in Slack (say "set up Slack", about 4 clicks); AI memo drafts and the AI Thesis Check (say "turn on AI"; Vercel needs a card on file for its free AI credit, no charge).
 > **Later:** say "update Scout" and I run `npm run update`, which brings in whatever Adrian has improved since.
 > **Phase I is this prototype; Phase II is built together.** The Phase II link on every page opens the details, and Talk to Adrian goes to his LinkedIn.
 
