@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, Download, LockOpen, Sparkles } from "lucide-react";
 import { useUI } from "./ui";
-import { Ago } from "./Live";
+import { Ago, Clock } from "./Live";
 import { AiChip } from "./cards";
 import { postJSON, getJSON, download } from "@/lib/client";
 
@@ -17,20 +17,16 @@ export function CompanyNotes({ companyId, name, initial }: { companyId: number; 
   async function add() {
     if (!text.trim() || busy) return;
     setBusy(true);
-    const r = await postJSON<{ note: Note }>("/api/note", { companyId, body: text });
+    const r = await ui.undoable("Note", postJSON<{ note: Note }>("/api/note", { companyId, body: text }), async (r) => {
+      const id = r.data!.note.id;
+      setNotes((n) => n.filter((x) => x.id !== id));
+      await fetch("/api/note", { method: "DELETE", body: JSON.stringify({ id }) });
+    });
     setBusy(false);
     if (!r.ok) return ui.error("The note didn't save", r.error || "The server did not answer.");
     setNotes((n) => [r.data!.note, ...n]);
     setText("");
     ui.toast("Note Added");
-    const id = r.data!.note.id;
-    ui.pushUndo({
-      label: "Note",
-      run: async () => {
-        setNotes((n) => n.filter((x) => x.id !== id));
-        await fetch("/api/note", { method: "DELETE", body: JSON.stringify({ id }) });
-      },
-    });
   }
   return (
     <section className="sec" id="notes" aria-label="Team Notes">
@@ -51,7 +47,7 @@ export function CompanyNotes({ companyId, name, initial }: { companyId: number; 
             autoComplete="off"
             spellCheck={false}
           />
-          <button className="btn red" onClick={add} disabled={!text.trim() || busy} title="Save the note for everyone (⌘↩)">
+          <button className="btn" onClick={add} disabled={!text.trim() || busy} title="Save the note for everyone (⌘↩)">
             Add Note
           </button>
         </div>
@@ -72,6 +68,7 @@ export function MemoPanel({ id, name, ai }: { id: number; name: string; ai: bool
   const ui = useUI();
   const [draft, setDraft] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [since, setSince] = useState<number | null>(null);
   async function outline(): Promise<string | null> {
     const r = await getJSON<{ markdown: string }>(`/api/memo/${id}`);
     if (!r.ok || !r.data) {
@@ -99,8 +96,11 @@ export function MemoPanel({ id, name, ai }: { id: number; name: string; ai: bool
   }
   async function aiDraft() {
     setBusy(true);
+    setSince(Date.now());
     const r = await postJSON<{ markdown: string }>(`/api/memo/${id}`, {});
     setBusy(false);
+    setSince(null);
+    if (r.status === 429) return ui.error("Today's AI drafts are used", r.error || "Copy the outline instead.");
     if (!r.ok) return ui.error("The draft didn't come back", r.error || "Copy the outline instead.");
     setDraft(r.data!.markdown);
     ui.toast("Draft Ready");
@@ -118,12 +118,18 @@ export function MemoPanel({ id, name, ai }: { id: number; name: string; ai: bool
       )}
       <div className="row">
         {ai ? (
-          <button className="btn red" onClick={aiDraft} disabled={busy} title="Writes a first draft here in Courtside's voice">
+          <button className="btn" onClick={aiDraft} disabled={busy} title="Writes a first draft here in Courtside's voice">
             <Sparkles className="ico" />
-            {busy ? "Drafting…" : "Draft the Memo"}
+            {busy ? (
+              <>
+                Drafting · <Clock since={since} />
+              </>
+            ) : (
+              "Draft the Memo"
+            )}
           </button>
         ) : (
-          <button className="btn red" onClick={copy} title="Copies the eight-part outline, filled in, for your AI">
+          <button className="btn" onClick={copy} title="Copies the eight-part outline, filled in, for your AI">
             <Copy className="ico" />
             Copy the Outline for Your AI
           </button>

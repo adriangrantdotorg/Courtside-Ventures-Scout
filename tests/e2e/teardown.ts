@@ -4,7 +4,8 @@ import { readFileSync, existsSync } from "node:fs";
 config({ path: ".env.local", quiet: true });
 
 export default async function teardown() {
-  if (process.env.LIVE_URL || !existsSync(".logs/e2e-start")) return;
+  // a run on the local copy (SCOUT_PGLITE) wrote nothing to the shared database
+  if (process.env.LIVE_URL || process.env.SCOUT_PGLITE || !existsSync(".logs/e2e-start")) return;
   const { neon } = await import("@neondatabase/serverless");
   const sql = neon(process.env.DATABASE_URL!);
   const since = readFileSync(".logs/e2e-start", "utf8").trim();

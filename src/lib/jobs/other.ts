@@ -3,7 +3,8 @@ import { and, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import * as F from "../sources/fetchers";
 import { fmtMoney, slugify } from "../format";
-import { cultureOverlaps, sponsorCards, trendCards } from "../queries";
+import { cultureOverlaps, sponsorCards, trendCards, recommendable } from "../queries";
+import { groupStories } from "../stories";
 import { quietCheck } from "./collect-media";
 import { stageQuick, stageNews, stageCourtside } from "./collect-signals";
 import { runBacktest } from "../backtest";
@@ -72,14 +73,14 @@ export async function mondayBrief(ctx: Ctx, weekOverride?: string) {
   let startups = await db()
     .select({ id: S.companies.id, name: S.companies.name, why: S.companies.whyFits, score: S.companies.score, area: S.companies.thesisArea })
     .from(S.companies)
-    .where(and(isNotNull(S.companies.thesisArea), eq(S.companies.hidden, false), gte(S.companies.firstSeen, since)))
+    .where(and(isNotNull(S.companies.thesisArea), eq(S.companies.hidden, false), recommendable(), gte(S.companies.firstSeen, since)))
     .orderBy(desc(S.companies.score))
     .limit(12);
   if (startups.length < 5)
     startups = await db()
       .select({ id: S.companies.id, name: S.companies.name, why: S.companies.whyFits, score: S.companies.score, area: S.companies.thesisArea })
       .from(S.companies)
-      .where(and(isNotNull(S.companies.thesisArea), eq(S.companies.hidden, false)))
+      .where(and(isNotNull(S.companies.thesisArea), eq(S.companies.hidden, false), recommendable()))
       .orderBy(desc(S.companies.lastSignal))
       .limit(12);
   startups = startups.filter((s) => !downIds.includes(s.id)).sort((a, b) => b.score - a.score).slice(0, 5);
@@ -92,9 +93,10 @@ export async function mondayBrief(ctx: Ctx, weekOverride?: string) {
   const culture = (await cultureOverlaps(7, 3)).map((o) => ({ entity: o.entity, voices: o.voices, url: o.quotes[0]?.url }));
   ctx.tick();
   const fundRows = async (kind: string) =>
-    ((await db().execute(sql`select i.title, i.url, i.company, f.name as fund, f.slug from fund_items i join funds f on f.id = i.fund_id where f.kind = ${kind} and i.date > ${since} and i.possible = false order by i.date desc limit 3`)) as unknown as { rows: { title: string; url: string; company: string | null; fund: string; slug: string }[] }).rows;
-  const neighborhood = await fundRows("neighborhood");
-  const synergistic = await fundRows("synergistic");
+    ((await db().execute(sql`select i.title, i.url, i.company, f.name as fund, f.slug from fund_items i join funds f on f.id = i.fund_id where f.kind = ${kind} and i.date > ${since} and i.possible = false order by i.date desc limit 12`)) as unknown as { rows: { title: string; url: string; company: string | null; fund: string; slug: string }[] }).rows;
+  // one entry per story: the same funder and amount reported twice is one deal with two sources (V2, 10-26-26)
+  const neighborhood = groupStories(await fundRows("neighborhood")).slice(0, 3);
+  const synergistic = groupStories(await fundRows("synergistic")).slice(0, 3);
   ctx.tick();
   const [formd] = await db().select().from(S.filings).where(and(isNotNull(S.filings.thesisArea), gte(S.filings.filedAt, since))).orderBy(desc(S.filings.amountSold)).limit(1);
   const data = {

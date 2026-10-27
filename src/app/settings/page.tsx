@@ -5,7 +5,7 @@ import { db, schema as S } from "@/db";
 import { getWeights, getThreshold, getSetting, DEFAULT_QUERIES } from "@/lib/settings";
 import { latestJobRuns } from "@/lib/queries";
 import { slackConnection, slackConfigured } from "@/lib/slack";
-import { aiAvailable } from "@/lib/ai";
+import { aiAvailable, CAPS } from "@/lib/ai";
 import { SettingsView } from "@/components/settings/SettingsView";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function Page() {
     getSetting<string[]>("thesisQueries", DEFAULT_QUERIES),
     getSetting<boolean>("extraSources", false),
     getSetting<string[]>("sourcesOff", []),
-    getSetting<number>("aiDailyCap", 150),
+    Promise.all([getSetting<number>("memoDailyCap", CAPS.memoDailyCap), getSetting<number>("thesisCheckDailyCap", CAPS.thesisCheckDailyCap)]).then(([memo, check]) => ({ memo, check })),
     latestJobRuns(),
     db().execute(sql`select source, last_ok, last_error, error_text, items from source_health order by source`) as unknown as Promise<{ rows: { source: string; last_ok: string | null; last_error: string | null; error_text: string | null; items: number }[] }>,
     db().select({ id: S.voices.id, name: S.voices.name, kind: S.voices.kind, status: S.voices.status, lastEpisode: S.voices.lastEpisode, exempt: S.voices.exempt }).from(S.voices).orderBy(S.voices.name),

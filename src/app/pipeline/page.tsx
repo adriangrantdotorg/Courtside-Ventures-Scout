@@ -8,7 +8,7 @@ export const revalidate = 300;
 export const metadata: Metadata = { title: "Pipeline" };
 
 export default async function Page() {
-  const [cards, threshold] = await Promise.all([companyCards("thesis"), getThreshold()]);
+  const [cards, threshold] = await Promise.all([companyCards("recommend"), getThreshold()]);
   return (
     <Suspense>
       <PipelineView cards={cards} threshold={threshold} />

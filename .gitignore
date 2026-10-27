@@ -48,3 +48,6 @@ tests/.pglite/
 .next-e2e-*
 .env*.local
 .vercel
+
+# a local copy of the data (scripts/local-db.ts)
+.local-db/

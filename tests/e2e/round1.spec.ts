@@ -36,25 +36,32 @@ test("the theme chip is a symbol with no keycap (the key lives in its tooltip)",
   expect(chipBorder).toBe(searchBorder);
 });
 
-test("links carry no underline at rest and a dotted one on hover", async ({ page }) => {
+test("red links carry no underline at rest and a dotted one on hover; neutral prose links show a quiet dotted one", async ({ page }) => {
+  await page.goto("/trends");
+  const a = page.locator("main a:not(.btn):not([class*='x-'])").filter({ hasNot: page.locator("img") }).first();
+  if (await a.count()) {
+    expect(await a.evaluate((el) => getComputedStyle(el).textDecorationLine)).toBe("none");
+    await a.hover();
+    expect(await a.evaluate((el) => [getComputedStyle(el).textDecorationLine, getComputedStyle(el).textDecorationStyle])).toEqual(["underline", "dotted"]);
+  }
+  // V2 (10-26-26): links in prose are neutral, not red, so a dotted underline marks them as links ("Connect Slack")
   await page.goto("/synergistic-funders");
-  const a = page.locator(".ph-lede a").first();
-  expect(await a.evaluate((el) => getComputedStyle(el).textDecorationLine)).toBe("none");
-  await a.hover();
-  const cs = await a.evaluate((el) => [getComputedStyle(el).textDecorationLine, getComputedStyle(el).textDecorationStyle]);
-  expect(cs).toEqual(["underline", "dotted"]);
+  const p = page.locator(".ph-lede a").first();
+  expect(await p.evaluate((el) => [getComputedStyle(el).textDecorationLine, getComputedStyle(el).textDecorationStyle])).toEqual(["underline", "dotted"]);
+  await p.hover();
+  expect(await p.evaluate((el) => getComputedStyle(el).textDecorationStyle)).toBe("solid");
 });
 
 test("the Pipeline dropdowns sit on one line and never offer an empty option", async ({ page }) => {
   await page.goto("/pipeline");
-  const tops = await page.locator(".frow.sels .fsel").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+  const tops = await page.locator(".x-pfilters .fsel").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(tops.length).toBeGreaterThan(3);
   expect(new Set(tops).size).toBe(1);
   // every offered Signal option yields at least one card
   const opts = await page.locator('select[aria-label="Signal"] option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
   for (const v of opts) {
     await page.locator('select[aria-label="Signal"]').selectOption(v);
-    expect(await page.locator("article.dossier, .list article").count(), `signal ${v}`).toBeGreaterThan(0);
+    expect(await page.locator("#prows .x-row").count(), `signal ${v}`).toBeGreaterThan(0);
   }
 });
 

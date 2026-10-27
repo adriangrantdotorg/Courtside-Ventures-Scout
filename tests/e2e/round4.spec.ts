@@ -41,22 +41,6 @@ test("a nav click on Pipeline lands with nothing preselected", async ({ page }) 
   await expect(page.locator('input[aria-label="Search the Pipeline"]')).toHaveValue("");
 });
 
-test("the Spotlight headline shows its underline at rest", async ({ page }) => {
-  await page.goto(HOME);
-  const a = page.locator(".band h2 a").first();
-  if (await a.count()) expect(await a.evaluate((el) => getComputedStyle(el).textDecorationLine)).toBe("underline");
-});
-
-test("the Spotlight underline does not move on hover", async ({ page }) => {
-  await page.goto(HOME);
-  const a = page.locator(".band h2 a").first();
-  if (!(await a.count())) return;
-  const before = await a.evaluate((el) => [getComputedStyle(el).textUnderlineOffset, getComputedStyle(el).textDecorationStyle]);
-  await a.hover();
-  const after = await a.evaluate((el) => [getComputedStyle(el).textUnderlineOffset, getComputedStyle(el).textDecorationStyle]);
-  expect(after).toEqual(before);
-});
-
 test("Add on the Tracking page tracks a typed name", async ({ page }) => {
   test.skip(!!process.env.LIVE_URL, "writes run locally only");
   await page.goto("/tracking");

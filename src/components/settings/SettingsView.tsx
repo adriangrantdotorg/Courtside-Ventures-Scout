@@ -19,7 +19,6 @@ type Sec = { id: string; label: string; key: string; group: "Yours" | "Shared" |
 const SECTIONS: Sec[] = [
   { id: "appearance", label: "Appearance", key: "a", group: "Yours", words: "theme night day density compact roomy text size motion animation" },
   { id: "shortcuts", label: "Shortcuts", key: "k", group: "Yours", words: "keyboard keys rebind" },
-  { id: "home", label: "Home Sections", key: "h", group: "Yours", words: "today sections order show hide" },
   { id: "thesis", label: "Thesis", key: "t", group: "Shared", words: "thesis keyword search queries stage check" },
   { id: "scoring", label: "Scoring", key: "c", group: "Shared", words: "weights threshold worth a look penalties score" },
   { id: "sources", label: "Sources", key: "u", group: "Shared", words: "sources health extra github gdelt rss" },
@@ -27,6 +26,7 @@ const SECTIONS: Sec[] = [
   { id: "voices", label: "Creators and Shows", key: "r", group: "Shared", words: "creators shows podcasts youtube add remove quiet" },
   { id: "funds", label: "Funds", key: "f", group: "Shared", words: "funds co-investors synergistic focus specialist broad" },
   { id: "trackers", label: "Trackers", key: "i", group: "Shared", words: "tracked companies trends people" },
+  { id: "hidden", label: "Hidden Startups", key: "h", group: "Shared", words: "hidden not a startup blog placeholder big company restore filter" },
   { id: "alerts", label: "Alerts", key: "l", group: "Shared", words: "alerts" },
   { id: "slack", label: "Slack", key: "s", group: "Shared", words: "slack connect channel" },
   { id: "ai", label: "AI", key: "g", group: "Shared", words: "ai drafting memo gateway cap" },
@@ -116,12 +116,6 @@ const WLABEL: [string, string, string][] = [
   ["culture", "Culture", "Creators and shows, sponsors, the taste map"],
   ["team", "Team", "Founder track record in public sources"],
   ["geo", "Geography", "US first; India, LatAm, Middle East, Africa for gaming"],
-];
-const HOME_KEYS: [string, string][] = [
-  ["spotlight", "Spotlight, Top Picks, Velocity and Sponsor Radar"],
-  ["proof", "We'd Have Found It First"],
-  ["culture", "Culture"],
-  ["money", "Throw Some D's on It, Neighborhood, Synergistic Funders, From Courtside"],
 ];
 
 export function SettingsView({ data }: { data: Data }) {
@@ -288,8 +282,8 @@ function Pane({ id, data, refresh }: { id: string; data: Data; refresh: () => vo
           </Card>
         </>
       );
-    case "home":
-      return <HomeSections />;
+    case "hidden":
+      return <HiddenStartups />;
     case "thesis":
       return <ThesisPane data={data} refresh={refresh} />;
     case "scoring":
@@ -390,41 +384,42 @@ function Appearance() {
   );
 }
 
-function HomeSections() {
-  const [prefs, setPrefs] = useState<{ order: string[]; hidden: string[] }>({ order: HOME_KEYS.map((k) => k[0]), hidden: [] });
+/** The startup filter's list (V2, 10-26-26): blogs, big companies' products and placeholder names stay off Today,
+ *  the Pipeline and the IC Meeting. Restore puts one back for good; the filter never drops it again. */
+function HiddenStartups() {
+  const ui = useUI();
+  const [rows, setRows] = useState<{ id: number; name: string; domain: string | null; why: string | null; keep: boolean; area: string | null; score: number }[] | null>(null);
   useEffect(() => {
-    try {
-      const p = JSON.parse(localStorage.getItem("scout.home") || "null");
-      if (p) setPrefs({ order: [...p.order, ...HOME_KEYS.map((k) => k[0]).filter((k) => !p.order.includes(k))], hidden: p.hidden || [] });
-    } catch {
-      /* default */
-    }
+    getJSON<{ rows: NonNullable<typeof rows> }>("/api/hidden").then((r) => setRows(r.ok && r.data ? r.data.rows : []));
   }, []);
-  const save = (p: typeof prefs) => {
-    setPrefs(p);
-    try {
-      localStorage.setItem("scout.home", JSON.stringify(p));
-    } catch {
-      /* ignore */
-    }
-  };
-  const label = (k: string) => HOME_KEYS.find((x) => x[0] === k)?.[1] || k;
+  async function set(id: number, keep: boolean, quiet = false): Promise<void> {
+    const save = postJSON<{ keep: boolean; why: string | null }>("/api/hidden", { id, keep });
+    const r = await (quiet ? save : ui.undoable(keep ? "Restore" : "Hide", save, () => set(id, !keep, true)));
+    if (!r.ok) return ui.error("That didn't save", r.error || "The server did not answer.");
+    setRows((xs) => (xs || []).map((x) => (x.id === id ? { ...x, keep, why: r.data!.why } : x)));
+    if (quiet) return;
+    const name = rows?.find((x) => x.id === id)?.name || "Company";
+    ui.toast(`${name} ${keep ? "Restored" : "Hidden"}`);
+  }
   return (
     <>
-      <p className="sub">Which parts of Today show, and in what order. These stay in this browser.</p>
-      <Card title="Today">
-        {prefs.order.map((k, i) => (
-          <div className="trow" key={k}>
-            <span className="lbl">{label(k)}</span>
-            <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <button className="btn" disabled={i === 0} onClick={() => save({ ...prefs, order: prefs.order.map((x, j) => (j === i - 1 ? k : j === i ? prefs.order[i - 1] : x)) })} title="Move this section up">
-                Move Up
-              </button>
-              <button className="btn" disabled={i === prefs.order.length - 1} onClick={() => save({ ...prefs, order: prefs.order.map((x, j) => (j === i + 1 ? k : j === i ? prefs.order[i + 1] : x)) })} title="Move this section down">
-                Move Down
-              </button>
-              <Toggle label={`Show ${label(k)}`} on={!prefs.hidden.includes(k)} onChange={(v) => save({ ...prefs, hidden: v ? prefs.hidden.filter((x) => x !== k) : [...prefs.hidden, k] })} />
+      <p className="sub">Off Scout&apos;s recommendations: blogs, big companies&apos; products, placeholder names, startups the AI check found outside the thesis, and anything the team marked Not a Fit. Restore one and it&apos;s back for good.</p>
+      <Card title="Hidden Startups" note={rows ? `${rows.filter((x) => !x.keep).length} hidden` : undefined}>
+        {rows === null && <p className="sub">Loading the list</p>}
+        {rows && !rows.length && <p className="sub">Nothing is hidden right now.</p>}
+        {rows?.map((x) => (
+          <div className="trow" key={x.id}>
+            <span className="lbl">
+              <a href={`/company/${x.id}`} title={`Open ${x.name} in Scout`}>
+                {x.name}
+              </a>{" "}
+              <span className="mono" style={{ fontSize: 13, color: "var(--text-3)" }}>
+                {x.keep ? "Restored by the team" : x.why}
+              </span>
             </span>
+            <button className="btn" onClick={() => set(x.id, !x.keep)} title={x.keep ? `Hand ${x.name} back to the startup filter` : `Put ${x.name} back on Today and the Pipeline for good`}>
+              {x.keep ? "Hide Again" : "Restore"}
+            </button>
           </div>
         ))}
       </Card>
@@ -1013,19 +1008,20 @@ function SlackPane({ data, refresh }: { data: Data; refresh: () => void }) {
 
 function AiPane({ data, refresh }: { data: Data; refresh: () => void }) {
   const ui = useUI();
-  const s = useShared({ aiDailyCap: data.cap }, refresh);
+  const s = useShared({ memoDailyCap: data.cap.memo, thesisCheckDailyCap: data.cap.check }, refresh);
   return (
     <>
       <p className="sub">AI is a bonus, never a requirement: every section of Today works without it.</p>
       <Card title={`AI Drafting · ${data.ai ? "On" : "Off"} · Optional`}>
-        <p>Memo drafts, smart summaries and plain-English alerts run on Vercel&apos;s free AI credit. Vercel asks for a card on file to switch it on; nothing is charged on the free credit. Everything else already works without it.</p>
+        <p>Memo drafts (GPT-5) and the thesis check on new startups (GPT-5 mini) run on Vercel&apos;s free AI credit of $5 a month. At the defaults, even a month that uses every draft and check stays under it. Vercel asks for a card on file to switch it on; nothing is charged on the free credit. Everything else already works without it.</p>
         {!data.ai && (
           <button className="btn red" onClick={ui.aiCard} title="See what turning on AI drafting involves" style={{ width: "fit-content" }}>
             <Sparkles className="ico" />
             Turn On AI Drafting
           </button>
         )}
-        <SliderRow label="Daily cap" sub="AI calls a day, at most" value={s.draft.aiDailyCap as number} min={10} max={500} onChange={(n) => s.setDraft({ aiDailyCap: n })} />
+        <SliderRow label="Memo drafts a day" sub="About $0.03 each: 4 a day keeps a month under the free $5" value={s.draft.memoDailyCap as number} min={1} max={10} onChange={(n) => s.setDraft({ memoDailyCap: n })} />
+        <SliderRow label="Thesis checks a day" sub="About $0.0005 each, counted apart from memo drafts: 60 a day is under $1 a month" value={s.draft.thesisCheckDailyCap as number} min={10} max={100} onChange={(n) => s.setDraft({ thesisCheckDailyCap: n })} />
       </Card>
       <SaveBar count={s.count} onSave={s.save} onDiscard={s.discard} savedAt={s.savedAt} busy={s.busy} />
     </>

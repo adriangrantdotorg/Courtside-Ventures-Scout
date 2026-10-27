@@ -91,7 +91,7 @@ export async function scoreAll(ctx: Ctx) {
     );
     const why = c.whyFitsManual && c.whyFits ? c.whyFits : c.thesisArea ? whyFitsLine({ name: c.name, description: desc, thesisArea: c.thesisArea, stage: c.stage, amount: c.amount, currency: c.currency, lastSignal: lastSig, near: pcheck?.with || null }) : c.whyFits;
     // hygiene: incumbents and developer tools are never finds, even from the seed
-    const junk = !c.whyFitsManual && (INCUMBENT.test(c.name) || NOT_CONSUMER.test(`${c.name}. ${desc}`.slice(0, 300)));
+    const junk = !c.whyFitsManual && !c.keep && (INCUMBENT.test(c.name) || NOT_CONSUMER.test(`${c.name}. ${desc}`.slice(0, 300)));
     await db()
       .update(S.companies)
       .set({

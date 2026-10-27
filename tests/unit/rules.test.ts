@@ -156,6 +156,11 @@ describe("guards on the source", () => {
       expect(s, f).not.toMatch(/toast\([^)]*(error|failed|didn't)/i);
     }
   });
+  it("every Undo is ready the moment its action starts: ui.undoable, never an Undo added after the save (10-26-26)", () => {
+    // a ⌘Z pressed before a save landed did nothing, or undid the action before it
+    for (const { f, s } of SRC) if (!f.endsWith("ui.tsx")) expect(s, f).not.toMatch(/pushUndo/);
+    expect(SRC.filter(({ s }) => /ui\.undoable\(/.test(s)).length).toBeGreaterThanOrEqual(5);
+  });
   it("nothing truncates text", () => {
     for (const { f, s } of SRC) expect(s, f).not.toMatch(/text-overflow:\s*ellipsis|line-clamp/);
   });

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import { BriefView } from "@/components/BriefView";
+import { briefTop } from "@/lib/queries";
 
 export const revalidate = 300;
 
@@ -17,5 +18,6 @@ export default async function Page({ params }: { params: Promise<{ week: string 
   const [b] = await db().select().from(S.briefs).where(eq(S.briefs.week, week));
   if (!b) notFound();
   const archive = (await db().select({ w: S.briefs.week }).from(S.briefs).orderBy(desc(S.briefs.week)).limit(30)).map((x) => x.w);
-  return <BriefView week={b.week} data={b.data} archive={archive} />;
+  const top = await briefTop(b.data as { startups?: { id: number }[] }, b.week === archive[0]);
+  return <BriefView week={b.week} data={b.data} archive={archive} top={top} />;
 }

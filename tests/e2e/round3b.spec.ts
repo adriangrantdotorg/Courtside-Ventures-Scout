@@ -31,18 +31,18 @@ test("no keycap appears in the top bar, even on hover", async ({ page }) => {
 
 test("home blocks never spill past their column", async ({ page }) => {
   await page.goto(HOME);
-  const spills = await page.locator(".grid2 > section").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).length);
+  const spills = await page.locator("main .x-sec, #radar .x-tile").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).length);
   expect(spills).toBe(0);
 });
 
-test("footer: pages on the left, the person on the right; Check Size on the card", async ({ page }) => {
+test("footer: pages on the left, the person on the right; Funds Raised on the card", async ({ page }) => {
   await page.goto("/pipeline");
   const left = await page.locator("footer.foot .left").boundingBox();
   const right = await page.locator("footer.foot .right").boundingBox();
   expect(left!.x).toBeLessThan(right!.x);
   await expect(page.locator("footer.foot .left")).toContainText("Settings");
   await expect(page.locator("footer.foot .right")).toContainText("Built by");
-  await expect(page.locator(".facts").first()).toContainText("Check Size");
+  await expect(page.locator(".x-row .x-funds").first()).toContainText("Funds Raised");
 });
 
 test("every Phase II on the Culture and Alerts pages opens the door", async ({ page }) => {

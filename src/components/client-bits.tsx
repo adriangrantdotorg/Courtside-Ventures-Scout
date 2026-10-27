@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Info } from "lucide-react";
 import { Overlay, Kbd } from "./ui";
 
@@ -33,21 +33,3 @@ export function SpotlightPill({ kind, rule }: { kind: string; rule: string }) {
   );
 }
 
-/** Per-viewer Today layout (Settings › Home Sections): which blocks show, and in what order. */
-export function HomePrefs() {
-  useEffect(() => {
-    try {
-      const p = JSON.parse(localStorage.getItem("scout.home") || "null") as { order: string[]; hidden: string[] } | null;
-      if (!p) return;
-      document.querySelectorAll<HTMLElement>("[data-home]").forEach((el) => {
-        const k = el.dataset.home!;
-        el.hidden = p.hidden.includes(k);
-        const i = p.order.indexOf(k);
-        el.style.order = String(i < 0 ? 99 : i + 1);
-      });
-    } catch {
-      /* defaults */
-    }
-  }, []);
-  return null;
-}

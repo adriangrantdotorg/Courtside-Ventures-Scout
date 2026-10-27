@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, TriangleAlert, Lock, Sparkles, ArrowRightFromLine } from "lucide-react";
 import { DOORS, ADRIAN_LINKEDIN } from "@/lib/phase2";
+import type { Res } from "@/lib/client";
 import { Ago } from "./Live";
 
 type Toast = { id: number; text: string; fading?: boolean };
@@ -15,7 +16,7 @@ export type ConfirmOpts = {
   danger?: boolean;
   icon?: ReactNode;
 };
-type UndoEntry = { label: string; run: () => Promise<void> | void };
+type UndoEntry = { label: string; run: () => Promise<unknown> | unknown };
 
 type UI = {
   toast: (text: string) => void;
@@ -25,7 +26,9 @@ type UI = {
   aiCard: () => void;
   openPalette: () => void;
   openSheet: () => void;
-  pushUndo: (e: UndoEntry) => void;
+  /** Runs a save with its Undo ready at once: a ⌘Z pressed before the save lands waits for it, then undoes; a save
+   *  that fails leaves nothing to undo. The only way to add an Undo (a fast ⌘Z once undid the action before, 10-26-26). */
+  undoable: <T>(label: string, save: Promise<Res<T>>, run: (r: Res<T>) => Promise<unknown> | unknown) => Promise<Res<T>>;
   undo: () => Promise<boolean>;
   overlayOpen: boolean;
 };
@@ -135,10 +138,25 @@ export function UIProvider({ children, palette, sheet }: { children: ReactNode; 
     undoStack.current.push(e);
     if (undoStack.current.length > 30) undoStack.current.shift();
   }, []);
+  const undoable = useCallback(<T,>(label: string, save: Promise<Res<T>>, run: (r: Res<T>) => Promise<unknown> | unknown) => {
+    const e: UndoEntry = {
+      label,
+      run: async () => {
+        const r = await save;
+        if (!r.ok) return false;
+        await run(r);
+      },
+    };
+    pushUndo(e);
+    void save.then((r) => {
+      if (!r.ok) undoStack.current = undoStack.current.filter((x) => x !== e);
+    });
+    return save;
+  }, [pushUndo]);
   const undo = useCallback(async () => {
     const e = undoStack.current.pop();
     if (!e) return false;
-    await e.run();
+    if ((await e.run()) === false) return false; // its save failed while ⌘Z waited: nothing to undo
     toast(`${e.label} Undone`);
     return true;
   }, [toast]);
@@ -152,7 +170,7 @@ export function UIProvider({ children, palette, sheet }: { children: ReactNode; 
     aiCard: () => setAi(true),
     openPalette: () => setPal(true),
     openSheet: () => setSh(true),
-    pushUndo,
+    undoable,
     undo,
     overlayOpen,
   };

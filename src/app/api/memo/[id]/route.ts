@@ -17,8 +17,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!(await aiAvailable())) return NextResponse.json({ error: "AI drafting is off. Copy the outline instead." }, { status: 409 });
   const m = await memoOutline(Number(id));
   if (!m) return NextResponse.json({ error: "No such company" }, { status: 404 });
-  const { draftMemo } = await import("@/lib/ai");
+  const { draftMemo, MEMO_CAP_MESSAGE } = await import("@/lib/ai");
   const text = await draftMemo(Number(id), m.markdown);
+  if (text === "cap") return NextResponse.json({ error: MEMO_CAP_MESSAGE }, { status: 429 });
   if (!text) return NextResponse.json({ error: "The AI draft did not come back. Copy the outline instead." }, { status: 502 });
   return NextResponse.json({ name: m.name, markdown: text });
 }

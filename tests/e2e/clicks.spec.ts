@@ -1,15 +1,16 @@
 import { test, expect } from "@playwright/test";
-import { PAGES, LIVE } from "./pages";
+import { PAGES, LIVE, ready } from "./pages";
 
 // One test per page: press every visible, enabled button and require a visible effect.
-const SKIP = /refresh|print|csv|copy|slack|send|delete|remove|reset|undo|run backtest|draft the memo|disconnect|flag a ui|move up|move down|confirm|save|discard|add$|add note|track person|save alert|me too|mark fixed|connection email|email/i;
+const SKIP = /refresh|print|csv|copy|slack|send|delete|remove|reset|undo|run backtest|draft the memo|disconnect|flag a ui|move up|move down|confirm|save|discard|add$|add note|track person|save alert|me too|mark fixed|connection email|email|not a fit/i;
 const SKIP_LIVE = /track|vote|this fits|not for|good call|not useful|worth|convincing|day|night|roomy|compact|normal|large|move to|useful hit|a great source|matters/i;
 
 for (const path of PAGES) {
   test(`click every button on ${path}`, async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto(path);
-    await page.waitForTimeout(600);
+    await ready(page);
+    await page.waitForTimeout(300);
     const handles = (await page.locator("main button:visible").elementHandles()) as import("@playwright/test").ElementHandle<HTMLElement>[];
     const labels: string[] = [];
     for (const h of handles) labels.push(((await h.getAttribute("aria-label")) || (await h.textContent()) || (await h.getAttribute("title")) || "").trim());
@@ -39,14 +40,18 @@ for (const path of PAGES) {
       const effect =
         gone ||
         page.url() !== url ||
-        (await page.locator(".veil, [data-testid=toast], [data-testid=error-card], [role=tooltip]").count()) > 0 ||
+        (await page.locator(".veil, [data-testid=toast], [data-testid=error-card], [role=tooltip], [data-testid=theater]").count()) > 0 ||
         (after && (after.p !== before.p || after.e !== before.e || after.c !== before.c)) ||
         (await page.locator("main").innerHTML()) !== html ||
         req2xx;
       if (!effect) dead.push(label);
       pressed++;
-      if (await page.locator(".veil").count()) await page.keyboard.press("Escape");
-      if (page.url() !== url) await page.goto(path);
+      // close what the press opened (a dialog, the player, a menu) so it never covers the next button
+      if (await page.locator(".veil, [data-testid=theater], .x-pop > button[aria-expanded=true]").count()) await page.keyboard.press("Escape");
+      if (page.url() !== url) {
+        await page.goto(path);
+        await ready(page);
+      }
     }
     expect(dead, `buttons with no visible effect on ${path}`).toEqual([]);
   });

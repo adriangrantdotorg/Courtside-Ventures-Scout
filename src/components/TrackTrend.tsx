@@ -11,14 +11,16 @@ export function TrackTrend({ id, term, initial }: { id: number; term: string; in
   async function press() {
     const next = !on;
     setOn(next);
-    const r = await postJSON<{ full?: boolean }>("/api/track", { kind: "trend", id, on: next });
+    const r = await ui.undoable("Track", postJSON<{ full?: boolean }>("/api/track", { kind: "trend", id, on: next }), async () => {
+      setOn(!next);
+      await postJSON("/api/track", { kind: "trend", id, on: !next });
+    });
     if (!r.ok) {
       setOn(!next);
       ui.error(next ? "This trend isn't tracked yet" : "Untrack didn't save", r.error || "The server did not answer.", r.status === 409 ? { label: "See Tracked Trends", href: "/trends" } : undefined);
       return;
     }
     ui.toast(`Trend ${next ? "Tracked" : "Untracked"}`);
-    ui.pushUndo({ label: "Track", run: async () => { setOn(!next); await postJSON("/api/track", { kind: "trend", id, on: !next }); } });
   }
   return (
     <button className="btn track" data-act="track" aria-pressed={on} onClick={press} title={on ? `Stop tracking "${term}"` : `Track "${term}": a daily check and a timeline (up to 30 tracked trends)`}>

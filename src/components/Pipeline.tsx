@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { List, Columns3, Search } from "lucide-react";
-import { Dossier, Vote, Signals, StatusPill, partOf } from "./cards";
+import { Vote, Signals, StatusPill, partOf } from "./cards";
+import { Row } from "./V2";
+import { BUCKETS } from "@/lib/v2";
 import { useUI, ClearX } from "./ui";
 import { Rich } from "./Rich";
 import { postJSON } from "@/lib/client";
@@ -13,16 +15,18 @@ import type { CompanyCard } from "@/lib/queries";
 
 const AREAS = ["health", "sports", "media", "gaming", "lifestyle"];
 const AREA_NAME: Record<string, string> = { health: "Health", sports: "Sports", media: "Media", gaming: "Gaming", lifestyle: "Lifestyle" };
-export type Filters = { q: string; area: string; stage: string; signal: string; score: string; seen: string; rating: string; status: string };
-const EMPTY: Filters = { q: "", area: "", stage: "", signal: "", score: "", seen: "", rating: "", status: "" };
+// V2 (10-26-26): one row of menus. Funds Raised replaced Stage, Category replaced Status and the area chips.
+export type Filters = { q: string; area: string; bucket: string; signal: string; score: string; seen: string; rating: string };
+const EMPTY: Filters = { q: "", area: "", bucket: "", signal: "", score: "", seen: "", rating: "" };
 const PAGE = 20;
 const DAY = 86400000;
 
-/** Does a card pass every filter except the thesis-area chips? One predicate for the list and for the option counts. */
+/** Does a card pass every filter? One predicate for the list and for the menus' options. */
 export function matches(c: CompanyCard, f: Filters, now: number): boolean {
   const q = f.q.trim().toLowerCase();
   if (q && !`${c.name} ${c.domain || ""} ${c.descSegs.map((s) => (typeof s === "string" ? s : s.t)).join("")}`.toLowerCase().includes(q)) return false;
-  if (f.stage === "past" ? !["series-b", "later"].includes(c.stage) : f.stage && c.stage !== f.stage) return false;
+  if (f.bucket !== "" && String(c.bucket) !== f.bucket) return false;
+  if (f.area && c.thesisArea !== f.area) return false;
   if (f.signal && !c.signals.some((s) => s.type === f.signal)) return false;
   if (f.score && c.score < Number(f.score)) return false;
   if (f.seen && now) {
@@ -33,7 +37,6 @@ export function matches(c: CompanyCard, f: Filters, now: number): boolean {
   }
   if (f.rating === "up" && c.votes <= 0) return false;
   if (f.rating === "down" && c.votes >= 0) return false;
-  if (f.status && c.status !== f.status) return false;
   return true;
 }
 
@@ -78,13 +81,11 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
     setPage(0);
   };
 
-  const base = useMemo(() => items.filter((c) => matches(c, f, now)), [items, f, now]);
-  const shown = f.area ? base.filter((c) => c.thesisArea === f.area) : base;
+  const shown = useMemo(() => items.filter((c) => matches(c, f, now)), [items, f, now]);
   // A dropdown option that would show nothing is not offered (Adrian, 10-14-26); the chosen one always stays.
-  const live = (k: keyof Filters, opts: [string, string][]) => opts.filter(([v]) => v === f[k] || items.some((c) => matches(c, { ...f, [k]: v }, now) && (!f.area || c.thesisArea === f.area)));
-  const counts = Object.fromEntries(AREAS.map((a) => [a, base.filter((c) => c.thesisArea === a).length]));
+  const live = (k: keyof Filters, opts: [string, string][]) => opts.filter(([v]) => v === f[k] || items.some((c) => matches(c, { ...f, [k]: v }, now)));
   const active = Object.values(f).some(Boolean);
-  const newToday = now ? items.filter((c) => now - new Date(c.firstSeen).getTime() < DAY).length : 0;
+  const newWeek = items.filter((c) => c.isNew).length;
 
   async function move(c: CompanyCard, status: string) {
     if (c.status === status) return;
@@ -104,21 +105,16 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
     }
     const prev = c.status;
     setItems((xs) => xs.map((x) => (x.id === c.id ? { ...x, status } : x)));
-    const r = await postJSON<{ logId: number }>("/api/status", { id: c.id, status });
+    const r = await ui.undoable("Move", postJSON<{ logId: number }>("/api/status", { id: c.id, status }), async (r) => {
+      setItems((xs) => xs.map((x) => (x.id === c.id ? { ...x, status: prev } : x)));
+      await postJSON("/api/undo", { id: r.data!.logId });
+    });
     if (!r.ok) {
       setItems((xs) => xs.map((x) => (x.id === c.id ? { ...x, status: prev } : x)));
       ui.error(`${c.name} didn't move`, r.error || "The server did not answer.");
       return;
     }
     ui.toast(`${c.name} Moved to ${STATUS_LABEL[status]}`);
-    const logId = r.data!.logId;
-    ui.pushUndo({
-      label: "Move",
-      run: async () => {
-        setItems((xs) => xs.map((x) => (x.id === c.id ? { ...x, status: prev } : x)));
-        await postJSON("/api/undo", { id: logId });
-      },
-    });
   }
 
   return (
@@ -126,7 +122,7 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
       <div className="ph">
         <h1>Pipeline</h1>
         <span className="count">
-          {items.length} companies inside the thesis{newToday ? ` · ${newToday} new today` : ""} · sorted by thesis fit
+          {items.length} startups inside the thesis{newWeek ? ` · ${newWeek} new this week` : ""} · sorted by thesis fit
         </span>
         <div className="views" role="group" aria-label="View">
           <button aria-pressed={view === "list"} onClick={() => setView("list")} title="Show the Pipeline as a ranked list">
@@ -139,8 +135,7 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
           </button>
         </div>
       </div>
-      <div className="filters">
-        <div className="frow">
+      <div className="filters x-pfilters">
         <label className="fsearch">
           <Search className="ico" />
           <input
@@ -157,35 +152,22 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
           />
           <ClearX show={!!f.q} onClear={() => set("q")("")} />
         </label>
+        <Sel label="Funds Raised" value={f.bucket} onChange={set("bucket")} opts={live("bucket", BUCKETS.map((b, i) => [String(i), b] as [string, string]))} />
+        <Sel label="Category" value={f.area} onChange={set("area")} opts={live("area", AREAS.map((a) => [a, AREA_NAME[a]] as [string, string]))} />
+        <Sel label="Fit" value={f.score} onChange={set("score")} opts={live("score", [[String(threshold), `Worth a Look (${threshold}%+)`], ["50", "50%+"], ["40", "40%+"], ["30", "30%+"]])} />
+        <Sel label="Signal" value={f.signal} onChange={set("signal")} opts={live("signal", [["formd", "Form D"], ["formc", "Form C"], ["yc", "Y Combinator"], ["hn", "Show HN"], ["producthunt", "Product Hunt"], ["appstore", "App Store"], ["news", "News"]])} />
+        <Sel label="Seen" value={f.seen} onChange={set("seen")} opts={live("seen", [["today", "Today"], ["week", "This Week"], ["month", "This Month"]])} />
+        <Sel label="Rating" value={f.rating} onChange={set("rating")} opts={live("rating", [["up", "Voted Up"], ["down", "Voted Down"]])} />
         <button className="fclear" disabled={!active} onClick={() => setF(EMPTY)} title="Clear every filter">
           Clear Filters
         </button>
-        </div>
-        <div className="frow sels">
-        <Sel label="Stage" value={f.stage} onChange={set("stage")} opts={live("stage", [["pre-seed", "Pre-Seed"], ["seed", "Seed"], ["series-a", "Series A"], ["unknown", "Unknown"], ["past", "Past Courtside's stage"]])} />
-        <Sel label="Signal" value={f.signal} onChange={set("signal")} opts={live("signal", [["formd", "Form D"], ["formc", "Form C"], ["yc", "Y Combinator"], ["hn", "Show HN"], ["producthunt", "Product Hunt"], ["appstore", "App Store"], ["news", "News"]])} />
-        <Sel label="Score" value={f.score} onChange={set("score")} opts={live("score", [[String(threshold), `Worth a Look (${threshold}+)`], ["50", "50+"], ["40", "40+"], ["30", "30+"]])} />
-        <Sel label="Seen" value={f.seen} onChange={set("seen")} opts={live("seen", [["today", "Today"], ["week", "This week"], ["month", "This month"]])} />
-        <Sel label="Rating" value={f.rating} onChange={set("rating")} opts={live("rating", [["up", "Voted up"], ["down", "Voted down"]])} />
-        <Sel label="Status" value={f.status} onChange={set("status")} opts={live("status", STATUSES.map((s) => [s, STATUS_LABEL[s]] as [string, string]))} />
-        </div>
       </div>
       <div className="rule" />
-      <div className="lanes" role="group" aria-label="Thesis area">
-        <button className="lane-chip" aria-pressed={!f.area} onClick={() => set("area")("")} title="Every thesis area">
-          All <b>{base.length}</b>
-        </button>
-        {AREAS.filter((a) => counts[a] > 0 || f.area === a).map((a) => (
-          <button key={a} className="lane-chip" aria-pressed={f.area === a} onClick={() => set("area")(f.area === a ? "" : a)} title={`Only ${AREA_NAME[a]}`}>
-            {AREA_NAME[a]} <b>{counts[a]}</b>
-          </button>
-        ))}
-      </div>
       {view === "list" ? (
         <>
-          <div className="list">
+          <div className="x-rows" id="prows">
             {shown.slice(page * PAGE, page * PAGE + PAGE).map((c) => (
-              <Dossier key={c.id} c={{ ...c, rank: items.indexOf(c) + 1 }} />
+              <Row key={c.id} c={c} rank={items.indexOf(c) + 1} />
             ))}
             {!shown.length && <p className="empty">No company matches these filters. Clear Filters shows all {items.length}.</p>}
           </div>
@@ -288,10 +270,7 @@ function Board({ cards, move }: { cards: CompanyCard[]; move: (c: CompanyCard, s
               )}
               <div className="facts">
                 <span>
-                  Stage <b>{c.stageText}</b>
-                </span>
-                <span>
-                  Check <b className={c.check.tone === "ok" ? "ok" : ""}>{c.check.text}</b>
+                  Funds Raised <b>{c.funds.text}</b>
                 </span>
               </div>
               <div className="foot2">

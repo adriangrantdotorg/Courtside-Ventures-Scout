@@ -23,14 +23,18 @@ test("Trends: one action bar, Track turns green and says Tracking", async ({ pag
   await expect(track).toHaveAttribute("aria-pressed", was!);
 });
 
-test("Dossier: six actions in two rows of three, no label clipped", async ({ page }) => {
+test("Pipeline rows (V2): Visit or Find Website, Track, More and votes, none clipped; More holds the five actions", async ({ page }) => {
   await page.goto("/pipeline");
-  const acts = page.locator(".acts").first();
-  const tops = await acts.locator(".btn").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-  expect(tops.length).toBe(6);
-  expect(new Set(tops).size).toBe(2);
-  const clipped = await acts.locator(".btn .long, .btn").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).length);
+  const side = page.locator(".x-row .x-side").first();
+  await expect(side.locator(".x-btn.site")).toHaveText(/^(Visit Website|Find Website)$/);
+  await expect(side.locator('[data-act="track"]')).toBeVisible();
+  await expect(side.locator(".x-votes")).toBeVisible();
+  const clipped = await side.locator(".x-btn").evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).length);
   expect(clipped).toBe(0);
+  await side.locator(".x-more").click();
+  expect((await side.locator(".x-menu button").allInnerTexts()).map((t) => t.trim())).toEqual(["Draft Investment Memo", "Connection Email", "Add Note", "Copy for CRM", "Download CSV", "Not a Fit"]);
+  await page.keyboard.press("Escape");
+  await expect(side.locator(".x-menu")).toBeHidden();
 });
 
 test("Filings and deals are tables with the picked columns", async ({ page }) => {

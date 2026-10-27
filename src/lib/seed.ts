@@ -278,7 +278,8 @@ export async function loadSeed(seed: Seed, log: (s: string) => void = () => {}) 
   if (st.laneQueries) await put("thesisQueries", st.laneQueries);
   await put("extraSources", !!st.extraSources);
   await put("sourcesOff", st.sourcesOff || []);
-  await put("aiDailyCap", st.aiDailyCap || 150);
+  await put("memoDailyCap", 4); // the free $5 a month never runs out mid-month (10-26-26)
+  await put("thesisCheckDailyCap", 60);
   await put("worthThreshold", 45);
   if (st.appRanks) await put("appRanks", st.appRanks);
   if (st.secIndexDays) await put("secIndexDays", st.secIndexDays);

@@ -1,11 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pin, PenLine, Mail, Copy, Download, Plus, Lock, Sparkles, Check } from "lucide-react";
 import { useUI, Overlay, Kbd } from "./ui";
-import { Ago } from "./Live";
-import { Rich } from "./Rich";
 import { postJSON, getJSON, download } from "@/lib/client";
 import { favicon, STATUS_LABEL } from "@/lib/format";
 import type { CompanyCard } from "@/lib/queries";
@@ -65,7 +62,7 @@ const Down = () => (
   </svg>
 );
 
-export function Vote({ k, initial = 0, row, upTitle = "This fits Courtside", downTitle = "Not for Courtside", name }: { k: string; initial?: number; row?: boolean; upTitle?: string; downTitle?: string; name?: string }) {
+export function Vote({ k, initial = 0, row, upTitle = "This fits Courtside", downTitle = "Not for Courtside", name, v2 }: { k: string; initial?: number; row?: boolean; upTitle?: string; downTitle?: string; name?: string; v2?: boolean }) {
   useVoteStore();
   const ui = useUI();
   useEffect(() => want(k), [k]);
@@ -86,7 +83,7 @@ export function Vote({ k, initial = 0, row, upTitle = "This fits Courtside", dow
       emit();
       await postJSON("/api/vote", { key: k, value: before.m });
     };
-    const r = await postJSON<{ count: number }>("/api/vote", { key: k, value: next });
+    const r = await ui.undoable("Vote", postJSON<{ count: number }>("/api/vote", { key: k, value: next }), undo);
     if (!r.ok) {
       store.mine[k] = before.m;
       store.counts[k] = before.c;
@@ -96,8 +93,23 @@ export function Vote({ k, initial = 0, row, upTitle = "This fits Courtside", dow
     }
     store.counts[k] = r.data!.count;
     emit();
-    ui.pushUndo({ label: "Vote", run: undo });
   }
+  if (v2)
+    return (
+      <span className="x-votes" data-vote={k}>
+        <button type="button" className={"up" + (mine === 1 ? " on" : "")} data-act="up" aria-pressed={mine === 1} title={upTitle} aria-label={`${upTitle}${name ? `: ${name}` : ""}`} onClick={() => press(1)}>
+          <svg className="x-ico fill" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 3l6 9H2z" />
+          </svg>
+        </button>
+        <b data-testid="vote-count">{count}</b>
+        <button type="button" className={"dn" + (mine === -1 ? " on" : "")} data-act="down" aria-pressed={mine === -1} title={downTitle} aria-label={`${downTitle}${name ? `: ${name}` : ""}`} onClick={() => press(-1)}>
+          <svg className="x-ico fill" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 13L2 4h12z" />
+          </svg>
+        </button>
+      </span>
+    );
   return (
     <span className={"votes" + (row ? " row" : "")} data-vote={k}>
       <button data-act="up" aria-pressed={mine === 1} title={upTitle} aria-label={`${upTitle}${name ? `: ${name}` : ""}`} onClick={() => press(1)}>
@@ -113,71 +125,9 @@ export function Vote({ k, initial = 0, row, upTitle = "This fits Courtside", dow
   );
 }
 
-/* ---------- gauge ---------- */
-const PARTS: [string, string][] = [
-  ["thesis", "Thesis fit"],
-  ["stage", "Stage and check"],
-  ["signal", "Signal strength"],
-  ["culture", "Culture"],
-  ["team", "Team"],
-  ["geo", "Geography"],
-  ["learned", "Learned from votes"],
-  ["penalties", "Penalties"],
-];
+/* ---------- score parts ---------- */
 export function partOf(b: Record<string, number>, k: string) {
   return k === "thesis" ? (b.thesis ?? b.laneFit ?? 0) : (b[k] ?? 0);
-}
-
-export function Gauge({ score, breakdown }: { score: number; breakdown: Record<string, number> }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLButtonElement>(null);
-  const off = 141.37 * (1 - Math.max(0, Math.min(100, score)) / 100);
-  return (
-    <button
-      ref={ref}
-      className="gauge gauge-btn"
-      style={{ ["--v" as string]: score }}
-      aria-expanded={open}
-      title="How Scout scored it"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onClick={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
-      onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-    >
-      <div className="dial">
-        <svg viewBox="0 0 110 62">
-          <path className="gt" d="M10 56 A45 45 0 0 1 100 56" />
-          <path className="gf" d="M10 56 A45 45 0 0 1 100 56" style={{ strokeDashoffset: off }} />
-        </svg>
-        <span className="needle" />
-      </div>
-      <b>
-        {score}
-        <small>%</small>
-      </b>
-      <em>Thesis Fit</em>
-      {open && (
-        <span className="breakdown" role="tooltip">
-          {PARTS.map(([k, l]) =>
-            k === "learned" || k === "penalties" ? (
-              partOf(breakdown, k) ? (
-                <span key={k} style={{ display: "flex", justifyContent: "space-between" }}>
-                  {l}
-                  <b>{partOf(breakdown, k) > 0 ? "+" : ""}{partOf(breakdown, k)}</b>
-                </span>
-              ) : null
-            ) : (
-              <span key={k} style={{ display: "flex", justifyContent: "space-between" }}>
-                {l}
-                <b>{partOf(breakdown, k)}</b>
-              </span>
-            ),
-          )}
-        </span>
-      )}
-    </button>
-  );
 }
 
 /* ---------- signals ---------- */
@@ -225,9 +175,9 @@ export function AiChip() {
 /* ---------- the six actions ---------- */
 function csvRow(c: CompanyCard, notes = "") {
   const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
-  const head = ["Organization", "Domain", "Description", "Thesis area", "Stage", "Score", "Source links", "Notes"];
+  const head = ["Organization", "Domain", "Description", "Thesis area", "Funds Raised", "Thesis Fit", "Source links", "Notes"];
   const desc = c.descSegs.map((s) => (typeof s === "string" ? s : s.t)).join("");
-  const row = [c.name, c.domain || "", desc, c.area, c.stageText, String(c.score), c.signals.map((s) => s.url).join(" "), notes];
+  const row = [c.name, c.domain || "", desc, c.area, c.funds.text, `${c.score}%`, c.signals.map((s) => s.url).join(" "), notes];
   return head.map(esc).join(",") + "\n" + row.map(esc).join(",") + "\n";
 }
 function crmText(c: CompanyCard) {
@@ -235,10 +185,10 @@ function crmText(c: CompanyCard) {
   const why = c.whySegs.map((s) => (typeof s === "string" ? s : s.t)).join("");
   return [
     `${c.name}${c.domain ? ` (${c.domain})` : ""}`,
-    `Thesis area: ${c.area} · Stage: ${c.stageText} · Thesis fit: ${c.score}%`,
+    `Thesis area: ${c.area} · Funds Raised: ${c.funds.text}${c.funds.stage ? ` (${c.funds.stage})` : ""} · Thesis fit: ${c.score}%`,
     `What it does: ${desc}`,
     `Why it fits Courtside: ${why}`,
-    c.portfolio ? `Portfolio: ${c.portfolio.text} (${c.portfolio.reason})` : "",
+    c.overlap ? `Overlaps with ${c.overlap.with}, a Courtside portfolio company (${c.overlap.reason})` : "",
     `Sources:`,
     ...c.signals.map((s) => `- ${s.title}: ${s.url}`),
     `Status: ${STATUS_LABEL[c.status]} · Scout: ${location.origin}/company/${c.id}`,
@@ -247,27 +197,61 @@ function crmText(c: CompanyCard) {
     .join("\n");
 }
 
+/* ---------- Not a Fit: a card the team hides leaves every list on the page at once, and comes back on Undo ---------- */
+const gone = { ids: new Set<number>(), v: 0, subs: new Set<() => void>() };
+function setGone(id: number, on: boolean) {
+  if (on) gone.ids.add(id);
+  else gone.ids.delete(id);
+  gone.v++;
+  gone.subs.forEach((f) => f());
+}
+const subGone = (f: () => void) => {
+  gone.subs.add(f);
+  return () => {
+    gone.subs.delete(f);
+  };
+};
+/** True once the team hid this company in this visit; false again after Undo. */
+export function useGone(id: number) {
+  return useSyncExternalStore(subGone, () => gone.ids.has(id), () => false);
+}
+/** The cards still showing: a hidden one leaves the list and the rest close up. */
+export function useShown<T extends { id: number }>(cards: T[]): T[] {
+  useSyncExternalStore(subGone, () => gone.v, () => 0);
+  return cards.filter((c) => !gone.ids.has(c.id));
+}
+
 export function useActions(c: CompanyCard) {
   const ui = useUI();
   const [tracked, setTracked] = useState(c.tracked);
   const [noting, setNoting] = useState(false);
+  const isGone = useGone(c.id);
+  async function notFit() {
+    setGone(c.id, true);
+    const r = await ui.undoable("Not a Fit", postJSON("/api/hidden", { id: c.id, keep: false }), async () => {
+      setGone(c.id, false);
+      await postJSON("/api/hidden", { id: c.id, keep: null });
+    });
+    if (!r.ok) {
+      setGone(c.id, false);
+      ui.error(`Not a Fit didn't save for ${c.name}`, r.error || "The server did not answer.");
+      return;
+    }
+    ui.toast(`${c.name} Hidden`);
+  }
   async function track() {
     const next = !tracked;
     setTracked(next);
-    const r = await postJSON("/api/track", { kind: "company", id: c.id, on: next });
+    const r = await ui.undoable("Track", postJSON("/api/track", { kind: "company", id: c.id, on: next }), async () => {
+      setTracked(!next);
+      await postJSON("/api/track", { kind: "company", id: c.id, on: !next });
+    });
     if (!r.ok) {
       setTracked(!next);
       ui.error(`Track didn't save for ${c.name}`, r.error || "The server did not answer.");
       return;
     }
     ui.toast(`${c.name} ${next ? "Tracked" : "Untracked"}`);
-    ui.pushUndo({
-      label: "Track",
-      run: async () => {
-        setTracked(!next);
-        await postJSON("/api/track", { kind: "company", id: c.id, on: !next });
-      },
-    });
   }
   async function memo() {
     const r = await getJSON<{ markdown: string }>(`/api/memo/${c.id}`);
@@ -299,7 +283,7 @@ export function useActions(c: CompanyCard) {
     download(`${c.name}.csv`, csvRow(c), "text/csv");
     ui.toast("CSV Downloaded");
   }
-  return { tracked, track, memo, email, crm, csv, noting, setNoting };
+  return { tracked, track, memo, email, crm, csv, noting, setNoting, gone: isGone, notFit };
 }
 
 export function NoteDialog({ c, close, onSaved }: { c: { id: number; name: string }; close: () => void; onSaved?: (n: { id: number; body: string; createdAt: string }) => void }) {
@@ -309,12 +293,12 @@ export function NoteDialog({ c, close, onSaved }: { c: { id: number; name: strin
   async function save() {
     if (!text.trim() || busy) return;
     setBusy(true);
-    const r = await postJSON<{ note: { id: number; body: string; createdAt: string } }>("/api/note", { companyId: c.id, body: text });
+    const r = await ui.undoable("Note", postJSON<{ note: { id: number; body: string; createdAt: string } }>("/api/note", { companyId: c.id, body: text }), async (r) => {
+      await fetch("/api/note", { method: "DELETE", body: JSON.stringify({ id: r.data!.note.id }) });
+    });
     setBusy(false);
     if (!r.ok) return ui.error("The note didn't save", r.error || "The server did not answer.");
     ui.toast("Note Added");
-    const id = r.data!.note.id;
-    ui.pushUndo({ label: "Note", run: async () => void (await fetch("/api/note", { method: "DELETE", body: JSON.stringify({ id }) })) });
     onSaved?.(r.data!.note);
     close();
   }
@@ -375,102 +359,6 @@ export function Actions({ c, onNote }: { c: CompanyCard; onNote?: (n: { id: numb
   );
 }
 
-/* ---------- the Dossier card ---------- */
-export function Facts({ c }: { c: CompanyCard }) {
-  return (
-    <div className="facts">
-      <span>
-        Stage <b>{c.stageText}</b>
-      </span>
-      <span>
-        Check Size <b className={c.check.tone === "ok" ? "ok" : c.check.tone === "warn" ? "warn" : ""}>{c.check.text}</b>
-      </span>
-      {c.portfolio && (
-        <span>
-          Portfolio{" "}
-          <b className={c.portfolio.kind === "competes" ? "warn" : "amber"}>
-            {c.portfolio.href ? (
-              <a href={c.portfolio.href} target="_blank" rel="noopener noreferrer" title={`${c.portfolio.reason}. Opens ${c.portfolio.text.replace(/^(Adjacent to|Competes with) /, "")} on Courtside's site in a new window`}>
-                {c.portfolio.text}
-              </a>
-            ) : (
-              c.portfolio.text
-            )}
-          </b>
-        </span>
-      )}
-      {c.lastSignal && (
-        <span>
-          Last Signal{" "}
-          <b>
-            <Ago date={c.lastSignal} ch={7} />
-          </b>
-        </span>
-      )}
-    </div>
-  );
-}
-
 export function StatusPill({ s }: { s: string }) {
   return <span className={"status " + s}>{STATUS_LABEL[s] || s}</span>;
-}
-
-export function Dossier({ c, showRank = true }: { c: CompanyCard; showRank?: boolean }) {
-  return (
-    <article className="t1" data-item data-company={c.id}>
-      <Gauge score={c.score} breakdown={c.breakdown} />
-      <div className="t1-main" style={{ minWidth: 0 }}>
-        <div className="lane">
-          {c.domain && (
-            <span className="clogo">
-              <img src={favicon(c.domain)} alt="" width={18} height={18} />
-            </span>
-          )}
-          {showRank && <span>#{c.rank} ·</span>}
-          {c.area && <span>{c.area} ·</span>}
-          {c.domain && (
-            <a href={`https://${c.domain}`} target="_blank" rel="noopener noreferrer" title={`Opens ${c.domain} in a new window`}>
-              {c.domain}
-            </a>
-          )}
-          <StatusPill s={c.status} />
-          {c.possible && <span className="tag gold">Possible match</span>}
-        </div>
-        <h3 className="cname">
-          <Link href={`/company/${c.id}`} data-act="open" title={`Open ${c.name} in Scout`}>
-            {c.name}
-          </Link>
-        </h3>
-        {c.descSegs.length > 0 && (
-          <p className="cdesc">
-            <Rich segs={c.descSegs} />{" "}
-            {c.descSource && !c.signals.some((s) => sigLabel(s).toLowerCase() === c.descSource!.label.toLowerCase()) && (
-              <span className="per">
-                per{" "}
-                <a href={c.descSource.url} target="_blank" rel="noopener noreferrer" title={`Opens ${c.descSource.label} in a new window`}>
-                  {c.descSource.label}
-                </a>
-              </span>
-            )}
-          </p>
-        )}
-        {c.whySegs.length > 0 && (
-          <div className="why">
-            <Rich segs={c.whySegs} />
-          </div>
-        )}
-        {c.signals.length > 0 && (
-          <div className="row">
-            <span className="k">Signals</span>
-            <Signals signals={c.signals} />
-          </div>
-        )}
-        <div className="row">
-          <Facts c={c} />
-        </div>
-      </div>
-      <Vote k={`company:${c.id}`} initial={c.votes} name={c.name} />
-      <Actions c={c} />
-    </article>
-  );
 }

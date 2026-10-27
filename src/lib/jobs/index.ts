@@ -6,6 +6,8 @@ import { scoreAll } from "./score";
 import { cultureJob, sponsorsJob, trendsJob } from "./media-jobs";
 import { fundsJob } from "./funds";
 import { alertsJob, mondayBrief, weeklyJob, refreshNow } from "./other";
+import { enrichJob, backfillJob, aiThesisCheck } from "./enrich";
+import { libraryJob } from "./library";
 import { refreshSpotlight } from "../spotlight";
 import { checkAi } from "../ai";
 
@@ -26,14 +28,26 @@ export const JOBS: Record<string, { label: string; hourUtc: number; weekday?: nu
   culture: { label: "Culture", hourUtc: 12, run: cultureJob },
   trends: { label: "Trends", hourUtc: 13, run: trendsJob },
   sponsors: { label: "Sponsor Radar", hourUtc: 14, run: sponsorsJob },
+  enrich: { label: "Funds Raised, websites and pictures", hourUtc: 15, run: enrichJob },
   "monday-brief": { label: "IC Meeting brief", hourUtc: 4, weekday: 1, run: (c) => mondayBrief(c) },
   weekly: { label: "Weekly upkeep", hourUtc: 6, weekday: 0, run: weeklyJob },
+};
+
+/** Jobs with no schedule, run by hand: npm run pipeline:all -- backfill */
+export const ON_DEMAND: Record<string, { label: string; run: (ctx: Ctx) => Promise<void> }> = {
+  backfill: { label: "Funding news, last 12 months", run: (c) => backfillJob(c) },
+  // the backlog after the backfill: checks until today's cap (npm run pipeline:all -- thesis-check)
+  "thesis-check": { label: "AI Thesis Check", run: (c) => aiThesisCheck(c) },
+  // ship day: every waiting card checked in one go, past the daily cap (npm run pipeline:all -- thesis-check-all --rounds=20)
+  "thesis-check-all": { label: "AI Thesis Check, Every Card", run: (c) => aiThesisCheck(c, { launch: true }) },
+  // ship day: the startups the team saved, screened by the AI Thesis Check (npm run pipeline:all -- library --rounds=5)
+  library: { label: "Library Backfill", run: libraryJob },
 };
 
 export const REFRESH = { label: "Refresh Now", run: refreshNow };
 
 export async function runNamed(name: string, budgetMs = 240_000) {
-  const j = name === "refresh" ? REFRESH : JOBS[name];
+  const j = name === "refresh" ? REFRESH : JOBS[name] || ON_DEMAND[name];
   if (!j) throw new Error(`unknown job ${name}`);
   const res = await runJob(name, j.run, budgetMs);
   try {

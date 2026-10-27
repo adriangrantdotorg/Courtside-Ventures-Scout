@@ -4,7 +4,7 @@ import { db, schema as S } from "@/db";
 import { getSetting, setSetting } from "@/lib/settings";
 import { rateLimit } from "@/lib/visitor";
 
-const ALLOWED = new Set(["scoreWeights", "worthThreshold", "stage", "thesisQueries", "extraSources", "sourcesOff", "aiDailyCap", "lanes"]);
+const ALLOWED = new Set(["scoreWeights", "worthThreshold", "stage", "thesisQueries", "extraSources", "sourcesOff", "aiDailyCap", "memoDailyCap", "thesisCheckDailyCap", "lanes"]);
 const LABEL: Record<string, string> = { thesis: "Thesis weight", stage: "Stage weight", signal: "Signal weight", culture: "Culture weight", team: "Team weight", geo: "Geography weight" };
 
 function describe(key: string, before: unknown, after: unknown): string {
@@ -21,6 +21,8 @@ function describe(key: string, before: unknown, after: unknown): string {
   if (key === "sourcesOff") return `Sources off: ${(after as string[]).join(", ") || "none"}`;
   if (key === "thesisQueries") return "Thesis keyword search edited";
   if (key === "aiDailyCap") return `AI daily cap ${before} → ${after}`;
+  if (key === "memoDailyCap") return `Memo drafts a day ${before} → ${after}`;
+  if (key === "thesisCheckDailyCap") return `Thesis checks a day ${before} → ${after}`;
   if (key === "stage") return "Stage and check filters edited";
   return `${key} changed`;
 }

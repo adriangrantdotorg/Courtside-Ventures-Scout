@@ -22,7 +22,8 @@
     "update": "bash scripts/update.sh",
     "release": "bash scripts/release.sh",
     "seed:export": "tsx scripts/export-seed.ts",
-    "verify:light": "tsx scripts/verify-live.ts --light"
+    "verify:light": "tsx scripts/verify-live.ts --light",
+    "check:ai": "tsx scripts/check-ai.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -30,7 +31,7 @@
     "drizzle-orm": "^0.45.4",
     "fast-xml-parser": "^5.11.2",
     "lucide-react": "^1.56.0",
-    "next": "16.4.0",
+    "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"
@@ -45,7 +46,7 @@
     "dotenv": "^18.0.7",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
-    "eslint-config-next": "16.4.0",
+    "eslint-config-next": "16.4.3",
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.4"

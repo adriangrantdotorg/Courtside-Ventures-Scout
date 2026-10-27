@@ -3,7 +3,8 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import { companyCards, trendCards } from "@/lib/queries";
-import { Dossier, LockChip, Vote } from "@/components/cards";
+import { LockChip, Vote } from "@/components/cards";
+import { Row } from "@/components/V2";
 import { AddedProvider, TrackingTabs, AddedList, AddPersonAdded, NewAlertAdded } from "@/components/Added";
 import { AddTracked } from "@/components/AddTracked";
 import { TrackTrend } from "@/components/TrackTrend";
@@ -66,9 +67,9 @@ export default async function Page() {
         <div>
           <AddTracked kind="company" placeholder="Add a company by name or site" />
           <AddedList kind="companies" />
-          <div className="list">
-            {cos.map((c, i) => (
-              <Dossier key={c.id} c={{ ...c, rank: i + 1 }} showRank={false} />
+          <div className="x-rows track">
+            {cos.map((c) => (
+              <Row key={c.id} c={c} />
             ))}
             {!cos.length && <p className="empty">No company is tracked yet. Press Track on any card, or add one above.</p>}
           </div>

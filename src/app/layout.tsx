@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./progress.css";
+import "./v2.css";
 import { Shell } from "@/components/Shell";
 import { Ticker } from "@/components/Ticker";
 

@@ -13,6 +13,8 @@ export type Ctx = {
   cursor: <T>(fallback: T) => Promise<T>;
   saveCursor: (c: unknown) => Promise<void>;
   change: (s: string) => void;
+  /** Work is left that a next run picks up (pipeline:all then runs another round), though the time box isn't used up. */
+  more: () => void;
 };
 
 export async function lastCursor<T>(job: string, fallback: T): Promise<T> {
@@ -20,7 +22,7 @@ export async function lastCursor<T>(job: string, fallback: T): Promise<T> {
   return (r?.cursor as T) ?? fallback;
 }
 
-export async function runJob(job: string, fn: (ctx: Ctx) => Promise<void>, budgetMs = 240_000): Promise<{ id: number; status: string; items: number; errors: number; changes: string[]; timedOut: boolean }> {
+export async function runJob(job: string, fn: (ctx: Ctx) => Promise<void>, budgetMs = 240_000): Promise<{ id: number; status: string; items: number; errors: number; changes: string[]; timedOut: boolean; more: boolean }> {
   const t0 = Date.now();
   const prevCursor = await lastCursor(job, null as unknown);
   const [row] = await db().insert(S.jobRuns).values({ job, status: "running", stage: "starting" }).returning({ id: S.jobRuns.id });
@@ -32,6 +34,7 @@ export async function runJob(job: string, fn: (ctx: Ctx) => Promise<void>, budge
   let cursor: unknown = prevCursor;
   const log: string[] = [];
   const changes: string[] = [];
+  let more = false;
   let lastWrite = 0;
   const write = async (force = false) => {
     if (!force && Date.now() - lastWrite < 2000) return;
@@ -67,11 +70,14 @@ export async function runJob(job: string, fn: (ctx: Ctx) => Promise<void>, budge
     change: (s) => {
       if (changes.length < 50) changes.push(s);
     },
+    more: () => {
+      more = true;
+    },
   };
   let status = "ok";
   try {
     await fn(ctx);
-    if (Date.now() - t0 > budgetMs) status = "partial";
+    if (Date.now() - t0 > budgetMs || more) status = "partial";
   } catch (e) {
     status = "error";
     ctx.error(e instanceof Error ? e.stack || e.message : String(e));
@@ -81,7 +87,7 @@ export async function runJob(job: string, fn: (ctx: Ctx) => Promise<void>, budge
     .update(S.jobRuns)
     .set({ status, finishedAt: new Date(), stage: status === "error" ? "stopped on an error" : "done", done, total, items, errors, log: log.join("\n"), cursor: cursor as object, changes })
     .where(eq(S.jobRuns.id, row.id));
-  return { id: row.id, status, items, errors, changes, timedOut: Date.now() - t0 > budgetMs };
+  return { id: row.id, status, items, errors, changes, timedOut: Date.now() - t0 > budgetMs, more };
 }
 
 /** A job is "running" only if it started recently and has not finished. */

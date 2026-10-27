@@ -89,7 +89,11 @@ export function SponsorsView({ cards }: { cards: SponsorCard[] }) {
                 </h3>
                 {c.hot && <span className="tag gold">🔥 New on several shows</span>}
               </div>
-              {c.whatItIs && <p style={{ margin: "6px 0" }}>{c.whatItIs}</p>}
+              {c.whatItIs && (
+                <p style={{ margin: "6px 0" }} data-quote title="From the brand's own website">
+                  {c.whatItIs}
+                </p>
+              )}
               <div className="meta">
                 <span className={"tag" + (c.fitTag === "thesis" ? " green" : "")}>{FIT[c.fitTag] || c.fitTag}</span>
                 <span className={c.fresh ? "" : ""} style={c.fresh ? { color: "var(--green)" } : undefined}>
@@ -111,7 +115,7 @@ export function SponsorsView({ cards }: { cards: SponsorCard[] }) {
                       {s.show}
                     </a>{" "}
                     <span className="mono" style={{ color: "var(--text-3)" }}>{fmtDate(s.date)}</span>
-                    {s.evidence && <span style={{ color: "var(--text-2)" }}> · &ldquo;{s.evidence.slice(0, 120)}&rdquo;</span>}
+                    {s.evidence && <span style={{ color: "var(--text-2)" }} data-quote> · &ldquo;{s.evidence.slice(0, 120)}&rdquo;</span>}
                   </li>
                 ))}
               </ul>

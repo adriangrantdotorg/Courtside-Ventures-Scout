@@ -18,7 +18,16 @@ for (const path of PAGES) {
     const errors = await open(page, path);
     await page.waitForTimeout(800);
     expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");
-    const text = await page.locator("body").innerText();
+    // Scout's own words: quoted episode notes and creators' quotes are someone else's text ("Innovation-based pricing", 10-26-26)
+    const text = await page.locator("body").evaluate((b) => {
+      const c = b.cloneNode(true) as HTMLElement;
+      c.querySelectorAll("blockquote, q, [data-quote]").forEach((q) => q.remove());
+      document.body.appendChild(c);
+      c.style.cssText = "position:absolute;left:-99999px;top:0";
+      const t = c.innerText;
+      c.remove();
+      return t;
+    });
     for (const b of BANNED) expect(text, `${path} shows ${b}`).not.toMatch(b);
     // links: red, no underline at rest (the dotted underline comes on hover, tested in round1.spec); never browser blue
     for (const theme of ["dark", "light"]) {
@@ -31,7 +40,8 @@ for (const path of PAGES) {
           if (cs.display === "none" || !a.offsetParent) return;
           const opted = a.matches(OPT);
           if (cs.color === "rgb(0, 0, 238)") out.push("blue:" + a.textContent);
-          if (cs.textDecorationLine.includes("underline") && !a.matches(".band h2 a")) out.push("underlined at rest:" + a.textContent?.slice(0, 40)); // the Spotlight headline keeps its underline (10-14-26)
+          // neutral links in prose carry a quiet dotted underline so they read as links without red (V2, 10-26-26)
+          if (cs.textDecorationLine.includes("underline") && !a.matches(".band h2 a, .ph-lede a, .pgh .lede2 a, .doc .main li > a, .doc .main p > a, .x-popbox li > a")) out.push("underlined at rest:" + a.textContent?.slice(0, 40));
           void opted;
         });
         return out.slice(0, 10);
@@ -64,7 +74,7 @@ test("nav labels are one line at 1440 and 1024", async ({ page }) => {
 for (const w of [390, 768, 1440]) {
   test(`no horizontal scroll and no clipped text at ${w}`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: 900 });
-    for (const p of [HOME, "/pipeline", "/company/3", "/settings", "/backtest"]) {
+    for (const p of [HOME, "/pipeline", "/company/3", "/settings", "/backtest", "/tracking", "/brief"]) {
       await page.goto(p);
       await page.waitForTimeout(300);
       const sw = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -93,7 +103,7 @@ test("phone: the tab bar works and every card action is reachable", async ({ pag
   await page.locator(".tabbar a", { hasText: "Trends" }).click();
   await expect(page).toHaveURL(/\/trends/);
   await page.goto("/pipeline");
-  const acts = page.locator(".t1").first().locator(".acts .btn");
+  const acts = page.locator(".x-row").first().locator(".x-side > *");
   for (let i = 0; i < (await acts.count()); i++) await expect(acts.nth(i)).toBeInViewport({ ratio: 0.01 }).catch(async () => {
     await acts.nth(i).scrollIntoViewIfNeeded();
     await expect(acts.nth(i)).toBeVisible();
@@ -113,7 +123,7 @@ test("every Talk to Adrian opens his LinkedIn in a new window", async ({ page })
   const a = page.locator("[data-talk]").first();
   await expect(a).toHaveAttribute("href", "https://www.linkedin.com/in/adriangrant3/");
   await expect(a).toHaveAttribute("target", "_blank");
-  await page.goto("/company/3");
+  await page.goto("/tracking");
   await page.locator(".lock-chip").first().click();
   const door = page.getByTestId("door");
   await expect(door).toBeVisible();

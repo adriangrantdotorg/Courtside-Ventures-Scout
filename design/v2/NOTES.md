@@ -37,7 +37,7 @@ Full-page mockups for the V2 redesign. Regenerate with `python3 design/v2/build.
 - **IC Meeting:** the Top 5 are Pipeline-style Tile rows (fit and Funds Raised first). **Repeated news is one entry:** stories about the same funder and amount merge, the extra coverage behind a Sources button (this week IDL's Series A appeared twice in Neighborhood Deals). Links in its lists, and "Connect Slack", are neutral, not red.
 - **Tracking:** tracked companies are the same Tile rows, with Track shown as Tracking. The other tabs (Trends, People, Alerts, Configure Alerts) keep today's design.
 
-## Live-site behaviors to build (the mockups can't show all of them)
+## Live-site behaviors (built 10-26-26 in `src/components/V2.tsx`, `src/lib/v2.ts`, `src/lib/enrich.ts`, `src/lib/jobs/enrich.ts`)
 
 - **Every video plays on Scout, in the on-site player** (dimmed backdrop, the company's name and what is playing, Pause, Mute, Close, Visit Website; Esc or a click outside closes; double-click goes full screen). Nothing opens YouTube or another site.
   - Video files (a company's own MP4 / WebM) play in a `<video>` element.
@@ -55,3 +55,13 @@ Full-page mockups for the V2 redesign. Regenerate with `python3 design/v2/build.
 - The live CSS has a `.pill` class (uppercase): new classes must start with `x-`.
 - Off-screen WebKit runs no CSS transitions, and `innerText` applies CSS uppercase: tests turn transitions off and read `textContent`.
 - `v2.js` sets the option switches LAST: the filter state must exist before the first filter runs.
+
+## Build notes (10-26-26)
+
+- "New" is one rule everywhere: a signal in the last 7 days (the green chip, "New This Week", the Pipeline count).
+- On the Radar shows every recommendable startup but Must See, 18 at a time with Show More; the filter covers all of them.
+- Must See: the highest fit among startups with a signal in the last 14 days (`MUST_SEE_DAYS`).
+- Funds Raised: each round's amount is the highest any source reported; sources that disagree show a range ("$2.0–2.2M"), and the cap reads the high end.
+- The website finder accepts a page only when it names the company and a fact from its news (a proper noun from the headlines, or a distinctive word from the description); with no news, the page must read as the same thesis area.
+- Coverage check (`scripts/coverage.ts`): none of the 22 library startups was in Scout. Most raised before Scout started (it reads the last 7 days), so `backfill` reads 12 months of funding news; the headline gates now read "clinches", "investment in X" and music and audio-wellness words. 11 had no funding story under their name in Google News: only a funding database would catch those.
+

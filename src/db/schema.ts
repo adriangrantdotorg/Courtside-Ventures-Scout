@@ -16,6 +16,31 @@ import { sql } from "drizzle-orm";
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
 
+/** The card's picture, in the order Scout looks: product video, App Store screenshots, website preview image, logo. */
+export type Media = {
+  kind: "yt" | "mp4" | "shots" | "site" | "logo";
+  yt?: string;
+  mp4?: string;
+  poster?: string;
+  shots?: string[];
+  img?: string;
+  logo?: string;
+  play?: string;
+  from?: string;
+};
+/** The AI Thesis Check: is this a consumer startup inside Courtside's thesis? (10-26-26) */
+export type ThesisCheck = { ok: boolean; area: string | null; why: string; model: string; at: string };
+/** One funding round and every source that reported it. */
+export type Round = {
+  stage: string;
+  amount: number | null;
+  low: number | null;
+  currency: string;
+  date: string | null;
+  investors: string | null;
+  sources: { name: string; url: string; amount: number | null; date: string | null; title: string }[];
+};
+
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
   value: jsonb("value").notNull(),
@@ -64,6 +89,15 @@ export const companies = pgTable(
     firstSeen: ts("first_seen").defaultNow().notNull(),
     lastSignal: ts("last_signal"),
     updatedAt: ts("updated_at").defaultNow(),
+    // V2 (10-26-26): what the cards show, filled by the enrich job
+    media: jsonb("media").$type<Media | null>(),
+    rounds: jsonb("rounds").$type<Round[]>().default(sql`'[]'::jsonb`).notNull(),
+    totalRaised: doublePrecision("total_raised"),
+    notStartup: text("not_startup"), // why Scout drops it from recommendations: a blog, a big company's product, a placeholder name
+    keep: boolean("keep").default(false).notNull(), // the team restored it: the startup filter never drops it again
+    mergedInto: integer("merged_into"), // a duplicate of another card (the same funding story)
+    thesisCheck: jsonb("thesis_check").$type<ThesisCheck | null>(), // the AI Thesis Check's answer, asked once per company
+    enrichedAt: ts("enriched_at"),
   },
   (t) => [index("companies_score_idx").on(t.score), index("companies_domain_idx").on(t.domain)],
 );
@@ -391,7 +425,8 @@ export const rateLimits = pgTable("rate_limits", {
 
 export const aiUsage = pgTable("ai_usage", {
   day: date("day").primaryKey(),
-  calls: integer("calls").default(0).notNull(),
+  calls: integer("calls").default(0).notNull(), // memo drafts
+  checks: integer("checks").default(0).notNull(), // AI Thesis Checks, capped separately
 });
 
 export const cache = pgTable("cache", {

@@ -2,3 +2,8 @@ export const HOME = process.env.LIVE_URL ? "/" : "/preview";
 export const PAGES = [HOME, "/pipeline", "/company/3", "/trends", "/sponsors", "/culture", "/tracking", "/brief", "/backtest", "/throw-some-ds", "/neighborhood", "/synergistic-funders", "/settings", "/about"];
 export const LIVE = !!process.env.LIVE_URL;
 export const IGNORE_CONSOLE = /favicon|Failed to load resource|s2\/favicons|status of 404|ERR_BLOCKED|net::ERR|Download the React DevTools|unavatar/i;
+
+/** The page's buttons work once React has hydrated it (Shell sets html[data-hydrated]). */
+export async function ready(page: import("@playwright/test").Page) {
+  await page.waitForFunction(() => document.documentElement.dataset.hydrated === "1", null, { timeout: 15_000 });
+}

@@ -2,8 +2,8 @@
 import { fetchText, fetchJSON, health } from "./http";
 import * as P from "./parse";
 
-const GN = (q: string, when = "7d", before?: string) =>
-  `https://news.google.com/rss/search?q=${encodeURIComponent(q + (before ? ` before:${before}` : ` when:${when}`))}&hl=en-US&gl=US&ceid=US:en`;
+const GN = (q: string, when = "7d", before?: string, after?: string) =>
+  `https://news.google.com/rss/search?q=${encodeURIComponent(q + (after ? ` after:${after}` : "") + (before ? ` before:${before}` : ` when:${when}`))}&hl=en-US&gl=US&ceid=US:en`;
 
 export async function secDailyIndex(day: Date): Promise<P.IndexRow[]> {
   const y = day.getUTCFullYear();
@@ -61,8 +61,8 @@ export async function appLookup(id: string): Promise<{ sellerUrl: string | null;
   return r ? { sellerUrl: r.sellerUrl || null, releaseDate: r.releaseDate || null, description: r.description || "" } : null;
 }
 
-export async function googleNews(q: string, when = "7d", before?: string) {
-  const t = await fetchText(GN(q, when, before), { source: "google-news" });
+export async function googleNews(q: string, when = "7d", before?: string, after?: string) {
+  const t = await fetchText(GN(q, when, before, after), { source: "google-news" });
   return t ? P.parseGoogleNews(t) : [];
 }
 
@@ -138,6 +138,22 @@ export async function ogImage(url: string): Promise<string | null> {
   const t = await fetchText(url, { timeoutMs: 8000 });
   const m = t?.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
   return m ? m[1] : null;
+}
+
+/** An App Store app's website, screenshots and icon (V2 cards). */
+export async function appDetails(id: string): Promise<{ sellerUrl: string | null; shots: string[]; icon: string | null; name: string } | null> {
+  const j = (await fetchJSON(`https://itunes.apple.com/lookup?id=${id}`, { source: "appstore" })) as {
+    results?: { sellerUrl?: string; screenshotUrls?: string[]; artworkUrl512?: string; trackName?: string }[];
+  } | null;
+  const r = j?.results?.[0];
+  return r ? { sellerUrl: r.sellerUrl || null, shots: r.screenshotUrls || [], icon: r.artworkUrl512 || null, name: r.trackName || "" } : null;
+}
+
+/** A homepage's HTML, following redirects; null when it doesn't answer. */
+export async function homepage(url: string): Promise<{ html: string; url: string } | null> {
+  const { fetchRaw } = await import("./http");
+  const r = await fetchRaw(url, { timeoutMs: 7000, accept: "text/html" });
+  return r.ok && r.text ? { html: r.text.slice(0, 600_000), url } : null;
 }
 
 export async function linkAlive(url: string): Promise<boolean> {

@@ -1,12 +1,14 @@
 // Every read the pages make. Server-side only (pages, routes, jobs).
-import { and, asc, desc, eq, gte, inArray, isNotNull, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import { cache } from "react";
 import { db, schema } from "@/db";
 import { buildIndex, linkify, type Entity, type Index, type Seg } from "./linkify";
-import { areaLabel, domainOf, fmtMoney, pastStage, slugify, stageLabel } from "./format";
+import { areaLabel, domainOf, favicon, fmtMoney, pastStage, slugify, stageLabel } from "./format";
 import { getSetting, getThreshold, type BuildProgress } from "./settings";
 import { cleanCopy, unescapeTwice } from "./copy";
 import { classify } from "./thesis";
+import { CAP, fundsOf, bucketOf, isNew, searchUrl, type Funds } from "./v2";
+import type { Media } from "@/db/schema";
 export { cleanCopy };
 
 const S = schema;
@@ -36,6 +38,16 @@ export type CompanyCard = {
   rank: number;
   votes: number;
   possible: boolean;
+  // V2 (10-26-26)
+  site: string | null; // the official website, or null: then the card offers Find Website
+  searchUrl: string;
+  media: Media;
+  logo: string | null;
+  funds: Funds;
+  bucket: number;
+  overlap: { with: string; reason: string; logo: string | null; href: string | null } | null; // real competitors only
+  isNew: boolean;
+  recommend: boolean; // a startup under the $15M cap, not a duplicate
 };
 
 const SOURCE_NAMES: Record<string, string> = {
@@ -66,7 +78,7 @@ export const entityIndex = cache(async (): Promise<Index> => {
   const list: Entity[] = [];
   try {
     const [cos, port, voices, funds, people] = await Promise.all([
-      db().select({ id: S.companies.id, name: S.companies.name, aliases: S.companies.aliases }).from(S.companies).where(eq(S.companies.hidden, false)),
+      db().select({ id: S.companies.id, name: S.companies.name, aliases: S.companies.aliases }).from(S.companies).where(and(eq(S.companies.hidden, false), isNull(S.companies.mergedInto))),
       db().select({ name: S.portfolio.name, url: S.portfolio.descriptionUrl, site: S.portfolio.site }).from(S.portfolio),
       db().select({ name: S.voices.name, site: S.voices.site, kind: S.voices.kind }).from(S.voices),
       db().select({ name: S.funds.name, slug: S.funds.slug, kind: S.funds.kind }).from(S.funds),
@@ -107,9 +119,14 @@ export async function voteCounts(keys: string[]): Promise<Record<string, number>
 /* ---------- companies ---------- */
 type CoRow = typeof S.companies.$inferSelect;
 
-export async function companyCards(where: "thesis" | "all" | number[], limit?: number): Promise<CompanyCard[]> {
-  const conds = [eq(S.companies.hidden, false)];
-  if (where === "thesis") conds.push(isNotNull(S.companies.thesisArea));
+/** What Scout recommends: a startup (not a blog, a big company's product or a placeholder), not a duplicate card,
+ *  and under the $15M cap (Adrian, 10-26-26). Sponsor Radar and the other context pages are not limited. */
+export const recommendable = () => sql`${S.companies.notStartup} is null and ${S.companies.mergedInto} is null and coalesce(${S.companies.totalRaised}, ${S.companies.amount}, 0) < ${CAP}`;
+
+export async function companyCards(where: "thesis" | "recommend" | "all" | number[], limit?: number): Promise<CompanyCard[]> {
+  const conds = [eq(S.companies.hidden, false), isNull(S.companies.mergedInto)];
+  if (where === "thesis" || where === "recommend") conds.push(isNotNull(S.companies.thesisArea));
+  if (where === "recommend") conds.push(recommendable());
   if (Array.isArray(where)) conds.push(inArray(S.companies.id, where.length ? where : [-1]));
   const q = db()
     .select()
@@ -127,10 +144,12 @@ export async function toCards(cos: CoRow[]): Promise<CompanyCard[]> {
     db().select().from(S.signals).where(inArray(S.signals.companyId, ids)).orderBy(desc(S.signals.date)),
     entityIndex(),
     voteCounts(ids.map((i) => `company:${i}`)),
-    db().select({ name: S.portfolio.name, url: S.portfolio.descriptionUrl }).from(S.portfolio),
+    db().select({ name: S.portfolio.name, url: S.portfolio.descriptionUrl, site: S.portfolio.site }).from(S.portfolio),
     getSetting<{ minCheck: number; maxCheck: number }>("stage", { minCheck: 500000, maxCheck: 4000000 }),
   ]);
   const portUrl = new Map(port.map((p) => [p.name.toLowerCase(), p.url]));
+  const portSite = new Map(port.map((p) => [p.name.toLowerCase(), p.site]));
+  const now = Date.now();
   const byCo = new Map<number, SignalOut[]>();
   for (const s of sigs) {
     const list = byCo.get(s.companyId) || [];
@@ -172,8 +191,27 @@ export async function toCards(cos: CoRow[]): Promise<CompanyCard[]> {
       rank: i + 1,
       votes: counts[`company:${c.id}`] || 0,
       possible: c.possibleMatch,
+      ...v2Fields(c, pc && pc.kind === "competes" ? { with: pc.with, reason: cleanCopy(pc.reason), logo: portSite.get(pc.with.toLowerCase()) ? favicon(portSite.get(pc.with.toLowerCase())) : null, href: portUrl.get(pc.with.toLowerCase()) || null } : null, now),
     };
   });
+}
+
+/** The V2 card fields from a company row. A tie to a portfolio company shows only when they really compete. */
+function v2Fields(c: CoRow, overlap: CompanyCard["overlap"], now: number) {
+  const funds = fundsOf(c.rounds || [], { amount: c.amount, currency: c.currency, stage: c.stage });
+  const logo = c.media?.logo || (c.domain ? favicon(c.domain) : null);
+  const media: Media = c.media || { kind: "logo", logo: logo || undefined };
+  return {
+    site: c.domain ? `https://${c.domain}` : null,
+    searchUrl: searchUrl(c.name, areaLabel(c.thesisArea)),
+    media,
+    logo,
+    funds,
+    bucket: bucketOf(funds.total),
+    overlap,
+    isNew: isNew(c.lastSignal ? c.lastSignal.toISOString() : null, now),
+    recommend: !c.notStartup && !c.mergedInto && !(funds.total && funds.total >= CAP),
+  };
 }
 
 function checkFit(c: CoRow, cfg: { minCheck: number; maxCheck: number }): CompanyCard["check"] {
@@ -200,15 +238,15 @@ export async function companyById(id: number) {
   const [c] = await db().select().from(S.companies).where(eq(S.companies.id, id)).limit(1);
   if (!c) return null;
   const [card] = await toCards([c]);
-  const allRank = await rows<{ n: number }>(sql`select count(*)::int as n from companies where hidden = false and thesis_area is not null and score > ${c.score}`);
+  const allRank = await rows<{ n: number }>(sql`select count(*)::int as n from companies where hidden = false and thesis_area is not null and ${recommendable()} and score > ${c.score}`);
   card.rank = Number(allRank[0]?.n || 0) + 1;
   const [notes, similar, near] = await Promise.all([
     db().select().from(S.notes).where(eq(S.notes.companyId, id)).orderBy(desc(S.notes.createdAt)),
     c.thesisArea
       ? db()
-          .select({ id: S.companies.id, name: S.companies.name, domain: S.companies.domain, why: S.companies.whyFits, score: S.companies.score })
+          .select({ id: S.companies.id, name: S.companies.name, domain: S.companies.domain, why: S.companies.whyFits, score: S.companies.score, media: S.companies.media })
           .from(S.companies)
-          .where(and(eq(S.companies.thesisArea, c.thesisArea), ne(S.companies.id, id), eq(S.companies.hidden, false)))
+          .where(and(eq(S.companies.thesisArea, c.thesisArea), ne(S.companies.id, id), eq(S.companies.hidden, false), recommendable()))
           .orderBy(desc(S.companies.score))
           .limit(4)
       : Promise.resolve([]),
@@ -233,9 +271,9 @@ export async function homeCounts() {
   const threshold = await getThreshold();
   const [r] = await rows<{ worth: number; total: number; today: number; formds: number; sponsors: number }>(sql`
     select
-      (select count(*)::int from companies where hidden = false and thesis_area is not null and status <> 'passed' and score >= ${threshold}) as worth,
-      (select count(*)::int from companies where hidden = false and thesis_area is not null) as total,
-      (select count(*)::int from companies where hidden = false and thesis_area is not null and first_seen > now() - interval '24 hours') as today,
+      (select count(*)::int from companies where hidden = false and thesis_area is not null and ${recommendable()} and status <> 'passed' and score >= ${threshold}) as worth,
+      (select count(*)::int from companies where hidden = false and thesis_area is not null and ${recommendable()}) as total,
+      (select count(*)::int from companies where hidden = false and thesis_area is not null and ${recommendable()} and first_seen > now() - interval '24 hours') as today,
       (select count(*)::int from filings where thesis_area is not null and filed_at > now() - interval '7 days') as formds,
       (select count(*)::int from sponsors) as sponsors`);
   return { ...r, threshold };
@@ -546,7 +584,7 @@ export async function tickerItems(): Promise<TickerItem[]> {
     db()
       .select({ id: S.companies.id, name: S.companies.name, score: S.companies.score, prev: S.companies.prevScore, domain: S.companies.domain, amount: S.companies.amount, currency: S.companies.currency, stage: S.companies.stage })
       .from(S.companies)
-      .where(and(eq(S.companies.hidden, false), isNotNull(S.companies.thesisArea)))
+      .where(and(eq(S.companies.hidden, false), isNotNull(S.companies.thesisArea), recommendable()))
       .orderBy(desc(S.companies.score))
       .limit(5),
     db().select().from(S.filings).where(isNotNull(S.filings.thesisArea)).orderBy(desc(S.filings.filedAt)).limit(3),
@@ -596,3 +634,13 @@ export async function latestJobRuns() {
 }
 
 export { slugify, areaLabel, stageLabel };
+
+/** The IC Meeting's Top 5 as V2 cards, in the brief's order, under today's rules (startups only, under $15M).
+ *  The latest brief fills any gap with the next-best startups, so it always shows five. */
+export async function briefTop(data: { startups?: { id: number }[] } | null, fill: boolean): Promise<CompanyCard[]> {
+  const ids = (data?.startups || []).map((s) => s.id);
+  const cards = (await companyCards(ids)).filter((c) => c.recommend && c.thesisArea);
+  const top = ids.map((id) => cards.find((c) => c.id === id)).filter(Boolean) as CompanyCard[];
+  if (fill && top.length < 5) for (const c of await companyCards("recommend", 12)) if (top.length < 5 && !top.some((x) => x.id === c.id)) top.push(c);
+  return top.slice(0, 5);
+}

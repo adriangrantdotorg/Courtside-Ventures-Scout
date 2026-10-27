@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { HOME, LIVE } from "./pages";
+import { HOME, LIVE, ready } from "./pages";
 
 test.describe("controls are real", () => {
   test.skip(LIVE, "writes or long holds run locally only");
@@ -67,22 +67,27 @@ test.describe("controls are real", () => {
     const pa = await a.newPage();
     const pb = await b.newPage();
     await pa.goto("/pipeline");
-    const key = await pa.locator("[data-vote]").first().getAttribute("data-vote");
+    await ready(pa);
+    await pa.waitForLoadState("networkidle"); // the live counts have loaded
+    // the last row: the click tests press the first rows' votes on the same server at the same time
+    const key = await pa.locator("[data-vote]").last().getAttribute("data-vote");
     const vA = pa.locator(`[data-vote="${key}"]`).first();
-    const start = Number(await vA.locator(".n").innerText());
+    const start = Number(await vA.getByTestId("vote-count").innerText());
     await vA.locator("[data-act=up]").click();
-    await expect(vA.locator(".n")).toHaveText(String(start + 1), { timeout: 300 });
+    await expect(vA.getByTestId("vote-count")).toHaveText(String(start + 1), { timeout: 300 });
     await pa.waitForTimeout(800);
     await pb.goto("/pipeline");
+    await ready(pb);
     const vB = pb.locator(`[data-vote="${key}"]`).first();
-    await expect(vB.locator(".n")).toHaveText(String(start + 1));
+    await expect(vB.getByTestId("vote-count")).toHaveText(String(start + 1));
     await vB.locator("[data-act=up]").click();
-    await expect(vB.locator(".n")).toHaveText(String(start + 2));
+    await expect(vB.getByTestId("vote-count")).toHaveText(String(start + 2));
     await pb.waitForTimeout(800);
     await pa.reload();
-    await expect(pa.locator(`[data-vote="${key}"]`).first().locator(".n")).toHaveText(String(start + 2));
+    await ready(pa);
+    await expect(pa.locator(`[data-vote="${key}"]`).first().getByTestId("vote-count")).toHaveText(String(start + 2));
     await pa.locator(`[data-vote="${key}"]`).first().locator("[data-act=up]").click();
-    await expect(pa.locator(`[data-vote="${key}"]`).first().locator(".n")).toHaveText(String(start + 1));
+    await expect(pa.locator(`[data-vote="${key}"]`).first().getByTestId("vote-count")).toHaveText(String(start + 1));
     await a.close();
     await b.close();
   });
@@ -93,10 +98,10 @@ test.describe("controls are real", () => {
     await page.goto("/pipeline");
     await batch; // the live counts land before the start value is read (the cached page can carry an older count)
     const v = page.locator("[data-vote]").first();
-    const start = await v.locator(".n").innerText();
+    const start = await v.getByTestId("vote-count").innerText();
     await v.locator("[data-act=up]").click();
     await expect(page.getByTestId("error-card")).toBeVisible();
-    await expect(v.locator(".n")).toHaveText(start);
+    await expect(v.getByTestId("vote-count")).toHaveText(start);
   });
 
   test("core shortcuts: j k, ⌘K, ?, /, Esc; never while typing", async ({ page }) => {

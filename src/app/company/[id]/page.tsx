@@ -1,15 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { companyById } from "@/lib/queries";
 import { getWeights } from "@/lib/settings";
 import { aiAvailable } from "@/lib/ai";
-import { Gauge, Vote, Actions, Facts, StatusPill, LockChip } from "@/components/cards";
-import { sigLabel } from "@/lib/labels";
 import { CompanyNotes, MemoPanel } from "@/components/company-bits";
-import { Ago } from "@/components/Live";
-import { Rich } from "@/components/Rich";
-import { favicon, fmtDate, fmtExact, areaLabel, stageLabel, STATUS_LABEL } from "@/lib/format";
+import { DealSheet, FitRing, Logo } from "@/components/V2";
+import { favicon, fmtDate, areaLabel, STAGE_LABEL, STATUS_LABEL } from "@/lib/format";
+import { moneyRange, CAP } from "@/lib/v2";
 import { cleanCopy } from "@/lib/copy";
 
 export const revalidate = 300;
@@ -21,24 +19,36 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 const PARTS: [string, string][] = [
-  ["thesis", "Thesis fit"],
-  ["stage", "Stage and check"],
-  ["signal", "Signal strength"],
+  ["thesis", "Thesis Fit"],
+  ["stage", "Stage and Check"],
+  ["signal", "Signal Strength"],
   ["culture", "Culture"],
   ["team", "Team"],
   ["geo", "Geography"],
 ];
 
+/** A company page, V2 (10-26-26): the Deal Sheet. Thesis fit and Funds Raised lead; Visit Website is the one red button. */
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const d = await companyById(Number(id));
   if (!d) notFound();
+  if (d.row.mergedInto) redirect(`/company/${d.row.mergedInto}`); // a duplicate card opens the one it merged into
   const [w, ai] = await Promise.all([getWeights(), aiAvailable()]);
   const c = d.card;
   const max: Record<string, number> = { thesis: w.thesis, stage: w.stage, signal: w.signal, culture: w.culture, team: w.team, geo: w.geo };
   const b = c.breakdown;
   const val = (k: string) => (k === "thesis" ? (b.thesis ?? b.laneFit ?? 0) : (b[k] ?? 0));
   const low = PARTS.filter(([k]) => val(k) / (max[k] || 1) < 0.35).map(([, l]) => l.toLowerCase());
+  const hint = [
+    (b.learned || 0) !== 0 ? `Votes moved it ${b.learned > 0 ? "up" : "down"} ${Math.abs(b.learned)} points.` : "",
+    (b.penalties || 0) !== 0 ? `Penalties took ${Math.abs(b.penalties)} points.` : "",
+    low.length ? `Low on ${low.join(" and ")}: it rises as more independent stories arrive, as creators and shows mention it, and as founders show up in filings.` : "Strong across the board.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const rounds = c.funds.rounds.filter((r) => r.amount || r.stage !== "unknown");
+  const investors = rounds.map((r) => r.investors).find(Boolean) || null;
+  const why = d.row.notStartup ? d.row.notStartup : c.funds.total && c.funds.total >= CAP ? `It has raised ${c.funds.text}, past Scout's $15M limit` : null;
   return (
     <div>
       <nav className="crumb" aria-label="Breadcrumb">
@@ -48,155 +58,71 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <span>›</span>
         <span>{c.name}</span>
       </nav>
-      <header className="dh" data-item>
-        <Gauge score={c.score} breakdown={c.breakdown} />
-        <div className="dh-main" style={{ minWidth: 0 }}>
-          <div className="lane">
-            {c.domain && (
-              <span className="clogo">
-                <img src={favicon(c.domain)} alt="" width={18} height={18} />
-              </span>
-            )}
-            <span>#{c.rank} ·</span>
-            {c.area && <span>{c.area} ·</span>}
-            {c.domain && (
-              <a href={`https://${c.domain}`} target="_blank" rel="noopener noreferrer" title={`Opens ${c.domain} in a new window`}>
-                {c.domain}
-              </a>
-            )}
-            <StatusPill s={c.status} />
-          </div>
-          <h1>{c.name}</h1>
-          {c.descSegs.length > 0 && (
-            <p className="cdesc">
-              <Rich segs={c.descSegs} />{" "}
-              {c.descSource && (
-                <span className="per">
-                  per{" "}
-                  <a href={c.descSource.url} target="_blank" rel="noopener noreferrer" title={`Opens ${c.descSource.label} in a new window`}>
-                    {c.descSource.label}
-                  </a>
-                </span>
-              )}
-            </p>
-          )}
-          {c.whySegs.length > 0 && (
-            <div className="why">
-              <Rich segs={c.whySegs} />
-            </div>
-          )}
-          <div className="facts" style={{ marginTop: 8 }}>
-            <Facts c={c} />
-            <span>
-              First Seen <b>{fmtDate(c.firstSeen)}</b>
-            </span>
-          </div>
-          <div className="locked">
-            <LockChip door="funding">Funding history</LockChip>
-            <LockChip door="mutuals">Mutual connections</LockChip>
-          </div>
-        </div>
-        <Vote k={`company:${c.id}`} initial={c.votes} name={c.name} />
-        <Actions c={c} />
-      </header>
+      {why && (
+        <p className="x-notrec" role="note">
+          <b>Not on Scout&apos;s recommendations.</b> {why}. It stays here for reference{d.row.notStartup ? "; Settings › Hidden Startups can restore it" : ""}.
+        </p>
+      )}
+      <DealSheet c={c} bars={PARTS.map(([k, l]) => [l, val(k), max[k]])} hint={hint} investors={investors} off={!!why} />
+      {rounds.length > 0 && (
+        <section className="x-rounds" aria-label="Funds Raised History">
+          <h2 className="x-h2">Funds Raised History</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Round</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Investors</th>
+                <th>Sources</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rounds.map((r, i) => (
+                <tr key={i}>
+                  <td className="r-st">{r.stage !== "unknown" ? STAGE_LABEL[r.stage] || r.stage : "Round"}</td>
+                  <td className="r-amt">{r.amount ? moneyRange(r.low ?? r.amount, r.amount) : "Not Disclosed"}</td>
+                  <td className="r-date">{fmtDate(r.date)}</td>
+                  <td>{r.investors || "Not Reported"}</td>
+                  <td>
+                    {r.sources
+                      .filter((s) => s.url)
+                      .map((s, j) => (
+                        <span key={j}>
+                          {j > 0 && " · "}
+                          <a href={s.url} target="_blank" rel="noopener noreferrer" title={`Opens ${s.title.slice(0, 80)} in a new window`}>
+                            {s.name}
+                          </a>
+                        </span>
+                      ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
       <div className="rule" />
       <div className="dbody">
         <div className="dcol">
-          <section className="sec" aria-label="Signals">
-            <div className="h">
-              <h2>Signals</h2>
-            </div>
-            <div className="tl">
-              {c.signals.map((s) => (
-                <div className="tli" key={s.id}>
-                  <div className="when">
-                    <Ago date={s.date} ch={7} />
-                    <span title={fmtExact(s.date)}>{fmtDate(s.date)}</span>
-                    <a className="src2" href={s.url} target="_blank" rel="noopener noreferrer" title={`Opens ${s.domain} in a new window`}>
-                      <img src={favicon(s.domain)} alt="" width={14} height={14} />
-                      {sigLabel(s)}
-                    </a>
-                  </div>
-                  <div className="what">
-                    <a href={s.url} target="_blank" rel="noopener noreferrer" title="Opens the source in a new window">
-                      {s.title}
-                    </a>
-                  </div>
-                </div>
-              ))}
-              <div className="tli own">
-                <div className="when">
-                  <Ago date={c.firstSeen} ch={7} />
-                  <span>{fmtDate(c.firstSeen)}</span>
-                </div>
-                <div className="what">Added to the Pipeline by Scout</div>
-              </div>
-            </div>
-          </section>
-          <section className="sec" aria-label={`Why ${c.score}%`}>
-            <div className="h">
-              <h2>Why {c.score}%</h2>
-              <Link className="more" href="/settings?s=scoring" title="Open Settings › Scoring">
-                How Scout Scores
-              </Link>
-            </div>
-            <div className="bars">
-              {PARTS.map(([k, l]) => (
-                <div className="bar" key={k}>
-                  <span className="lbl">{l}</span>
-                  <span className="tr">
-                    <i style={{ ["--w" as string]: `${Math.round((val(k) / (max[k] || 1)) * 100)}%` }} />
-                  </span>
-                  <span className="n">
-                    {val(k)}
-                    <small>/{max[k]}</small>
-                  </span>
-                </div>
-              ))}
-            </div>
-            <p style={{ marginTop: 12, fontSize: 15, color: "var(--text-2)" }}>
-              {(b.learned || 0) !== 0 && <>Votes moved it {b.learned > 0 ? "up" : "down"} {Math.abs(b.learned)} points. </>}
-              {(b.penalties || 0) !== 0 && <>Penalties took {Math.abs(b.penalties)} points ({c.check.tone === "warn" ? "past Courtside's stage" : "portfolio conflict or scale"}). </>}
-              {low.length ? `Low on ${low.join(" and ")}: it rises as more independent signals arrive, as creators and shows mention it, and as founders show up in filings.` : "Strong across the board."}
-            </p>
-          </section>
-          {c.portfolio && (
-            <section className="sec" aria-label="Portfolio Check">
-              <div className="h">
-                <h2>Portfolio Check</h2>
-              </div>
-              <div className={"pcheck" + (c.portfolio.kind === "competes" ? " red" : "")}>
-                <b>{c.portfolio.kind === "competes" ? "Competes" : "Adjacent, possible intro"}</b>
-                <span>
-                  {c.portfolio.text}.{" "}
-                  {c.portfolio.href && (
-                    <a href={c.portfolio.href} target="_blank" rel="noopener noreferrer" title="Opens the portfolio company on Courtside's site in a new window">
-                      Courtside&apos;s page
-                    </a>
-                  )}{" "}
-                  {cleanCopy(c.portfolio.reason)}.
-                </span>
-              </div>
-            </section>
-          )}
           <CompanyNotes companyId={c.id} name={c.name} initial={d.notes.map((n) => ({ id: n.id, body: n.body, createdAt: n.createdAt!.toISOString() }))} />
+          <MemoPanel id={c.id} name={c.name} ai={ai} />
         </div>
         <aside className="dcol">
-          <MemoPanel id={c.id} name={c.name} ai={ai} />
           {d.similar.length > 0 && (
-            <section className="sec" aria-label="Similar in the Pipeline" style={{ marginTop: 28 }}>
+            <section className="sec" aria-label="Similar in the Pipeline">
               <div className="h">
                 <h2>Similar in the Pipeline</h2>
               </div>
-              <div className="sim">
+              <div className="x-sim">
                 {d.similar.map((s) => (
                   <Link key={s.id} href={`/company/${s.id}`} title={`Open ${s.name} in Scout`}>
-                    {s.domain ? <img src={favicon(s.domain)} alt="" width={26} height={26} /> : <span />}
+                    <Logo src={s.media?.logo || (s.domain ? favicon(s.domain) : null)} name={s.name} cls="x-logo sm" />
                     <span>
                       <b>{s.name}</b>
                       <span>{cleanCopy(s.why || "")}</span>
                     </span>
-                    <span className="sc">{s.score}%</span>
+                    <FitRing fit={s.score} name={s.name} size="sm" />
                   </Link>
                 ))}
               </div>
@@ -207,15 +133,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <div className="h">
                 <h2>Nearby in the Portfolio</h2>
               </div>
-              <div className="sim">
+              <div className="x-sim">
                 {d.nearby.map((p) => (
                   <a key={p.id} href={p.descriptionUrl || p.site || "#"} target="_blank" rel="noopener noreferrer" title={`Opens ${p.name} on Courtside's site in a new window`}>
-                    {p.site ? <img src={favicon(p.site)} alt="" width={26} height={26} /> : <span />}
+                    <Logo src={p.site ? favicon(p.site) : null} name={p.name} cls="x-logo sm" />
                     <span>
                       <b>{p.name}</b>
                       <span>{(p.description || "").split(/(?<=\.)\s/)[0]}</span>
                     </span>
-                    <span />
                   </a>
                 ))}
               </div>
@@ -226,10 +151,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <h2>Record</h2>
             </div>
             <dl className="kv">
-              <dt>Thesis area</dt>
-              <dd>{areaLabel(c.thesisArea) || "Outside the thesis"}</dd>
-              <dt>Stage</dt>
-              <dd>{stageLabel(c.stage)}</dd>
+              <dt>Area</dt>
+              <dd>{areaLabel(c.thesisArea) || "Outside the Thesis"}</dd>
+              <dt>Funds Raised</dt>
+              <dd>
+                {c.funds.text}
+                {c.funds.stage ? ` · ${c.funds.stage}` : ""}
+                {rounds.length > 1 ? ` · ${rounds.length} Rounds` : ""}
+              </dd>
+              <dt>Thesis Fit</dt>
+              <dd>{c.score}%</dd>
+              {c.overlap && (
+                <>
+                  <dt>Overlaps with</dt>
+                  <dd>{c.overlap.with}</dd>
+                </>
+              )}
               <dt>First seen</dt>
               <dd>{fmtDate(c.firstSeen)}</dd>
               <dt>Last signal</dt>
@@ -238,16 +175,16 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <dd>{STATUS_LABEL[c.status]}</dd>
               <dt>Tracked by</dt>
               <dd>{c.tracked ? "The team (shared)" : "Not tracked"}</dd>
-              {c.domain && (
-                <>
-                  <dt>Website</dt>
-                  <dd>
-                    <a href={`https://${c.domain}`} target="_blank" rel="noopener noreferrer" title={`Opens ${c.domain} in a new window`}>
-                      {c.domain}
-                    </a>
-                  </dd>
-                </>
-              )}
+              <dt>Website</dt>
+              <dd>
+                {c.site ? (
+                  <a href={c.site} target="_blank" rel="noopener noreferrer" title="Opens the official website in a new window">
+                    {c.domain}
+                  </a>
+                ) : (
+                  "Not found yet"
+                )}
+              </dd>
             </dl>
           </section>
         </aside>

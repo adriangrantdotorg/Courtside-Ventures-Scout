@@ -4,7 +4,9 @@ import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import * as F from "../sources/fetchers";
 import { classify, DROP_INDUSTRY, THESIS_INDUSTRY, NOT_CONSUMER, INCUMBENT } from "../thesis";
-import { upsertCompany, subjectOf, stageOf, moneyOf, isGenericName, cleanName } from "../companies";
+import { upsertCompany, subjectOf, stageOf, moneyOf, isGenericName, cleanName, normKey, knownCompany } from "../companies";
+import { libraryStory, LIBRARY_DAYS } from "../library";
+import { aiAvailable, thesisCheck, CHECK_GAP_MS, TIMEOUTS } from "../ai";
 import { saveItems } from "./collect-media";
 import { getSetting, setSetting, extraSourcesOn, sourcesOff, DEFAULT_QUERIES } from "../settings";
 import { domainOf } from "../format";
@@ -27,10 +29,10 @@ export const INDUSTRY_FEEDS: [string, string][] = [
   ["The Verge", "https://www.theverge.com/rss/index.xml"],
 ];
 
-const FUNDING = /\b(raises|raised|secures|closes|nabs|bags|funding|seed round|pre-seed|series a)\b/i;
+export const FUNDING = /\b(raises|raised|secures|closes|nabs|bags|clinches|lands|funding|seed round|pre-seed|series a|investment in|invests in|backs)\b/i;
 
 /** A funding headline → a company signal, when the company is the subject and the story is inside the thesis. */
-async function fromHeadline(ctx: Ctx, h: { title: string; url: string; date: string | null; text?: string; outlet?: string }, source: string) {
+export async function fromHeadline(ctx: Ctx, h: { title: string; url: string; date: string | null; text?: string; outlet?: string }, source: string) {
   if (!FUNDING.test(h.title)) return;
   const name = subjectOf(h.title);
   if (!name || INCUMBENT.test(name)) return;
@@ -221,14 +223,79 @@ export async function stageAppStore(ctx: Ctx) {
   if (Object.keys(next).length) await setSetting("appRanks", next);
 }
 
+/** The funding words every topic's news search asks Google for: the round names, and a second search for stories
+ *  that only say "raises", "raised", "funding" or "investment" next to "startup" (Adrian, 10-26-26: many stories never
+ *  name the round). Two searches, not one: Google returns at most 100 stories, and one broad search crowded out
+ *  Topdog in the test (17 startups a month became 26 with both, none lost). */
+/** A name search for one company's funding story (Funds Raised, the Library backfill, Second Look). */
+export const FUNDING_Q = (name: string) => `"${name}" (raises OR raised OR funding OR seed OR "pre-seed" OR "Series A" OR investment)`;
+
+/** Second Look (Adrian, 10-26-26): a headline about a startup that never mentions money, like "A Vinyl Bar in Shibuya
+ *  is a startup from a former Spotify leader for making music apps": the name to search for its raise, or null.
+ *  A headline with a funding word is fromHeadline's, never this. */
+export function secondLookName(title: string, text = ""): string | null {
+  if (FUNDING.test(title) || NOT_CONSUMER.test(title)) return null;
+  const isStartup = title.match(/^(.{2,60}?)\s+is\s+(?:a|an)\s+(?:[\w-]+\s){0,4}?(?:startup|start-up)\b/i)?.[1];
+  const n = subjectOf(title) || (isStartup ? cleanName(isStartup) : null);
+  if (!n || isGenericName(n) || INCUMBENT.test(n) || normKey(n).length < 4) return null;
+  if (!classify(`${title}. ${text}`).area) return null;
+  return n;
+}
+
+/** Searches a Second Look name once per run; a raise from the last two years, before Series B and under the cap, gets
+ *  the AI Thesis Check at once, and only a YES becomes a card: these names are noisier than funding headlines (the
+ *  first test month found a VC firm and a phrase among three). About 2 new startups a month (10-26-26 test). */
+export async function secondLook(ctx: Ctx, h: { title: string; text?: string; outlet?: string }, source: string, seen: Set<string>) {
+  const name = secondLookName(h.title, h.text);
+  if (!name || seen.has(normKey(name))) return;
+  seen.add(normKey(name));
+  // room for the search and the check; a name skipped for time comes up again on a later run
+  if (ctx.timeLeft() < CHECK_GAP_MS + TIMEOUTS.checkMs + 5_000 || (await knownCompany(name))) return;
+  const story = libraryStory(name, await F.googleNews(FUNDING_Q(name), `${LIBRARY_DAYS}d`));
+  if (!story) return;
+  const area = classify(`${story.title}. ${story.text || ""}`).area || classify(`${h.title}. ${h.text || ""}`).area;
+  if (!(await aiAvailable())) return;
+  const check = await thesisCheck({ name, area, description: story.text || null, headlines: [story.title, h.title] }, Math.max(0, ctx.timeLeft() - 5_000));
+  if (!check) return; // today's checks are used or no answer came back: no card without the screen
+  if (!check.ok) {
+    ctx.change(`Second look kept out: ${name} (${check.why})`);
+    return;
+  }
+  const thesisArea = area || check.area;
+  if (!thesisArea) return;
+  const long = story.text && story.text.length > 40;
+  const r = await upsertCompany({
+    name,
+    thesisArea,
+    stage: story.stage,
+    amount: story.amount,
+    currency: story.currency,
+    description: long ? story.text! : null,
+    descriptionUrl: long ? story.url : null,
+    signal: { type: "news", source: story.outlet || source, title: story.title, url: story.url, date: story.date ? new Date(story.date) : null },
+  });
+  if (r) {
+    await db().update(S.companies).set({ thesisCheck: check }).where(eq(S.companies.id, r.id));
+    ctx.item();
+    if (r.created) ctx.change(`New company (second look): ${name}`);
+  }
+}
+
+export const FUNDING_SEARCHES = ['("pre-seed" OR seed OR "Series A")', '(raises OR raised OR funding OR investment) (startup OR "start-up" OR founders)'];
+
 export async function stageNews(ctx: Ctx, queriesMax = 6) {
   const qs = (await getSetting<string[]>("thesisQueries", DEFAULT_QUERIES)).slice(0, queriesMax);
-  await ctx.stage("funding news", 0, qs.length);
-  for (const q of qs) {
+  const searches = qs.flatMap((q) => FUNDING_SEARCHES.map((f) => `(${q}) ${f}`));
+  await ctx.stage("funding news", 0, searches.length);
+  const seen = new Set<string>();
+  for (const q of searches) {
     if (ctx.outOfTime()) break;
-    const items = await F.googleNews(`(${q}) ("pre-seed" OR seed OR "Series A")`, "7d");
+    const items = await F.googleNews(q, "7d");
     await saveItems(items.map((n) => ({ kind: "news", source: n.outlet || "Google News", title: n.title, url: n.url, date: n.date, text: n.text })));
-    for (const n of items) await fromHeadline(ctx, { title: n.title, url: n.url, date: n.date, text: n.text, outlet: n.outlet }, "Google News");
+    for (const n of items) {
+      await fromHeadline(ctx, { title: n.title, url: n.url, date: n.date, text: n.text, outlet: n.outlet }, "Google News");
+      await secondLook(ctx, n, "Google News", seen);
+    }
     ctx.tick();
   }
 }

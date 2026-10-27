@@ -7,6 +7,7 @@ import { Search, Sun, Moon, House, ListChecks, TrendingUp, Users2, Menu, FileTex
 import { UIProvider, useUI, Overlay, Kbd, ClearX } from "./ui";
 import { ACTIONS, loadBindings, comboOf, prettyCombo, type Action } from "@/lib/shortcuts";
 import { postJSON } from "@/lib/client";
+import { Theater } from "./V2";
 
 export const NAV: { href: string; label: string }[] = [
   { href: "/", label: "Today" },
@@ -551,6 +552,28 @@ function Swipe() {
   return null;
 }
 
+/** A link to the page you're already on (the logo, Today, the current nav item) scrolls back to the top.
+ *  Next.js keeps the scroll position for a same-page link, so it looked like nothing happened (feedback, 10-26-26). */
+function ScrollTop() {
+  // tests wait for this before pressing anything: a click before hydration does nothing
+  useEffect(() => void (document.documentElement.dataset.hydrated = "1"), []);
+  useEffect(() => {
+    // capture phase: Next's Link prevents the default before a bubbling listener would see the click
+    const on = (e: MouseEvent) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as HTMLElement).closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank") return;
+      const u = new URL(a.href, location.href);
+      if (u.origin !== location.origin || u.pathname !== location.pathname || u.hash) return;
+      if (u.search !== location.search) return;
+      window.scrollTo({ top: 0, behavior: document.documentElement.dataset.motion === "off" ? "auto" : "smooth" });
+    };
+    document.addEventListener("click", on, true);
+    return () => document.removeEventListener("click", on, true);
+  }, []);
+  return null;
+}
+
 export function Shell({ children, ticker }: { children: ReactNode; ticker: ReactNode }) {
   return (
     <UIProvider palette={(c) => <Palette close={c} />} sheet={(c) => <Sheet close={c} />} >
@@ -562,6 +585,8 @@ export function Shell({ children, ticker }: { children: ReactNode; ticker: React
       </div>
       <Keys />
       <Swipe />
+      <ScrollTop />
+      <Theater />
     </UIProvider>
   );
 }

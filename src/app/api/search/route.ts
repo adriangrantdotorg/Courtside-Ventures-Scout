@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const like = `%${q.replace(/[%_]/g, "")}%`;
   type R = { rows: Record<string, unknown>[] };
   const [cos, trends, people, brands, voices] = (await Promise.all([
-    db().execute(sql`select id, name, domain, thesis_area, score, status from companies where hidden = false and (name ilike ${like} or domain ilike ${like}) order by (lower(name) like lower(${q + "%"})) desc, score desc limit 6`),
+    db().execute(sql`select id, name, domain, thesis_area, score, status from companies where hidden = false and merged_into is null and (name ilike ${like} or domain ilike ${like}) order by (lower(name) like lower(${q + "%"})) desc, score desc limit 6`),
     db().execute(sql`select id, slug, headline, term from trends where headline ilike ${like} or term ilike ${like} order by score desc limit 4`),
     db().execute(sql`select slug, name, role from people where name ilike ${like} limit 4`),
     db().execute(sql`select key, brand, site from sponsors where brand ilike ${like} limit 4`),
