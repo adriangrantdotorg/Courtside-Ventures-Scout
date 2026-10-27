@@ -228,7 +228,7 @@ export function useActions(c: CompanyCard) {
   const isGone = useGone(c.id);
   async function notFit() {
     setGone(c.id, true);
-    const r = await ui.undoable("Not a Fit", postJSON("/api/hidden", { id: c.id, keep: false }), async () => {
+    const r = await ui.undoable("Not a Fit", postJSON("/api/hidden", { id: c.id, keep: false, by: "team" }), async () => {
       setGone(c.id, false);
       await postJSON("/api/hidden", { id: c.id, keep: null });
     });
