@@ -20,6 +20,7 @@ Full-page mockups for the V2 redesign. Regenerate with `python3 design/v2/build.
 4. Round 4, 10-26-26 (`round4/`): website icon **Filled or Ghost Globe**, on Today's cards only. His words: "On the pipeline and company pages, it should use the call-to-action buttons to visit the website or find the website."
 
 5. Round 5, 10-30-26 (`round5/masthead.html`): Must See art for a startup with no picture: **Brand Sky** (the startup's own site art with its logo), over Ring Pulse and Contour Field. He then asked that it always work, so it became a template with three tiers (`round5/template.html`, built in `src/lib/brand.ts`).
+6. Round 6, 10-30-26 (`round6/github.html`, `python3 design/v2/round6/build.py`): View on GitHub, his pick **Ghost Chip** (over Solid Button, Edge Light, Open Source Band). The Search chip's look, first in the top-bar tools, with GitHub's mark; in the footer a red link with the mark before Built by. The label shortens to "GitHub" at 1320px and below, never to the icon alone (built in `Shell.tsx`).
 
 ## Rules from his feedback (10-26-26)
 

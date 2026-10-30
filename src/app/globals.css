@@ -711,6 +711,15 @@ button.p2:hover, button.p2:focus-visible { text-decoration:underline dotted; tex
 .grid2 table.t th, .grid2 table.t td { padding-left:6px; padding-right:6px; }
 .foot .left { display:flex; gap:22px; }
 .foot .right { margin-left:auto; display:flex; gap:22px; align-items:center; }
+/* View on GitHub (Adrian, 10-30-26: Ghost Chip): the Search chip's look in the top bar, a link with the mark in the footer.
+   The label shortens to "GitHub" where the other chips drop theirs, and never disappears. */
+a.chip, a.chip:hover, a.chip:focus-visible { text-decoration:none; }
+.gh-mark { width:16px; height:16px; fill:currentColor; flex:none; }
+.tools a.chip.gh span.gh-lbl { display:inline; }
+.foot a.gh-foot { display:inline-flex; align-items:center; gap:7px; }
+@media (max-width:1320px) { .gh-long { display:none; } }
+/* The chip costs ~100px: just above the phone layout the page tabs tighten so they never run into it. */
+@media (min-width:901px) and (max-width:980px) { .nav > a, .nav .dd > button { padding:22px 4px 20px; letter-spacing:0; } .tools { padding:0 8px; } }
 
 .tabadd { margin:14px 32px 0; position:relative; }
 .tabadd .fsearch { width:100%; }

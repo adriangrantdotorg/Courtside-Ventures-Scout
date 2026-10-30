@@ -55,8 +55,8 @@ for (const path of PAGES) {
   });
 }
 
-test("nav labels are one line at 1440 and 1024", async ({ page }) => {
-  for (const w of [1440, 1024]) {
+test("nav labels are one line from 1440 down to 920", async ({ page }) => {
+  for (const w of [1440, 1320, 1180, 1024, 920]) {
     await page.setViewportSize({ width: w, height: 900 });
     await page.goto("/pipeline");
     const tall = await page.locator(".nav > a, .nav .dd > button").evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetHeight > 0 && e.getBoundingClientRect().height > 70).map((e) => e.textContent));
@@ -115,6 +115,39 @@ test("icons are Courtside's", async ({ request }) => {
     const r = await request.get(p);
     expect(r.status()).toBe(200);
     expect((await r.body()).length).not.toBe(25931);
+  }
+});
+
+test("View on GitHub: the top bar and the footer open the public repo in a new window", async ({ page, context }) => {
+  const REPO = "https://github.com/adriangrantdotorg/Courtside-Ventures-Scout";
+  await context.route("https://github.com/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<title>repo</title>" }));
+  // the label shortens with the other chips but never disappears (Adrian, 10-30-26: icon + text)
+  for (const [w, label] of [[1440, "View on GitHub"], [1180, "GitHub"], [390, "GitHub"]] as const) {
+    await page.setViewportSize({ width: w, height: 900 });
+    await page.goto("/pipeline");
+    const chip = page.locator(".tools a[data-github]");
+    await expect(chip, `width ${w}`).toBeVisible();
+    expect((await chip.innerText()).trim().toLowerCase(), `width ${w}`).toBe(label.toLowerCase());
+    expect(await chip.locator("svg.gh-mark").boundingBox(), `mark at ${w}`).not.toBeNull();
+    const foot = page.locator("footer.foot a[data-github]");
+    await expect(foot).toHaveText("View on GitHub");
+    await expect(foot.locator("svg.gh-mark")).toBeVisible();
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const sel of [".tools a[data-github]", "footer.foot a[data-github]"]) {
+    const a = page.locator(sel);
+    await expect(a).toHaveAttribute("href", REPO);
+    await expect(a).toHaveAttribute("target", "_blank");
+    await a.scrollIntoViewIfNeeded();
+    const hit = await a.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return !!top && el.contains(top);
+    });
+    expect(hit, `${sel} is the thing under its center`).toBe(true);
+    const [popup] = await Promise.all([page.waitForEvent("popup"), a.click()]);
+    expect(popup.url()).toBe(REPO);
+    await popup.close();
   }
 });
 
