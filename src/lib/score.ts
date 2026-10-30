@@ -96,19 +96,19 @@ const SIG_FACT: Record<string, string> = {
   sponsor: "sponsoring a tracked show",
 };
 
-/** Under 30 words: the play first, a named portfolio parallel, the dated fact last. */
-const AREA_PARALLEL: Record<string, string> = { sports: "Veo", gaming: "100 Thieves", lifestyle: "StockX", health: "System", media: "Religion of Sports" };
+/** Under 30 words: the play first (with its named parallel), the dated fact last. */
 const HEADLINE = /\b(raises|raised|secures|secured|closes|closed|nabs|bags|lands|funding|launches)\b/i;
 
-export function whyFitsLine(i: { name: string; description: string; thesisArea: string | null; stage: string; amount: number | null; currency: string; lastSignal: { type: string; date: Date | null } | null; near?: string | null }): string {
+export function whyFitsLine(i: { name: string; description: string; thesisArea: string | null; stage: string; amount: number | null; currency: string; lastSignal: { type: string; date: Date | null } | null }): string {
   const text = `${i.name}. ${i.description}`;
   const play = playOf(text, i.thesisArea);
   const area = i.thesisArea ? i.thesisArea[0].toUpperCase() + i.thesisArea.slice(1) : "";
   const d = (i.description || "").trim();
   // A bare name or a stripped-to-nothing sentence never leaves the line starting with ":" or "," (10-14-26).
   const what = (d.length > 30 && !HEADLINE.test(d.split(/(?<=[.!?])\s/)[0]) ? shortWhat(d) : "") || `A new ${area || "consumer"} company`;
-  const parallel = i.near || (i.thesisArea ? AREA_PARALLEL[i.thesisArea] : null);
-  const head = play ? `${what}: ${play.label}, like ${play.parallel}` : parallel ? `${what} in the ${area} area of the thesis, near ${parallel} in the portfolio` : `${what}, inside Courtside's thesis`;
+  // A portfolio tie is only ever the "Overlaps with …" tag, for real competitors; the line never says "near X in the
+  // portfolio" (Adrian, 10-30-26: 305 cards read "near Religion of Sports" from a loose keyword match).
+  const head = play ? `${what}: ${play.label}, like ${play.parallel}` : `${what}, inside Courtside's thesis`;
   let fact = "";
   if (i.amount) fact = `raised ${fmtMoney(i.amount, i.currency)}${i.stage !== "unknown" ? " " + (i.stage === "pre-seed" ? "pre-seed" : i.stage === "seed" ? "seed" : i.stage === "series-a" ? "Series A" : "") : ""}`.trim();
   else if (i.lastSignal) {

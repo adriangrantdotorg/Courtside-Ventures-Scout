@@ -65,6 +65,67 @@ export async function fetchRaw(url: string, o: FetchOpts = {}): Promise<FetchRes
   }
 }
 
+/** An image's bytes, for Brand Sky's measurements: 2xx with an image type, at most `maxBytes`; null otherwise. */
+export async function fetchImage(url: string, maxBytes = 8_000_000, timeoutMs = 10_000): Promise<Buffer | null> {
+  let host = "";
+  try {
+    host = new URL(url).host;
+  } catch {
+    return null;
+  }
+  await politeWait(host);
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const r = await transport.fetch(url, { signal: ctl.signal, headers: { "user-agent": UA(), accept: "image/*" }, redirect: "follow", cache: "no-store" });
+    if (!r.ok || !(r.headers.get("content-type") || "").toLowerCase().startsWith("image/")) return null;
+    if (Number(r.headers.get("content-length") || 0) > maxBytes) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    return buf.length && buf.length <= maxBytes ? buf : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/** Does this picture or video still load? A HEAD (or, where a host refuses HEAD, a one-byte GET) that must answer
+ *  2xx with an image or video type. A page's own tags can name another host whose files are gone: Helios's og:image
+ *  pointed at myhelios.com, a 404, and the Must See masthead showed a blank letter tile (10-30-26). */
+export async function mediaLoads(url: string, kind: "image" | "video", timeoutMs = 6000): Promise<boolean> {
+  let host = "";
+  try {
+    host = new URL(url).host;
+  } catch {
+    return false;
+  }
+  const ask = async (method: "HEAD" | "GET") => {
+    await politeWait(host);
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      const r = await transport.fetch(url, {
+        method,
+        signal: ctl.signal,
+        headers: { "user-agent": UA(), accept: `${kind}/*`, ...(method === "GET" ? { range: "bytes=0-0" } : {}) },
+        redirect: "follow",
+        cache: "no-store",
+      });
+      if (method === "GET") ctl.abort(); // the body is never needed
+      return r;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(t);
+    }
+  };
+  let r = await ask("HEAD");
+  if (r && [403, 405, 501].includes(r.status)) r = await ask("GET");
+  if (!r || !(r.ok || r.status === 206)) return false;
+  const type = (r.headers.get("content-type") || "").toLowerCase();
+  return type.startsWith(`${kind}/`) || (kind === "video" && type.startsWith("application/octet-stream"));
+}
+
 export async function fetchText(url: string, o: FetchOpts = {}): Promise<string | null> {
   const r = await fetchRaw(url, o);
   if (o.source) await health(o.source, r.ok, r.ok ? 1 : 0, r.error);

@@ -28,6 +28,10 @@ export function cleanCopy(s: string | null | undefined): string {
     .replace(/\bthe lanes\b/gi, "the thesis")
     .replace(/\blanes\b/gi, "thesis")
     .replace(/\blane\b/gi, "thesis")
+    // a portfolio tie in prose ("near Religion of Sports in the portfolio", "close to Wizard and Stay Tuned in the
+    // portfolio") is gone: only real competitors get one, as the Overlaps With tag (Adrian, 10-30-26)
+    .replace(/ in the [A-Z][a-z]+ area of the thesis, (near|close to|next to) [^;.]+? in the portfolio/g, ", inside Courtside's thesis")
+    .replace(/,? (near|close to|next to) [^;.]+? in the portfolio/g, "")
     .replace(/thesis areas?/gi, "thesis")
     .replace(/Context only: /g, "Rejected because ")
     .replace(/\bPre-seed\b/g, "Pre-Seed")

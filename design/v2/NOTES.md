@@ -19,6 +19,8 @@ Full-page mockups for the V2 redesign. Regenerate with `python3 design/v2/build.
 3. Round 3, 10-26-26 (`round3/`): filter **Dropdown Bar**, card hover **Veil**, overlap **Logo Pair**, shown for **real competitors only**.
 4. Round 4, 10-26-26 (`round4/`): website icon **Filled or Ghost Globe**, on Today's cards only. His words: "On the pipeline and company pages, it should use the call-to-action buttons to visit the website or find the website."
 
+5. Round 5, 10-30-26 (`round5/masthead.html`): Must See art for a startup with no picture: **Brand Sky** (the startup's own site art with its logo), over Ring Pulse and Contour Field. He then asked that it always work, so it became a template with three tiers (`round5/template.html`, built in `src/lib/brand.ts`).
+
 ## Rules from his feedback (10-26-26)
 
 - **Never recommend a company that has raised $15M or more in total.** It applies to everything Scout puts forward as a potential investment (Today, the Pipeline, company pages, the IC Meeting). Sponsor Radar and other context pages are not limited. In the mockups this drops International Dance League ($22M) and POV Beauty ($15M).
@@ -65,3 +67,14 @@ Full-page mockups for the V2 redesign. Regenerate with `python3 design/v2/build.
 - The website finder accepts a page only when it names the company and a fact from its news (a proper noun from the headlines, or a distinctive word from the description); with no news, the page must read as the same thesis area.
 - Coverage check (`scripts/coverage.ts`): none of the 22 library startups was in Scout. Most raised before Scout started (it reads the last 7 days), so `backfill` reads 12 months of funding news; the headline gates now read "clinches", "investment in X" and music and audio-wellness words. 11 had no funding story under their name in Google News: only a funding database would catch those.
 
+
+## Brand Sky (10-30-26)
+
+- Must See draws Brand Sky unless Scout has a real product picture (a YouTube frame, App Store screenshots, a video with no poster). A website's share image is never the masthead: it often carries its own headline (Helios's sat under Scout's text).
+- One layout: backdrop, the startup's mark in the open sky on the right (left 70%, top 30%), a dark fade on the left so Scout's white words read. The painted sky is always dark, in both themes.
+- Each part takes the first that exists: backdrop = homepage hero art (the image the page preloads first, a video poster) → a sky in the startup's colors → its thesis area's sky; mark = the header logo named for the startup → its app/touch icon beside the name → a letter tile and the name; colors = theme color → the icon's two main colors → the area palette.
+- A logo that doesn't read on its backdrop is drawn white (dark sky) or ink (light art). Anything that fails to load drops to the next tier.
+- Traps: a backer's logo sits in the same `/brand/` folder (heliosinc.ai's `formation-logo.png`); "cypress" contains "press"; small logo files need a fixed box to scale up.
+- On the Radar cards (10-30-26, his "build this"): a card with no product picture draws Brand Sky too, the mark centered between the fit ring and the name, no side fade (the card's scrim does that job). Cards with a share image keep it.
+- On a phone, Must See's words and buttons sit under the picture (16:9), and the mark sits right of center, clear of the fit ring and the globe.
+- The Pipeline's rows and the company page (10-30-26, his "ok"): Brand Sky too, the mark centered in the part of the picture that shows (right of the row's fade; the middle of the company page's 16:10 box). A startup's name in a word mark breaks only between words.

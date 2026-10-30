@@ -11,6 +11,7 @@ import { Ago } from "./Live";
 import type { CompanyCard } from "@/lib/queries";
 import type { Media } from "@/db/schema";
 import { fitHue, BUCKETS, moneyRange } from "@/lib/v2";
+import { skyPlan, usesSky } from "@/lib/brand";
 import { fmtDate, STAGE_LABEL, plural } from "@/lib/format";
 import { sigLabel } from "@/lib/labels";
 
@@ -138,10 +139,26 @@ export function FitRing({ fit, name, size = "md" }: { fit: number; name: string;
   );
 }
 
+/** An <img> whose failure is never missed: a server-rendered picture can fail before React attaches onError, and it
+ *  then stayed broken on screen instead of dropping to its fallback (Brand Sky's art in headless Chrome, 10-30-26).
+ *  decode() settles it: an SVG with no size of its own reports naturalWidth 0 in some browsers yet decodes fine. */
+function Img({ onFail, alt, ...p }: React.ImgHTMLAttributes<HTMLImageElement> & { alt: string; onFail: () => void }) {
+  const ref = useRef<HTMLImageElement>(null);
+  const failRef = useRef(onFail);
+  useEffect(() => {
+    failRef.current = onFail;
+  });
+  useEffect(() => {
+    const el = ref.current;
+    if (el && el.complete && el.naturalWidth === 0) el.decode().catch(() => failRef.current());
+  }, [p.src]);
+  return <img ref={ref} alt={alt} {...p} onError={onFail} />;
+}
+
 export function Logo({ src, name, cls = "x-logo" }: { src: string | null; name: string; cls?: string }) {
   const [bad, setBad] = useState(false);
   if (!src || bad) return <span className={cls + " mono"}>{name.trim().charAt(0).toUpperCase()}</span>;
-  return <img className={cls} src={src} alt="" loading="lazy" onError={() => setBad(true)} />;
+  return <Img className={cls} src={src} alt="" loading="lazy" onFail={() => setBad(true)} />;
 }
 
 const Area = ({ c }: { c: CompanyCard }) => (c.area ? <span className="x-area">{c.area}</span> : null);
@@ -359,18 +376,21 @@ export function SignalsPop({ c }: { c: CompanyCard }) {
 }
 
 /* ---------- the picture ---------- */
-export function MediaView({ c }: { c: CompanyCard }) {
+/** `sky`: with no product picture (or when it fails to load), draw Brand Sky instead of the gray logo tile: Must See,
+ *  the On the Radar cards, the Pipeline's rows and the company page (Adrian, 10-30-26). */
+export function MediaView({ c, sky }: { c: CompanyCard; sky?: boolean }) {
   const [bad, setBad] = useState(false);
   const m: Media = bad ? { kind: "logo", logo: c.logo || undefined } : c.media;
+  if (sky && m.kind === "logo") return <BrandSky c={c} />;
   const fail = () => setBad(true);
   let inner: ReactNode;
-  if (m.kind === "yt" || (m.kind === "mp4" && m.poster)) inner = <img className="cover" src={m.poster} alt={c.name} loading="lazy" onError={fail} />;
+  if (m.kind === "yt" || (m.kind === "mp4" && m.poster)) inner = <Img className="cover" src={m.poster} alt={c.name} loading="lazy" onFail={fail} />;
   else if (m.kind === "mp4") inner = <video className="cover" src={`${m.mp4}#t=0.5`} muted playsInline preload="metadata" aria-label={c.name} onError={fail} />;
   else if (m.kind === "shots")
     inner = (
       <div className="shots">
         {(m.shots || []).map((s) => (
-          <img key={s} src={s} alt="" loading="lazy" onError={fail} />
+          <Img key={s} src={s} alt="" loading="lazy" onFail={fail} />
         ))}
       </div>
     );
@@ -378,18 +398,53 @@ export function MediaView({ c }: { c: CompanyCard }) {
     inner = (
       <>
         <img className="back blur" src={m.img} alt="" loading="lazy" />
-        <img className="contain" src={m.img} alt={c.name} loading="lazy" onError={fail} />
+        <Img className="contain" src={m.img} alt={c.name} loading="lazy" onFail={fail} />
       </>
     );
   else
     inner = (
       <div className="logostage">
-        {c.logo && !bad ? <img className="lg sq" src={c.logo} alt={c.name} onError={() => setBad(true)} /> : <span className="lg monogram">{c.name.trim().charAt(0).toUpperCase()}</span>}
+        {c.logo && !bad ? <Img className="lg sq" src={c.logo} alt={c.name} onFail={() => setBad(true)} /> : <span className="lg monogram">{c.name.trim().charAt(0).toUpperCase()}</span>}
       </div>
     );
   return (
     <div className="x-media" data-kind={m.kind}>
       {inner}
+    </div>
+  );
+}
+
+/** Must See with no product picture: Brand Sky (src/lib/brand.ts). The startup's own art and logo when its site has
+ *  them, else a sky in its colors with its icon and name, else its thesis area's sky with a letter tile and name; a
+ *  picture that fails to load drops to the next tier, so the masthead never shows a gray letter (Adrian, 10-30-26). */
+export function BrandSky({ c }: { c: CompanyCard }) {
+  const [bad, setBad] = useState({ art: false, mark: false, icon: false });
+  const b = c.media.brand || {};
+  const p = skyPlan({
+    name: c.name,
+    thesisArea: c.thesisArea,
+    logo: bad.icon ? null : c.logo,
+    media: { ...c.media, brand: { ...b, art: bad.art ? undefined : b.art, mark: bad.mark ? undefined : b.mark } },
+  });
+  const fail = (k: keyof typeof bad) => () => setBad((x) => ({ ...x, [k]: true }));
+  const style = { "--top": p.sky.top, "--mid": p.sky.mid, "--low": p.sky.low, "--sun": p.sky.sun, "--cloud": p.sky.cloud, "--tile": p.sky.tile, "--tile-ink": p.sky.tileInk } as React.CSSProperties;
+  const words = c.name.trim();
+  const size = words.length <= 8 ? "l" : words.length <= 16 ? "m" : "s";
+  let mark: ReactNode;
+  if (p.mark.kind === "logo")
+    mark = <Img className={`x-skymark logo${p.flip ? (p.art && b.artTone === "light" ? " ink" : " white") : ""}`} src={p.mark.src} alt={c.name} onFail={fail("mark")} />;
+  else
+    mark = (
+      <div className={`x-skymark word ${size}`}>
+        {p.mark.kind === "icon" ? <Img className="x-skyicon" src={p.mark.src} alt="" onFail={fail("icon")} /> : <span className="x-skytile">{words.charAt(0).toUpperCase()}</span>}
+        <span className="x-skyname">{words}</span>
+      </div>
+    );
+  return (
+    <div className="x-media x-sky" data-kind={c.media.kind} data-tier={p.tier} style={style}>
+      {p.art ? <Img className="x-skyart x-drift" src={p.art} alt="" onFail={fail("art")} /> : <div className="x-clouds x-drift" />}
+      <div className="x-sun" />
+      {mark}
     </div>
   );
 }
@@ -502,7 +557,7 @@ export function Tile({ c }: { c: CompanyCard }) {
   return (
     <article className="x-tile link" tabIndex={0} data-item data-company={c.id} title={`Open ${c.name}`} onClick={open.onClick} onKeyDown={open.onKeyDown} aria-label={`${c.name}: ${c.score}% thesis fit, Funds Raised ${c.funds.text}`}>
       <div className="x-tm">
-        <MediaView c={c} />
+        <MediaView c={c} sky />
         <div className="x-scrim" />
         <div className="x-hovwrap">
           <div className="x-hov h1" aria-hidden="true">
@@ -545,7 +600,7 @@ export function Hero({ c }: { c: CompanyCard }) {
   return (
     <article className="x-tile hero open always" data-item data-company={c.id}>
       <div className="x-tm">
-        <MediaView c={c} />
+        {usesSky(c.media) ? <BrandSky c={c} /> : <MediaView c={c} sky />}
         <div className="x-scrim" />
         <div className="x-tl">
           <FitRing fit={c.score} name={c.name} size="lg" />
@@ -596,7 +651,7 @@ export function Row({ c, rank }: { c: CompanyCard; rank?: number }) {
       </div>
       <div className="x-banner">
         <div className="x-bclip">
-          <MediaView c={c} />
+          <MediaView c={c} sky />
           <div className="x-bscrim" />
         </div>
         <div className="x-bover">
@@ -849,7 +904,7 @@ export function DealSheet({ c, bars, hint, investors, off }: { c: CompanyCard; b
       </div>
       <div className="x-dr">
         <div className="x-dmedia">
-          <MediaView c={c} />
+          <MediaView c={c} sky />
           <PlayBar c={c} />
         </div>
         {c.signals.length > 0 && (

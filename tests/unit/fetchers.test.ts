@@ -91,3 +91,31 @@ describe("manners", () => {
     expect(ua).toMatch(/^CourtsideVenturesScout\/1\.0 \(\+https?:\/\//);
   });
 });
+
+describe("mediaLoads: a picture or video link must really load before a card uses it", () => {
+  const answer = (status: number, type: string) => ((async () => new Response(null, { status, headers: { "content-type": type } })) as unknown as typeof fetch);
+  it("accepts a live image and a live video", async () => {
+    const { mediaLoads } = await import("@/lib/sources/http");
+    transport.fetch = answer(200, "image/jpeg");
+    expect(await mediaLoads("https://www.heliosinc.ai/brand/og-home.jpg", "image")).toBe(true);
+    transport.fetch = answer(200, "video/mp4");
+    expect(await mediaLoads("https://www.heliosinc.ai/brand/og-home.mp4", "video")).toBe(true);
+  });
+  it("rejects a 404 (Helios's myhelios.com poster, 10-30-26) and a page served in place of a picture", async () => {
+    const { mediaLoads } = await import("@/lib/sources/http");
+    transport.fetch = answer(404, "text/html");
+    expect(await mediaLoads("https://www.myhelios.com/brand/og-home.jpg", "image")).toBe(false);
+    transport.fetch = answer(200, "text/html");
+    expect(await mediaLoads("https://example.com/missing.jpg", "image")).toBe(false);
+  });
+  it("falls back to a one-byte GET when a host refuses HEAD", async () => {
+    const { mediaLoads } = await import("@/lib/sources/http");
+    const methods: string[] = [];
+    transport.fetch = (async (_u: string, init?: RequestInit) => {
+      methods.push(String(init?.method));
+      return init?.method === "HEAD" ? new Response(null, { status: 405 }) : new Response(null, { status: 206, headers: { "content-type": "image/png" } });
+    }) as unknown as typeof fetch;
+    expect(await mediaLoads("https://cdn.example.com/a.png", "image")).toBe(true);
+    expect(methods).toEqual(["HEAD", "GET"]);
+  });
+});

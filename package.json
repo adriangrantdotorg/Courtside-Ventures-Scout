@@ -23,7 +23,8 @@
     "release": "bash scripts/release.sh",
     "seed:export": "tsx scripts/export-seed.ts",
     "verify:light": "tsx scripts/verify-live.ts --light",
-    "check:ai": "tsx scripts/check-ai.ts"
+    "check:ai": "tsx scripts/check-ai.ts",
+    "brand:backfill": "tsx scripts/brand-backfill.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -34,6 +35,7 @@
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "sharp": "0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {

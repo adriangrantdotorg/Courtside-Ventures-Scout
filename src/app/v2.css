@@ -267,10 +267,27 @@ html[data-theme="light"] .x-bar .tr i { background:hsl(95 70% 32%); }
   .x-row { grid-template-columns:1fr; }
   .x-key { border-right:0; border-bottom:1px solid var(--border); grid-template-columns:auto 1fr; }
   .x-banner .x-media { position:relative; width:100%; aspect-ratio:16/9; }
+  .x-row .x-banner .x-sky .x-skymark { left:50%; } /* beats the later desktop rule */
   .x-bscrim { display:none; } .x-bover { width:100%; }
   .x-sec, .x-rows, .x-deal, .x-rounds { padding-left:16px; padding-right:16px; }
   .x-rr { grid-template-columns:30px 30px minmax(0,1fr) 70px; } .x-rtrack { display:none; }
   .x-fbar { position:static; padding:12px 16px; }
+  /* Must See on a phone: the words and buttons sit under the picture, not on it (they covered the fit ring and hid the
+     name, 10-30-26). The block stays dark in both themes, so the white-on-dark styles above still read. */
+  .x-tile.hero .x-tm { background:#0c0c0f; }
+  .x-tile.hero .x-tm .x-media { aspect-ratio:16/9; }
+  .x-tile.hero .x-scrim { display:none; }
+  .x-tile.hero .x-over { position:relative; max-width:none; padding:16px 16px 18px; }
+  .x-tile.hero .x-name { font-size:34px; }
+  .x-tile.hero .x-sky::after { display:none; }
+  .x-tile.hero .x-sky .x-skymark { left:62%; top:60%; } /* clear of the fit ring (top left) and the globe (top right) */
+  .x-tile.hero .x-sky .x-skymark.logo { width:50%; height:34%; }
+  .x-tile.hero .x-sky .x-skymark.word { max-width:62%; gap:3cqw; }
+  .x-tile.hero .x-sky .x-skytile, .x-tile.hero .x-sky .x-skyicon { width:16cqw; height:16cqw; }
+  .x-tile.hero .x-sky .x-skytile { font-size:9cqw; }
+  .x-tile.hero .x-sky .x-skyname { font-size:12cqw; }
+  .x-tile.hero .x-sky .x-skymark.m .x-skyname { font-size:9cqw; }
+  .x-tile.hero .x-sky .x-skymark.s .x-skyname { font-size:7cqw; }
 }
 @media (prefers-reduced-motion: reduce) {
   .x-reveal, .x-rr, .x-rtrack i { transition:none !important; }
@@ -441,3 +458,57 @@ html[data-theme="light"] .x-btn.x-track:hover, html[data-theme="light"] .x-btn.x
 .x-ov .pair { flex:none; }
 /* on a phone the tab strip wraps instead of pushing the page sideways (Tracking at 390px, 10-26-26) */
 @media (max-width:820px) { .tabs { flex-wrap:wrap; margin-left:16px; margin-right:16px; } .tabs button { padding:10px 10px 12px; } }
+
+/* Brand Sky: Must See for a startup with no product picture (10-30-26; src/lib/brand.ts, design/v2/round5/template.html).
+   Always dark under Scout's white words, in both themes; the fade on the left keeps the text readable on light art. */
+.x-sky { container-type:inline-size; overflow:hidden; background:linear-gradient(180deg, var(--top) 0%, var(--mid) 58%, var(--low) 100%); }
+.x-sky::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg, rgba(8,8,10,.62) 0, rgba(8,8,10,.35) 38%, transparent 62%); }
+.x-sky .x-skyart { position:absolute; top:0; left:0; height:100%; width:116%; object-fit:cover; object-position:center 62%; }
+.x-sky .x-clouds { position:absolute; top:0; bottom:0; left:0; width:116%; filter:blur(22px);
+  background:
+    radial-gradient(18% 14% at 12% 72%, var(--cloud), transparent 70%),
+    radial-gradient(22% 16% at 34% 80%, var(--cloud), transparent 70%),
+    radial-gradient(26% 14% at 58% 70%, var(--cloud), transparent 70%),
+    radial-gradient(20% 18% at 80% 82%, var(--cloud), transparent 70%),
+    radial-gradient(30% 10% at 46% 58%, var(--cloud), transparent 70%),
+    radial-gradient(60% 22% at 50% 100%, var(--cloud), transparent 75%); }
+.x-sky .x-sun { position:absolute; inset:0; background:radial-gradient(45% 70% at 8% 0, var(--sun), transparent 70%); }
+.x-sky .x-drift { animation:x-skydrift 70s ease-in-out infinite; }
+@keyframes x-skydrift { 0%, 100% { transform:translateX(0); } 50% { transform:translateX(-12%); } }
+@media (prefers-reduced-motion: reduce) { .x-sky .x-drift { animation:none; } }
+.x-sky .x-skymark { position:absolute; left:70%; top:28%; transform:translate(-50%, -50%); z-index:1; }
+.x-sky .x-skymark.logo { width:30%; height:34%; object-fit:contain; } /* a small logo file scales up; a square one fits the height */
+.x-sky .x-skymark.logo.white { filter:brightness(0) invert(1); }
+.x-sky .x-skymark.logo.ink { filter:brightness(0); opacity:.86; }
+.x-sky .x-skymark.word { display:flex; align-items:center; gap:1.7cqw; max-width:42%; }
+.x-sky .x-skytile, .x-sky .x-skyicon { flex:none; width:8cqw; height:8cqw; border-radius:23%; }
+.x-sky .x-skytile { display:grid; place-items:center; background:var(--tile); color:var(--tile-ink); font:700 4.6cqw/1 Oswald, sans-serif; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+.x-sky .x-skyicon { object-fit:cover; box-shadow:0 10px 40px rgba(0,0,0,.3); }
+.x-sky .x-skyname { font:700 7cqw/1 Oswald, sans-serif; color:#fff; overflow-wrap:break-word; } /* "anywhere" let the flex row squeeze "Chaos" into "Chao / s" */
+.x-sky .x-skymark.m .x-skyname { font-size:5.4cqw; }
+.x-sky .x-skymark.s .x-skyname { font-size:4.2cqw; }
+/* On the Radar cards: the mark centered in the open space between the fit ring and the name; the card's own scrim
+   keeps the words readable, so no side fade */
+.x-tile:not(.hero) .x-sky::after { display:none; }
+.x-tile:not(.hero) .x-sky .x-skymark { left:50%; top:38%; }
+.x-tile:not(.hero) .x-sky .x-skymark.logo { width:52%; height:26%; }
+.x-tile:not(.hero) .x-sky .x-skymark.word { max-width:84%; gap:3cqw; }
+.x-tile:not(.hero) .x-sky .x-skytile, .x-tile:not(.hero) .x-sky .x-skyicon { width:14cqw; height:14cqw; }
+.x-tile:not(.hero) .x-sky .x-skytile { font-size:8cqw; }
+.x-tile:not(.hero) .x-sky .x-skyname { font-size:11cqw; }
+.x-tile:not(.hero) .x-sky .x-skymark.m .x-skyname { font-size:8cqw; }
+.x-tile:not(.hero) .x-sky .x-skymark.s .x-skyname { font-size:6cqw; }
+/* Pipeline rows (the picture fills the right half behind the fade) and the company page (its own 16:10 box): the mark
+   centered in what shows; no side fade of its own */
+.x-banner .x-sky::after, .x-dmedia .x-sky::after { display:none; }
+.x-banner .x-sky .x-skymark { left:62%; top:50%; }
+.x-dmedia .x-sky .x-skymark { left:50%; top:50%; }
+.x-banner .x-sky .x-skymark.logo { width:56%; height:36%; }
+.x-dmedia .x-sky .x-skymark.logo { width:60%; height:38%; }
+.x-banner .x-sky .x-skymark.word { max-width:66%; gap:3cqw; }
+.x-dmedia .x-sky .x-skymark.word { max-width:84%; gap:3cqw; }
+.x-banner .x-sky .x-skytile, .x-banner .x-sky .x-skyicon, .x-dmedia .x-sky .x-skytile, .x-dmedia .x-sky .x-skyicon { width:14cqw; height:14cqw; }
+.x-banner .x-sky .x-skytile, .x-dmedia .x-sky .x-skytile { font-size:8cqw; }
+.x-banner .x-sky .x-skyname, .x-dmedia .x-sky .x-skyname { font-size:10cqw; }
+.x-banner .x-sky .x-skymark.m .x-skyname, .x-dmedia .x-sky .x-skymark.m .x-skyname { font-size:7.5cqw; }
+.x-banner .x-sky .x-skymark.s .x-skyname, .x-dmedia .x-sky .x-skymark.s .x-skyname { font-size:5.6cqw; }

@@ -74,6 +74,14 @@ describe("why it fits and the portfolio check", () => {
     expect(l).toMatch(/like Camb AI/);
     expect(l).not.toMatch(/is in the funding news/);
   });
+  it("no portfolio tie in prose: never \"near X in the portfolio\" (10-30-26)", () => {
+    // only real competitors get a tie, as the Overlaps With tag; 305 cards read "near Religion of Sports in the portfolio"
+    const l = whyFitsLine({ name: "Chaos", description: "", thesisArea: "media", stage: "pre-seed", amount: 1_000_000, currency: "£", lastSignal: null });
+    expect(l).toBe("A new Media company, inside Courtside's thesis; raised £1.0M pre-seed.");
+    expect(cleanCopy("A new Media company in the Media area of the thesis, near Religion of Sports in the portfolio; raised £1.0M pre-seed.")).toBe("A new Media company, inside Courtside's thesis; raised £1.0M pre-seed.");
+    expect(cleanCopy("An AI that runs creators' social content, close to Wizard and Stay Tuned in the portfolio; in Y Combinator.")).toBe("An AI that runs creators' social content; in Y Combinator.");
+    expect(cleanCopy("An investment platform for sports and trading cards, next to Rare Candy and Kolex in the portfolio; in Y Combinator.")).toBe("An investment platform for sports and trading cards; in Y Combinator.");
+  });
   it("VideoDB overlaps Graphon AI", () => {
     const c = portfolioCheck(
       { name: "VideoDB", description: "VideoDB is the video database for AI agents: search, memory and context across video and audio.", thesisArea: "media" },
@@ -164,6 +172,10 @@ describe("guards on the source", () => {
     // a ⌘Z pressed before a save landed did nothing, or undid the action before it
     for (const { f, s } of SRC) if (!f.endsWith("ui.tsx")) expect(s, f).not.toMatch(/pushUndo/);
     expect(SRC.filter(({ s }) => /ui\.undoable\(/.test(s)).length).toBeGreaterThanOrEqual(5);
+  });
+  it("a picture with a fallback is an <Img onFail>, never a bare <img onError> (10-30-26)", () => {
+    // a server-rendered picture that failed before React attached onError stayed broken instead of falling back
+    for (const { f, s } of SRC) for (const m of s.matchAll(/<img\b[^>]*onError=/g)) expect(m.index === s.indexOf("<img ref={ref} alt={alt} {...p} onError={onFail} />") ? "Img" : m[0], f).toBe("Img");
   });
   it("nothing truncates text", () => {
     for (const { f, s } of SRC) expect(s, f).not.toMatch(/text-overflow:\s*ellipsis|line-clamp/);

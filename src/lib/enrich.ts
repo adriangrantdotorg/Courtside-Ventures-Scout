@@ -222,6 +222,45 @@ export function siteBits(html: string, base: string): SiteBits {
   return { title, ogImage: og ? abs(og, base) : null, mp4: vid ? abs(vid, base) : null, yt, logo: icon ? abs(icon, base) : null };
 }
 
+/** Brand Sky's candidates on a homepage, best first: hero art (the image the page loads first, a video's poster, a
+ *  high-priority image), the startup's own logo (an image named for it AND marked as a logo, so a backer's logo like
+ *  "formation-logo.png" on heliosinc.ai is skipped), and the theme color. The job loads and measures each one. */
+export type BrandBits = { art: string[]; marks: string[]; themeColor: string | null };
+export function brandBits(html: string, base: string, name: string): BrandBits {
+  const attr = (tag: string, a: string) => tag.match(new RegExp(`\\s${a}=["']([^"']+)["']`, "i"))?.[1] || "";
+  const notArt = /logo|icon|favicon|avatar|badge|\.svg(\?|$)|sprite|flag/i;
+  const art: string[] = [];
+  for (const m of html.matchAll(/<link\b[^>]*>/gi)) {
+    const t = m[0];
+    if (/rel=["']preload["']/i.test(t) && /as=["']image["']/i.test(t) && /fetchpriority=["']high["']/i.test(t)) art.push(attr(t, "href"));
+  }
+  for (const m of html.matchAll(/<video\b[^>]*>/gi)) art.push(attr(m[0], "poster"));
+  for (const m of html.matchAll(/<img\b[^>]*>/gi)) if (/fetchpriority=["']high["']/i.test(m[0])) art.push(attr(m[0], "src"));
+  const words = cleanName(name).toLowerCase().split(/\s+/).filter((w) => w.length >= 3);
+  const own = (t: string) => words.some((w) => t.includes(w)) || t.replace(/[^a-z0-9]/g, "").includes(cleanName(name).toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const marks: { u: string; rank: number }[] = [];
+  for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
+    const t = m[0];
+    const src = attr(t, "src");
+    if (!src || src.startsWith("data:")) continue;
+    const file = src.split("?")[0].toLowerCase();
+    const alt = attr(t, "alt").toLowerCase();
+    const cls = attr(t, "class").toLowerCase();
+    const isLogo = /logo|lockup|wordmark|brand/.test(`${file} ${cls}`) || /logo/.test(alt);
+    const named = own(file.split("/").pop() || "") || own(alt);
+    if (!isLogo || !named) continue;
+    if (/(^|[^a-z])(partners?|investors?|backed|press|clients?|customers?|payments?|badges?)([^a-z]|$)/.test(`${file} ${cls} ${alt}`)) continue; // "cypress" is not press
+    marks.push({ u: src, rank: /lockup/.test(file + cls) ? 0 : /logo/.test(file + cls) ? 1 : 2 });
+  }
+  const uniq = (xs: string[]) => [...new Set(xs.filter(Boolean).map((u) => abs(u, base)).filter((u): u is string => !!u))];
+  const tc = meta(html, "theme-color");
+  return {
+    art: uniq(art).filter((u) => !notArt.test(u.split("?")[0])).slice(0, 3),
+    marks: uniq(marks.sort((a, b) => a.rank - b.rank).map((m) => m.u)).slice(0, 4),
+    themeColor: tc && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(tc.trim()) ? tc.trim() : null,
+  };
+}
+
 /** The first picture Scout has, in the order the team picked: product video → App Store screenshots → website preview → logo. */
 export function pickMedia(o: { site?: SiteBits | null; shots?: string[]; appIcon?: string | null; domain?: string | null }): Media {
   const s = o.site;

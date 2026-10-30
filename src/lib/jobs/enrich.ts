@@ -3,7 +3,7 @@
 import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import * as F from "../sources/fetchers";
-import { fetchRaw } from "../sources/http";
+import { fetchRaw, mediaLoads } from "../sources/http";
 import { isSubject, decodeGoogleNews } from "../backtest";
 import { buildRounds, totalOf, startupVerdict, TEAM_HIDDEN, duplicateOf, guessDomains, factsOf, isOfficialSite, searchReportOk, siteBits, pickMedia, appIdOf, SKIP_HOSTS, type Report, type DupIn, type SiteBits } from "../enrich";
 import { normKey } from "../companies";
@@ -14,6 +14,8 @@ import { fromHeadline, secondLook, FUNDING_SEARCHES, FUNDING_Q } from "./collect
 import { getSetting, setSetting, DEFAULT_QUERIES } from "../settings";
 import { aiAvailable, thesisCheck, CHECK_GAP_MS, CHECK_MIN_MS } from "../ai";
 import type { Ctx } from "./runner";
+import type { Media } from "@/db/schema";
+import { brandFor, iconBrand } from "./brand";
 
 const DAY = 86400000;
 
@@ -105,6 +107,18 @@ async function findSite(c: { name: string }, titles: string[], appSeller: string
   return null;
 }
 
+/** A homepage's links that don't load are dropped before the picture is picked, so a dead poster or video never
+ *  reaches a card (the next one in the team's order is used instead). Every company is re-read weekly, which also
+ *  catches a link that dies later. */
+export async function loadingOnly(bits: SiteBits): Promise<SiteBits> {
+  const [og, mp4, logo] = await Promise.all([
+    bits.ogImage ? mediaLoads(bits.ogImage, "image") : false,
+    bits.mp4 ? mediaLoads(bits.mp4, "video") : false,
+    bits.logo ? mediaLoads(bits.logo, "image") : false,
+  ]);
+  return { ...bits, ogImage: og ? bits.ogImage : null, mp4: mp4 ? bits.mp4 : null, logo: logo ? bits.logo : null };
+}
+
 /** Funds Raised, the website and the picture, one company at a time, oldest first, inside the time box. */
 export async function enrichCompanies(ctx: Ctx, opts: { ids?: number[]; limit?: number; search?: boolean } = {}) {
   const conds = [eq(S.companies.hidden, false), isNull(S.companies.mergedInto), isNotNull(S.companies.thesisArea)];
@@ -138,7 +152,10 @@ export async function enrichCompanies(ctx: Ctx, opts: { ids?: number[]; limit?: 
       } else page = await F.homepage(`https://${domain}`);
       let bits: SiteBits | null = page ? siteBits(page.html, page.url) : null;
       if (bits?.ogImage && /favicon|logo|icon/i.test(bits.ogImage) && !/og|share|social|preview|banner|hero/i.test(bits.ogImage)) bits = { ...bits, ogImage: null };
-      const media = pickMedia({ site: bits, shots: app?.shots || [], appIcon: app?.icon || null, domain });
+      if (bits) bits = await loadingOnly(bits);
+      const media: Media = pickMedia({ site: bits, shots: app?.shots || [], appIcon: app?.icon || null, domain });
+      const brand = page ? await brandFor(page.html, page.url, c.name, bits?.logo || app?.icon || null) : await iconBrand(app?.icon || null);
+      if (Object.keys(brand).length) media.brand = brand;
       await db()
         .update(S.companies)
         .set({ rounds, totalRaised: total, media, domain: domain || null, enrichedAt: new Date() })

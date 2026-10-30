@@ -44,6 +44,117 @@ test("Must See shows no website button with no official site, and no Funds Raise
   await expect(box).toBeHidden();
 });
 
+test("Must See with no product picture draws Brand Sky: the startup's mark in the open sky, clear of the words, never a gray letter", async ({ page }) => {
+  // Adrian, 10-30-26: Helios showed a gray "H"; Brand Sky (src/lib/brand.ts) always has a backdrop and a mark
+  await page.goto(HOME);
+  await ready(page);
+  const hero = page.locator(".x-tile.hero");
+  await expect(hero.locator(".logostage, .monogram")).toHaveCount(0);
+  const sky = hero.locator(".x-sky");
+  if (!(await sky.count())) {
+    await expect(hero.locator(".x-media img.cover, .x-media video.cover, .x-media .shots").first()).toBeVisible(); // a real product picture
+    return;
+  }
+  expect(["1", "2", "3"]).toContain(await sky.getAttribute("data-tier"));
+  const mark = sky.locator(".x-skymark");
+  await expect(mark).toBeVisible();
+  // decode() resolves only for an image that really loaded (an SVG logo with no size of its own reports naturalWidth 0)
+  for (const img of await sky.locator("img").all()) expect(await img.evaluate((el: HTMLImageElement) => el.decode().then(() => true, () => false)), `${await img.getAttribute("src")} loads`).toBe(true);
+  // what is drawn: a logo's picture inside its box (object-fit: contain), and the words' own lines, not their blocks
+  const drawn = await page.evaluate(() => {
+    const r = (x: DOMRect) => ({ x: x.left, y: x.top, w: x.width, h: x.height });
+    const mk = document.querySelector(".x-tile.hero .x-skymark") as HTMLElement;
+    let m = r(mk.getBoundingClientRect());
+    if (mk instanceof HTMLImageElement && mk.naturalWidth && mk.naturalHeight) {
+      const k = Math.min(m.w / mk.naturalWidth, m.h / mk.naturalHeight);
+      const w = mk.naturalWidth * k, h = mk.naturalHeight * k;
+      m = { x: m.x + (m.w - w) / 2, y: m.y + (m.h - h) / 2, w, h };
+    }
+    const words: { sel: string; x: number; y: number; w: number; h: number }[] = [];
+    for (const el of document.querySelectorAll(".x-tile.hero .x-name, .x-tile.hero .x-why, .x-tile.hero .x-tags > *")) {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      for (const rc of range.getClientRects()) words.push({ sel: el.className || el.tagName, ...r(rc) });
+    }
+    return { m, sky: r(document.querySelector(".x-tile.hero .x-sky")!.getBoundingClientRect()), words };
+  });
+  const { m, sky: box, words } = drawn;
+  expect(m.x).toBeGreaterThanOrEqual(box.x);
+  expect(m.x + m.w).toBeLessThanOrEqual(box.x + box.w + 1);
+  for (const t of words) {
+    const overlap = Math.max(0, Math.min(m.x + m.w, t.x + t.w) - Math.max(m.x, t.x)) * Math.max(0, Math.min(m.y + m.h, t.y + t.h) - Math.max(m.y, t.y));
+    expect(overlap, `the mark covers ${t.sel}`).toBe(0);
+  }
+});
+
+test("Must See on a phone: the name, the fit ring and the buttons never sit on each other (10-30-26)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(HOME);
+  await ready(page);
+  const hero = page.locator(".x-tile.hero");
+  await expect(hero.locator(".x-name")).toBeVisible();
+  const boxes: (readonly [string, { x: number; y: number; width: number; height: number } | null])[] = await Promise.all([".x-tl .x-fit", ".x-tr .x-web", ".x-name", ".x-acts", ".x-tags"].map(async (sel) => [sel, await hero.locator(sel).first().boundingBox()] as const));
+  // Brand Sky's mark as drawn (a logo's picture inside its box), clear of the fit ring and the globe too
+  const mark = await page.evaluate(() => {
+    const mk = document.querySelector(".x-tile.hero .x-skymark");
+    if (!mk) return null;
+    const r = mk.getBoundingClientRect();
+    if (mk instanceof HTMLImageElement && mk.naturalWidth && mk.naturalHeight) {
+      const k = Math.min(r.width / mk.naturalWidth, r.height / mk.naturalHeight);
+      const w = mk.naturalWidth * k, h = mk.naturalHeight * k;
+      return { x: r.left + (r.width - w) / 2, y: r.top + (r.height - h) / 2, width: w, height: h };
+    }
+    return { x: r.left, y: r.top, width: r.width, height: r.height };
+  });
+  if (mark) boxes.push([".x-skymark", mark]);
+  const card = (await hero.boundingBox())!;
+  for (const [sel, b] of boxes) {
+    if (sel === ".x-tr .x-web" && !b) continue; // no official site, no globe
+    expect(b, sel).not.toBeNull();
+    expect(b!.y + b!.height, `${sel} stays inside the card`).toBeLessThanOrEqual(card.y + card.height + 1);
+  }
+  for (let i = 0; i < boxes.length; i++)
+    for (let j = i + 1; j < boxes.length; j++) {
+      const [sa, a] = boxes[i], [sb, b] = boxes[j];
+      if (!a || !b) continue;
+      const overlap = Math.max(0, Math.min(a!.x + a!.width, b!.x + b!.width) - Math.max(a!.x, b!.x)) * Math.max(0, Math.min(a!.y + a!.height, b!.y + b!.height) - Math.max(a!.y, b!.y));
+      expect(overlap, `${sa} and ${sb} overlap`).toBe(0);
+    }
+});
+
+test("On the Radar: a card with no product picture draws Brand Sky, its mark clear of the fit ring, globe and words (10-30-26)", async ({ page }) => {
+  await page.goto(HOME);
+  await ready(page);
+  await expect(page.locator("#radar .x-tile .logostage")).toHaveCount(0);
+  const found = await page.evaluate(() => {
+    const draw = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      if (el instanceof HTMLImageElement && el.naturalWidth && el.naturalHeight) {
+        const k = Math.min(r.width / el.naturalWidth, r.height / el.naturalHeight);
+        const w = el.naturalWidth * k, h = el.naturalHeight * k;
+        return { x: r.left + (r.width - w) / 2, y: r.top + (r.height - h) / 2, w, h };
+      }
+      return { x: r.left, y: r.top, w: r.width, h: r.height };
+    };
+    const hit = (a: ReturnType<typeof draw>, b: ReturnType<typeof draw>) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    const bad: string[] = [];
+    const tiles = [...document.querySelectorAll("#radar .x-tile")].filter((t) => t.querySelector(".x-sky"));
+    for (const t of tiles) {
+      const mk = t.querySelector(".x-skymark");
+      if (!mk) {
+        bad.push(`${t.getAttribute("aria-label")}: no mark`);
+        continue;
+      }
+      const m = draw(mk);
+      const others = [t.querySelector(".x-tl .x-fit"), t.querySelector(".x-tr > *"), ...t.querySelectorAll(".x-over .x-name, .x-over .x-tags > *, .x-over .x-funds")].filter(Boolean) as Element[];
+      for (const o of others) if (hit(m, draw(o)) > 0) bad.push(`${t.getAttribute("aria-label")}: mark covers ${o.className}`);
+    }
+    return { count: tiles.length, bad };
+  });
+  expect(found.bad).toEqual([]);
+  test.info().annotations.push({ type: "Brand Sky cards", description: String(found.count) });
+});
+
 test("On the Radar: the Dropdown Bar filters the tiles, and Clear Filters brings them back", async ({ page }) => {
   await page.goto(HOME);
   await ready(page);
@@ -144,6 +255,61 @@ test("secondary buttons share one look sitewide: Track, More and View Details", 
     }
   }
   expect([...looks]).toHaveLength(1);
+});
+
+test("the Pipeline and the company page: no gray logo tile; Brand Sky's mark sits inside the picture, clear of the words (10-30-26)", async ({ page }) => {
+  await page.goto("/pipeline");
+  await ready(page);
+  await expect(page.locator(".x-row .logostage")).toHaveCount(0);
+  const check = (scope: string) =>
+    page.evaluate((scope) => {
+      const draw = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        if (el instanceof HTMLImageElement && el.naturalWidth && el.naturalHeight) {
+          const k = Math.min(r.width / el.naturalWidth, r.height / el.naturalHeight);
+          const w = el.naturalWidth * k, h = el.naturalHeight * k;
+          return { x: r.left + (r.width - w) / 2, y: r.top + (r.height - h) / 2, w, h };
+        }
+        return { x: r.left, y: r.top, w: r.width, h: r.height };
+      };
+      const bad: string[] = [];
+      const skies = [...document.querySelectorAll(`${scope} .x-sky`)];
+      for (const sky of skies) {
+        const mk = sky.querySelector(".x-skymark");
+        if (!mk) {
+          bad.push("no mark");
+          continue;
+        }
+        const name = sky.querySelector(".x-skyname");
+        if (name) {
+          // a word never splits across lines ("Chao / s", 10-30-26): no more lines than words
+          const range = document.createRange();
+          range.selectNodeContents(name);
+          const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+          if (lines > (name.textContent || "").trim().split(/\s+/).length) bad.push(`"${name.textContent}" breaks inside a word`);
+        }
+        const m = draw(mk), b = draw(sky);
+        if (m.x < b.x - 1 || m.x + m.w > b.x + b.w + 1 || m.y < b.y - 1 || m.y + m.h > b.y + b.h + 1) bad.push(`mark outside its picture (${mk.className})`);
+        const row = sky.closest(".x-row");
+        for (const el of row ? row.querySelectorAll(".x-bover .x-name, .x-bover .x-why, .x-bover .x-tags > *") : []) {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          for (const t of range.getClientRects())
+            if (Math.max(0, Math.min(m.x + m.w, t.right) - Math.max(m.x, t.left)) * Math.max(0, Math.min(m.y + m.h, t.bottom) - Math.max(m.y, t.top)) > 0) bad.push(`mark covers ${el.className}`);
+        }
+      }
+      return { count: skies.length, bad };
+    }, scope);
+  const rows = await check(".x-row");
+  expect(rows.bad).toEqual([]);
+  if (!rows.count) return; // nothing without a product picture today
+  // the company page of a row drawn with Brand Sky
+  await page.locator(".x-row:has(.x-sky) .x-name a").first().click();
+  await page.waitForURL(/\/company\/\d+/);
+  await ready(page);
+  await expect(page.locator(".x-dmedia .logostage")).toHaveCount(0);
+  await expect(page.locator(".x-dmedia .x-sky")).toHaveCount(1);
+  expect((await check(".x-dmedia")).bad).toEqual([]);
 });
 
 test("the company page is the Deal Sheet: fit and Funds Raised lead, one red button", async ({ page }) => {

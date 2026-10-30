@@ -27,7 +27,11 @@ export type Media = {
   logo?: string;
   play?: string;
   from?: string;
+  /** Brand Sky's parts from the startup's own site (src/lib/brand.ts), each only when it loads. */
+  brand?: Brand;
 };
+/** Hero art from the homepage, the logo from its header, light or dark, and up to two brand colors (10-30-26). */
+export type Brand = { art?: string; artTone?: "light" | "dark"; mark?: string; markTone?: "light" | "dark"; colors?: string[] };
 /** The AI Thesis Check: is this a consumer startup inside Courtside's thesis? (10-26-26) */
 export type ThesisCheck = { ok: boolean; area: string | null; why: string; model: string; at: string };
 /** One funding round and every source that reported it. */
