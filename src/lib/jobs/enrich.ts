@@ -15,7 +15,7 @@ import { getSetting, setSetting, DEFAULT_QUERIES } from "../settings";
 import { aiAvailable, thesisCheck, CHECK_GAP_MS, CHECK_MIN_MS } from "../ai";
 import type { Ctx } from "./runner";
 import type { Media } from "@/db/schema";
-import { brandFor, iconBrand } from "./brand";
+import { brandFor, iconBrand, imageEngineError } from "./brand";
 
 const DAY = 86400000;
 
@@ -131,6 +131,8 @@ export async function enrichCompanies(ctx: Ctx, opts: { ids?: number[]; limit?: 
     .orderBy(sql`${S.companies.enrichedAt} asc nulls first`, sql`${S.companies.score} desc`)
     .limit(opts.limit ?? 400);
   await ctx.stage("funds raised, websites and pictures", 0, cos.length);
+  const engineErr = cos.length ? await imageEngineError() : null;
+  if (engineErr) ctx.error(`Brand Sky can't measure images here, so saved art and logos are kept as they are: ${engineErr}`);
   for (const c of cos) {
     if (ctx.outOfTime()) break;
     try {
@@ -154,8 +156,10 @@ export async function enrichCompanies(ctx: Ctx, opts: { ids?: number[]; limit?: 
       if (bits?.ogImage && /favicon|logo|icon/i.test(bits.ogImage) && !/og|share|social|preview|banner|hero/i.test(bits.ogImage)) bits = { ...bits, ogImage: null };
       if (bits) bits = await loadingOnly(bits);
       const media: Media = pickMedia({ site: bits, shots: app?.shots || [], appIcon: app?.icon || null, domain });
-      const brand = page ? await brandFor(page.html, page.url, c.name, bits?.logo || app?.icon || null) : await iconBrand(app?.icon || null);
-      if (Object.keys(brand).length) media.brand = brand;
+      // no image engine: keep the parts measured before rather than wiping them
+      const brand = engineErr ? null : page ? await brandFor(page.html, page.url, c.name, bits?.logo || app?.icon || null) : await iconBrand(app?.icon || null);
+      if (brand && Object.keys(brand).length) media.brand = brand;
+      else if (!brand && c.media?.brand) media.brand = c.media.brand;
       await db()
         .update(S.companies)
         .set({ rounds, totalRaised: total, media, domain: domain || null, enrichedAt: new Date() })

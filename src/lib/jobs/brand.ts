@@ -20,6 +20,17 @@ async function sharp(): Promise<Sharp | null> {
   return sharpMod;
 }
 
+/** Why images can't be measured here (sharp failed to load), or null when they can. */
+export async function imageEngineError(): Promise<string | null> {
+  if (await sharp()) return null;
+  try {
+    await import("sharp");
+    return "sharp loaded but returned nothing";
+  } catch (e) {
+    return e instanceof Error ? e.message.split("\n")[0] : String(e);
+  }
+}
+
 type Measured = { w: number; h: number; px: Buffer; right: Buffer };
 /** An image's size and its pixels at 96 px wide (the whole image, and the right half where the mark sits). */
 export async function measure(buf: Buffer): Promise<Measured | null> {
