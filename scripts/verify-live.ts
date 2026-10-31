@@ -48,6 +48,13 @@ ok(count(bt.html, /class="card2 win"/g) >= 2 && !/class="card2 none"/.test(bt.ht
 const ab = await get("/about");
 ok(ab.html.includes("https://www.linkedin.com/in/adriangrant3/") && ab.html.includes("A prototype deal-sourcing site for Courtside Ventures built by Adrian Grant."), "About: Talk to Adrian and the prototype line");
 for (const p of ["/icon.png", "/favicon.ico"]) ok((await fetch(url + p)).status === 200, `${p} answers`);
+// The share image (10-31-26): a link to Scout on LinkedIn showed a grey box with a cut-off description.
+const tag = (k: string) => (home.html.match(new RegExp(`<meta[^>]+(?:property|name)="${k}"[^>]+content="([^"]*)"`)) || [])[1] || "";
+const ogImage = tag("og:image").replace(/&amp;/g, "&");
+const ogImg = ogImage ? await fetch(ogImage) : null;
+ok(/^https:\/\//.test(ogImage) && ogImg?.status === 200 && /^image\/(jpeg|png)/.test(ogImg.headers.get("content-type") || ""), `the share image loads (${ogImage || "none"})`);
+ok(tag("og:description").length > 0 && tag("og:description").length <= 160, "the share description fits LinkedIn (160 characters or less)");
+ok(tag("twitter:card") === "summary_large_image", "X shows the large share image");
 // the official websites on Today's cards answer (V2's Visit Website)
 const links = [...home.html.matchAll(/class="x-web w1 known" href="(https?:[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&")).slice(0, 5);
 ok(links.length >= 1, `Today's cards link official websites (${links.length})`);
