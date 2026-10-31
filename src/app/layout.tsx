@@ -4,10 +4,10 @@ import "./progress.css";
 import "./v2.css";
 import { Shell } from "@/components/Shell";
 import { Ticker } from "@/components/Ticker";
-import { sharePreview } from "@/lib/share";
+import { sharePreview, siteUrl } from "@/lib/share";
 
 // The address link previews resolve opengraph-image.jpg against: LinkedIn, Slack and X need an absolute https URL.
-const SITE = process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
+const SITE = siteUrl() || "http://localhost:3000";
 // Adrian edits these in content/share-preview.md (a unit test holds the lengths).
 const SHARE = sharePreview();
 

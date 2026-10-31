@@ -15,6 +15,8 @@ npm run -s db:migrate > "$LOG/migrate.log" 2>&1 || fail "the migration failed (s
 printf '▶ Building\n'
 V pull --yes --environment=production > "$LOG/pull.log" 2>&1
 V build --prod > "$LOG/build.log" 2>&1 || fail "the build failed (see .logs/build.log)" "fix what the log names, then npm run update"
+# The share image needs the public address; a Mac build once baked in localhost (10-31-26, siteUrl in src/lib/share.ts)
+grep -rqs 'property="og:image" content="http://localhost' .vercel/output/static && fail "the build points the share image at localhost" "check .vercel/project.json names the Vercel project, then npm run update"
 printf '▶ Deploying the build\n'
 V deploy --prebuilt --prod --yes > "$LOG/deploy.log" 2>&1 || fail "the deploy failed (see .logs/deploy.log)" "npm run update"
 URL=$(grep '^SITE_URL=' .env.local | cut -d= -f2 | tr -d '"')
