@@ -283,7 +283,9 @@ export async function loadSeed(seed: Seed, log: (s: string) => void = () => {}) 
   if (st.lanes) await put("lanes", st.lanes);
   await put("scoreWeights", { thesis: w.lane ?? 30, stage: w.stage ?? 20, signal: w.signal ?? 20, culture: w.culture ?? 15, team: w.team ?? 10, geo: w.geo ?? 5 });
   if (st.stage) await put("stage", st.stage);
-  if (st.laneQueries) await put("thesisQueries", st.laneQueries);
+  // The seed file names them thesisQueries; older seeds said laneQueries (the 10-29-26 seed bug: only laneQueries was read).
+  const thesisQueries = st.thesisQueries ?? st.laneQueries;
+  if (thesisQueries) await put("thesisQueries", thesisQueries);
   await put("extraSources", !!st.extraSources);
   await put("sourcesOff", st.sourcesOff || []);
   await put("memoDailyCap", 4); // the free $5 a month never runs out mid-month (10-26-26)

@@ -32,6 +32,15 @@ describe("the launch seed and V2", () => {
     expect(c.thesisCheck).toEqual(thesisCheck);
     expect(c.enrichedAt).not.toBeNull();
   });
+  it("stores the seed's thesisQueries (the 10-29-26 seed bug read only laneQueries)", async () => {
+    const { loadSeed } = await import("@/lib/seed");
+    const { db, schema: S } = await import("@/db");
+    const { eq } = await import("drizzle-orm");
+    const queries = { sports: ["sports startup raises seed round"] };
+    await loadSeed({ companies: [], settings: { thesisQueries: queries } } as never);
+    const [row] = await db().select().from(S.settings).where(eq(S.settings.key, "thesisQueries"));
+    expect(row?.value).toEqual(queries);
+  });
   it("the export writes every one of those fields", () => {
     const src = readFileSync("scripts/export-seed.ts", "utf8");
     for (const f of V2_FIELDS) expect(src).toMatch(new RegExp(`\\b${f}: c\\.${f}\\b`));

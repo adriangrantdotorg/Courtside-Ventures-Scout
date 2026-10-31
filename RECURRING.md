@@ -2,6 +2,7 @@
 
 One line per defect fixed, so the next session can find the first report.
 
+- 10-31-26 · Seed bug: a fresh launch loaded no thesis search queries (the loader read `laneQueries`, the seed file holds `thesisQueries`) → read `thesisQueries`, `laneQueries` as a fallback (`src/lib/seed.ts`); test in `tests/unit/seed-v2.test.ts` (fails on the old loader).
 - 10-14-26 · First pull made junk cards (dev tools as "gaming", a school soccer "seed", tiny Form Ds, Google products) → NOT_CONSUMER / INCUMBENT filters, funding words required for a stage, Form D ≥ $250K, weak keywords count half (`src/lib/thesis.ts`, `src/lib/jobs/collect-signals.ts`); unit tests in `tests/unit/rules.test.ts`.
 - 10-14-26 · Culture counted "Future", "Jump" and podcast-host boilerplate as mentions → everyday-word names need a product context; boilerplate sentences skipped (`src/lib/extract.ts`).
 - 10-14-26 · Company page 500: a server component called a client-module function → shared labels moved to `src/lib/labels.ts`.
