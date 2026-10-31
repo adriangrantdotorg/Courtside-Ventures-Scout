@@ -7,9 +7,7 @@ What LinkedIn, Slack, iMessage and X show when someone shares Scout's link: the 
 - After an edit: deploy, then refresh LinkedIn in Post Inspector. Posts and messages already sent keep their old card.
 
 ## Title
-
-Courtside Ventures Scout
+Courtside Ventures AI Scout (prototype)
 
 ## Description
-
-Deal sourcing for Courtside Ventures: startups, trends, sponsors and funds, every fact linked to its source.
+AI Scout prototype optimized for sourcing Sports, Lifestyle, and Gaming startups synergistic with Courtside Ventures.
