@@ -91,7 +91,8 @@ def b():
 body{background:radial-gradient(70% 90% at 78% 40%,#3a0a1f 0%,#17181c 60%,#101114 100%)}
 .left{position:absolute;left:64px;top:0;bottom:0;width:440px;display:flex;flex-direction:column;justify-content:center;gap:22px}
 .brand{display:flex;align-items:center;gap:16px;font:400 22px/1.15 "Bruno Ace";text-transform:uppercase}
-.big{font:700 132px/.9 Oswald;letter-spacing:.01em;text-transform:uppercase}
+.big{font:700 106px/.9 Oswald;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}
+.tag{align-self:flex-start;margin-top:-6px;padding:7px 12px;border:1.5px solid rgba(255,77,122,.7);border-radius:4px;font:600 17px/1 "IBM Plex Mono";letter-spacing:.16em;text-transform:uppercase;color:#ffb3c6}
 .big b{color:#ff4d7a;font-weight:700}
 .l{font:500 27px/1.32 Montserrat;color:#e9e3e6}
 .k{font:600 21px/1 Oswald;letter-spacing:.2em;text-transform:uppercase;color:#ffbe4c}
@@ -101,7 +102,8 @@ body{background:radial-gradient(70% 90% at 78% 40%,#3a0a1f 0%,#17181c 60%,#10111
 .shot img{width:820px;display:block}
 """
     body = (f'<div class="left"><div class="brand">{logo(46)}<span>Courtside<br>Ventures</span></div>'
-            f'<div class="big">Scout</div><div class="l">Deal sourcing, every fact linked to its source.</div>'
+            f'<div class="big"><b>AI</b> Scout</div><div class="tag">Prototype</div>'
+            f'<div class="l">Optimized for sourcing startups synergistic with Courtside&nbsp;Ventures.</div>'
             f'<div class="k">{KICKER}</div></div>'
             f'<div class="stage"><div class="shot"><img src="today.png" alt=""></div></div>')
     return page(css, body)
@@ -195,7 +197,7 @@ OPTIONS = [
      "tokens": {"visual": {"bg": "red-gradient", "accent": ["#cc003d"], "saturation": "high", "ornament": "edge light",
                            "fonts": {"display": "bruno ace", "body": "montserrat"}, "layout": "banner", "energy": "bold"}}},
     {"id": "B", "fn": b, "name": "Product Shot", "tag": "On-Profile",
-     "desc": "The real Today page, tilted, with a red edge light, beside a big SCOUT. An investor sees what the site is "
+     "desc": "The real Today page, tilted, with a red edge light, beside a big AI SCOUT. An investor sees what the site is "
              "before clicking. Uses the README screenshot (10-27-26).",
      "tokens": {"visual": {"bg": "dark", "accent": ["#cc003d", "#ffbe4c"], "ornament": "edge light",
                            "fonts": {"display": "oswald", "body": "montserrat"}, "layout": "split + screenshot", "energy": "balanced"}}},

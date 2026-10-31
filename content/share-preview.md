@@ -5,6 +5,7 @@ What LinkedIn, Slack, iMessage and X show when someone shares Scout's link: the 
 - **Title:** 60 characters or less.
 - **Description:** 125 characters or less. LinkedIn shows it on one line and cut the old one at 129 characters (10-30-26).
 - After an edit: deploy, then refresh LinkedIn in Post Inspector. Posts and messages already sent keep their old card.
+- The words ON the picture are separate: they live in `design/share-image/build.py` (option B). Change both together.
 
 ## Title
 Courtside Ventures AI Scout (prototype)
