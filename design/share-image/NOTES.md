@@ -18,7 +18,8 @@ The picture LinkedIn, Slack, iMessage and X show when someone shares Scout's lin
 ## Copy of record
 
 - Title: Courtside Ventures Scout. Line: "Deal sourcing, every fact linked to its source." Kicker: Sports · Lifestyle · Gaming.
-- `og:description` is 160 characters or less: LinkedIn cut the old 168-character one at "every fact linked to its so…".
+- The title and description live in `content/share-preview.md` (Adrian edits them there). Limits: title 60, description
+  125 characters (LinkedIn's message card cut the old 168-character one at 129). A unit test fails past either.
 
 ## Look
 

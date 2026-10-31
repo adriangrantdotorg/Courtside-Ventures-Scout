@@ -1,6 +1,7 @@
 // npm run verify:live -- <url>: the live checks with AI off, then the read-only browser suite, then the residue query.
 import { config } from "dotenv";
 import { execFileSync } from "node:child_process";
+import { SHARE_LIMITS } from "../src/lib/share";
 config({ path: ".env.local", quiet: true });
 
 const LIGHT = process.argv.includes("--light"); // the launch's check: pages and sources only; the browser suite and residue run in `npm run release`
@@ -53,7 +54,8 @@ const tag = (k: string) => (home.html.match(new RegExp(`<meta[^>]+(?:property|na
 const ogImage = tag("og:image").replace(/&amp;/g, "&");
 const ogImg = ogImage ? await fetch(ogImage) : null;
 ok(/^https:\/\//.test(ogImage) && ogImg?.status === 200 && /^image\/(jpeg|png)/.test(ogImg.headers.get("content-type") || ""), `the share image loads (${ogImage || "none"})`);
-ok(tag("og:description").length > 0 && tag("og:description").length <= 160, "the share description fits LinkedIn (160 characters or less)");
+const shareDesc = tag("og:description").replace(/&#x27;/g, "'").replace(/&amp;/g, "&");
+ok(shareDesc.length > 0 && shareDesc.length <= SHARE_LIMITS.description, `the share description fits LinkedIn's one line (${shareDesc.length} of ${SHARE_LIMITS.description} characters)`);
 ok(tag("twitter:card") === "summary_large_image", "X shows the large share image");
 // the official websites on Today's cards answer (V2's Visit Website)
 const links = [...home.html.matchAll(/class="x-web w1 known" href="(https?:[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&")).slice(0, 5);
