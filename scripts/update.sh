@@ -14,7 +14,9 @@ printf '▶ Migrating\n'
 npm run -s db:migrate > "$LOG/migrate.log" 2>&1 || fail "the migration failed (see .logs/migrate.log)" "npm run update"
 printf '▶ Building\n'
 V pull --yes --environment=production > "$LOG/pull.log" 2>&1
-V build --prod > "$LOG/build.log" 2>&1 || fail "the build failed (see .logs/build.log)" "fix what the log names, then npm run update"
+# Pages are prerendered from the database; one dropped connection (Neon "fetch failed") failed a whole build (10-31-26), so build once more
+build() { V build --prod > "$LOG/build.log" 2>&1; }
+build || { grep -q "Error connecting to database" "$LOG/build.log" && { printf '▶ The database dropped a connection mid-build; building again\n'; sleep 5; build; }; } || fail "the build failed (see .logs/build.log)" "fix what the log names, then npm run update"
 # The share image needs the public address; a Mac build once baked in localhost (10-31-26, siteUrl in src/lib/share.ts)
 grep -rqs 'property="og:image" content="http://localhost' .vercel/output/static && fail "the build points the share image at localhost" "check .vercel/project.json names the Vercel project, then npm run update"
 printf '▶ Deploying the build\n'
