@@ -22,6 +22,12 @@ grep -rqs 'property="og:image" content="http://localhost' .vercel/output/static 
 printf '▶ Deploying the build\n'
 V deploy --prebuilt --prod --yes > "$LOG/deploy.log" 2>&1 || fail "the deploy failed (see .logs/deploy.log)" "npm run update"
 URL=$(grep '^SITE_URL=' .env.local | cut -d= -f2 | tr -d '"')
+# Right after the deploy the address can still serve the old build for a few seconds; the check once read it (10-31-26)
+B=$(cat .next/BUILD_ID 2>/dev/null)
+if [ -n "$B" ]; then
+  printf '▶ Waiting for the live site to serve the new build\n'
+  i=0; until curl -fsS "$URL/" 2>/dev/null | grep -q "$B"; do i=$((i+1)); [ "$i" -ge 30 ] && fail "the live site still serves the old build after 90 s" "npm run verify:live -- $URL"; sleep 3; done
+fi
 printf '▶ Checking %s\n' "$URL"
 npx tsx scripts/verify-live.ts "$URL" --light > "$LOG/verify.log" 2>&1 || { tail -12 "$LOG/verify.log"; fail "a live check failed (see .logs/verify.log)" "fix what it names, then npm run update"; }
 printf '\n✅ Scout is up to date: %s\n' "$URL"
