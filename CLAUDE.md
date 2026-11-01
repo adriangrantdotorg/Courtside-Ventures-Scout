@@ -56,7 +56,11 @@ A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: 
 - A server component can't call a function exported from a `"use client"` module: shared helpers live in `src/lib/` (e.g. `labels.ts`).
 - Live Playwright runs must stay read-only: the click test skips switches and `data-act` controls on `LIVE_URL`.
 - YouTube's keyless feeds rate-limit with 404; `http.ts` backs off for 60 s. Google News links are redirects; the backtest never stores them.
-- The SEC requires a contact email in the User-Agent (`SEC_CONTACT_EMAIL`).
+- The SEC requires a contact email in the User-Agent: only the `SEC_CONTACT_EMAIL` setting on Vercel and in `.env.local`,
+  the address Adrian gave for it (10-31-26); without it Scout never calls the SEC. Never Courtside's own address, and
+  never one he didn't give: Scout never speaks to an outside party as Courtside. This repo is public, so no address goes
+  in the code (`tests/unit/contact.test.ts` fails on one). Every request's User-Agent names the project, `VCScout/1.0`,
+  never the firm (Adrian, 10-31-26).
 - `scripts/step.ts` drives the build-progress page (`~/.courtside-ventures-scout/`) and `settings.build_progress`; `done: true` turns the Building page off.
 - `RECURRING.md` is the defect ledger: add one line per fix.
 - `SITE_URL` is a Sensitive variable on Vercel: a Mac build (`npm run update`, `vercel build`) reads the placeholder `[SENSITIVE]`. Anything that needs the public address at build time reads `siteUrl()` (`src/lib/share.ts`), which falls back to the linked project's `<name>.vercel.app`; `update.sh` stops before deploying a share image that points at localhost (10-31-26).

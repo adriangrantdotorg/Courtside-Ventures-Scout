@@ -109,7 +109,6 @@ if [ "$FROM" -le 1 ]; then
   ENVS=$(V env ls 2>/dev/null)
   SITE_URL="https://$NAME.vercel.app"
   if ! printf '%s' "$ENVS" | grep -q 'CRON_SECRET'; then CS=$(openssl rand -hex 24); for e in production preview development; do printf %s "$CS" | V env add CRON_SECRET "$e" > /dev/null 2>&1; done; fi
-  if ! printf '%s' "$ENVS" | grep -q 'SEC_CONTACT_EMAIL'; then EM=$(V api /v2/user 2>/dev/null | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{console.log(JSON.parse(d).user.email)}catch{console.log("hello@courtsidevc.com")}})'); for e in production preview development; do printf %s "$EM" | V env add SEC_CONTACT_EMAIL "$e" > /dev/null 2>&1; done; fi
   if ! printf '%s' "$ENVS" | grep -q 'SITE_URL'; then for e in production preview development; do printf %s "$SITE_URL" | V env add SITE_URL "$e" > /dev/null 2>&1; done; fi
   V env pull .env.local --yes > "$LOG/env.log" 2>&1
   step 1 Setup --note "project, database and environment ready (account: $ACCOUNT)"

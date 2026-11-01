@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { transport, resetBackoff } from "@/lib/sources/http";
 import * as F from "@/lib/sources/fetchers";
@@ -12,6 +12,8 @@ let calls: string[] = [];
 
 beforeEach(() => {
   resetBackoff();
+  // the SEC is only called with a contact (src/lib/sources/http.ts); the real one lives only in Vercel's settings
+  vi.stubEnv("SEC_CONTACT_EMAIL", "contact@example.org");
   calls = [];
   transport.fetch = (async (url: string, init?: RequestInit) => {
     calls.push(String(url));
@@ -24,6 +26,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   transport.fetch = real;
+  vi.unstubAllEnvs();
 });
 
 // each fetcher with its fixture, then every failure mode: nothing comes back, nothing throws
@@ -88,7 +91,7 @@ describe("manners", () => {
     }) as typeof fetch;
     const { fetchText } = await import("@/lib/sources/http");
     await fetchText("https://hn.algolia.com/api/v1/x");
-    expect(ua).toMatch(/^CourtsideVenturesScout\/1\.0 \(\+https?:\/\//);
+    expect(ua).toMatch(/^VCScout\/1\.0 \(\+https?:\/\//);
   });
 });
 

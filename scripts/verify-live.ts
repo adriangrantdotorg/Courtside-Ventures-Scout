@@ -10,7 +10,7 @@ if (!url) throw new Error("usage: npm run verify:live -- <url>");
 const fails: string[] = [];
 const ok = (c: boolean, m: string) => (c ? console.log("✓ " + m) : (fails.push(m), console.log("✗ " + m)));
 const get = async (p: string) => {
-  const r = await fetch(url + p, { headers: { "user-agent": "CourtsideVenturesScout/1.0 verify" } });
+  const r = await fetch(url + p, { headers: { "user-agent": "VCScout/1.0 verify" } });
   return { status: r.status, html: await r.text(), landed: r.url };
 };
 const count = (html: string, re: RegExp) => (html.match(re) || []).length;

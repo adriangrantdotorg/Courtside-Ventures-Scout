@@ -4,8 +4,13 @@ import { sql } from "drizzle-orm";
 import { db, hasDb } from "@/db";
 
 const SITE = () => process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "local");
-export const UA = () => `CourtsideVenturesScout/1.0 (+${SITE()})`;
-const SEC_UA = () => `CourtsideVenturesScout/1.0 ${process.env.SEC_CONTACT_EMAIL || "hello@courtsidevc.com"}`;
+// The name every outside site sees: the project's own, never Courtside's (Adrian, 10-31-26)
+export const UA = () => `VCScout/1.0 (+${SITE()})`;
+// The contact the SEC asks for in every filing request: only the SEC_CONTACT_EMAIL setting, an address Adrian gave for
+// it (10-31-26). No fallback: never Courtside's own address (Scout never speaks to anyone as Courtside), and without the
+// setting Scout never calls the SEC. This repo is public, so the address stays out of the code.
+const SEC_CONTACT = () => process.env.SEC_CONTACT_EMAIL || "";
+const SEC_UA = () => `VCScout/1.0 ${SEC_CONTACT()}`;
 
 // minimum gap between requests to the same host, in ms
 const GAP: Record<string, number> = {
@@ -42,6 +47,7 @@ export async function fetchRaw(url: string, o: FetchOpts = {}): Promise<FetchRes
   } catch {
     return { ok: false, status: 0, text: "", error: "bad url" };
   }
+  if (host.endsWith("sec.gov") && !SEC_CONTACT()) return { ok: false, status: 0, text: "", error: "no SEC contact email: set SEC_CONTACT_EMAIL (Adrian's pick)" };
   if ((blockedUntil.get(host) || 0) > Date.now()) return { ok: false, status: 429, text: "", error: "backing off" };
   await politeWait(host);
   const ctl = new AbortController();
