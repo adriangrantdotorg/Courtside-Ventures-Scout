@@ -135,7 +135,6 @@ body{background:var(--bg,#0b0b0e);margin:0}
 .m-c .lockup{position:absolute;left:70%;top:30%;width:28%;transform:translate(-50%,-50%)}
 @keyframes c-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(-12%)}}
 
-@media (prefers-reduced-motion:reduce){.m-a *,.m-b *,.m-c *{animation:none!important}}
 .frozen *{animation-play-state:paused!important}
 """
 

@@ -97,3 +97,28 @@ describe("routes", () => {
     expect(await aiAvailable()).toBe(false);
   });
 });
+
+// 11-05-26: Hoopr's card read "raised $40.0M Series A" for a ₹4 crore (about $480K) round. It was saved with no amount
+// (currency "$" by default); a later "₹4 Crore" story filled the amount and left the "$".
+describe("a company's raise keeps its currency", () => {
+  it("an amount added to an existing card brings its currency, and the card states it in dollars", async () => {
+    const { upsertCompany, moneyOf } = await import("@/lib/companies");
+    const { db, schema: S } = await import("@/db");
+    const { eq } = await import("drizzle-orm");
+    const { whyFitsLine } = await import("@/lib/score");
+    const sig = (t: string, url: string) => ({ type: "news", source: "test", title: t, url, date: new Date("2026-02-20") });
+    const first = await upsertCompany({ name: "Tunelicense Test", thesisArea: "media", stage: "seed", amount: null, currency: "$", signal: sig("Tunelicense Test secures funding in its seed round", "https://example.com/a") });
+    const m = moneyOf("Tunelicense Test Raises ₹4 Crore to Strengthen Its Platform")!;
+    expect(m).toEqual({ amount: 4e7, currency: "INR" });
+    await upsertCompany({ name: "Tunelicense Test", thesisArea: "media", stage: "seed", amount: m.amount, currency: m.currency, signal: sig("Tunelicense Test Raises ₹4 Crore", "https://example.com/b") });
+    const [c] = await db().select().from(S.companies).where(eq(S.companies.id, first!.id));
+    expect([Number(c.amount), c.currency]).toEqual([4e7, "INR"]);
+    // a second story in another currency never re-labels the amount already saved
+    await upsertCompany({ name: "Tunelicense Test", thesisArea: "media", stage: "seed", amount: 5e5, currency: "$", signal: sig("Tunelicense Test raises $500K", "https://example.com/c") });
+    const [c2] = await db().select().from(S.companies).where(eq(S.companies.id, first!.id));
+    expect([Number(c2.amount), c2.currency]).toEqual([4e7, "INR"]);
+    const line = whyFitsLine({ name: c.name, description: "", thesisArea: "media", stage: "seed", amount: Number(c.amount), currency: c.currency, lastSignal: null });
+    expect(line).toContain("raised $480K seed");
+    expect(line).not.toMatch(/40\.0M/);
+  });
+});

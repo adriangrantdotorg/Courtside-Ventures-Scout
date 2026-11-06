@@ -13,8 +13,22 @@ test("the site moves even when the Mac asks for reduced motion, and Settings can
   await page.goto("/pipeline");
   const sweep = await page.locator(".rule").first().evaluate((el) => getComputedStyle(el, "::after").animationName);
   expect(sweep).toBe("sweep");
+  // Brand Sky's drifting art (11-05-26, 2nd report: the V2 styles stopped it on a Mac with Reduce Motion on)
+  const drift = () =>
+    page.evaluate(() => {
+      const sky = document.createElement("div");
+      sky.className = "x-sky";
+      const art = document.createElement("img");
+      art.className = "x-skyart x-drift";
+      sky.appendChild(art);
+      document.body.appendChild(sky);
+      const n = getComputedStyle(art).animationName;
+      sky.remove();
+      return n;
+    });
+  expect(await drift()).toBe("x-skydrift");
   await page.evaluate(() => (document.documentElement.dataset.motion = "off"));
-  expect(await page.locator(".ticker .track").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+  expect(await page.locator(".ticker .track").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");  expect(await drift()).toBe("none");
 });
 
 test("the top bar stays put while the page scrolls", async ({ page }) => {

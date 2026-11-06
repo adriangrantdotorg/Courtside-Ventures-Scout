@@ -1,6 +1,7 @@
 // Thesis-fit score (0-100), the "why it fits" line and the portfolio check. Deterministic, no AI.
 import { classify, notVentureScale, type Area } from "./thesis";
-import { pastStage, fmtMoney, fmtDate } from "./format";
+import { pastStage, fmtDate, IN_RANGE_STAGES } from "./format";
+import { raisedText } from "./v2";
 import type { Weights } from "./settings";
 
 export type Plays = { key: string; label: string; parallel: string; re: RegExp; areas?: Area[] };
@@ -55,7 +56,7 @@ export function scoreCompany(i: ScoreInput, w: Weights, now = Date.now()): { sco
   // stage and check
   let stage = 0;
   if (pastStage(i.stage)) stage = Math.round(w.stage * 0.1);
-  else if (["pre-seed", "seed", "series-a"].includes(i.stage)) stage = w.stage;
+  else if (IN_RANGE_STAGES.includes(i.stage)) stage = w.stage;
   else stage = Math.round(w.stage * 0.7);
   if (i.amount && i.currency === "$" && i.amount > i.checkRange.maxCheck * 10) stage = Math.round(stage * 0.5);
   if (i.amount && i.currency === "$" && i.amount < i.checkRange.minCheck * 0.6) stage = Math.round(stage * 0.6);
@@ -110,7 +111,7 @@ export function whyFitsLine(i: { name: string; description: string; thesisArea: 
   // portfolio" (Adrian, 10-30-26: 305 cards read "near Religion of Sports" from a loose keyword match).
   const head = play ? `${what}: ${play.label}, like ${play.parallel}` : `${what}, inside Courtside's thesis`;
   let fact = "";
-  if (i.amount) fact = `raised ${fmtMoney(i.amount, i.currency)}${i.stage !== "unknown" ? " " + (i.stage === "pre-seed" ? "pre-seed" : i.stage === "seed" ? "seed" : i.stage === "series-a" ? "Series A" : "") : ""}`.trim();
+  if (i.amount) fact = `raised ${raisedText(i.amount, i.currency)}${i.stage !== "unknown" ? " " + (i.stage === "pre-seed" ? "pre-seed" : i.stage === "seed" ? "seed" : i.stage === "pre-series-a" ? "pre-Series A" : i.stage === "series-a" ? "Series A" : "") : ""}`.trim();
   else if (i.lastSignal) {
     const f = SIG_FACT[i.lastSignal.type] || "a new signal";
     fact = i.lastSignal.type === "yc" ? f : `${f}${i.lastSignal.date ? " on " + fmtDate(i.lastSignal.date) : ""}`;

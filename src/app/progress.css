@@ -36,4 +36,4 @@
 .pg-foot{margin:16px 0 0;font:500 14px/1.5 "IBM Plex Mono",monospace;color:var(--pg-text2)}
 .pg-foot:empty{display:none}
 @media (max-width:640px){.pg{padding:28px 18px}.pg-row{grid-template-columns:24px 32px minmax(0,1fr) 92px;padding:12px}.pg-stat b{font-size:32px}}
-@media (prefers-reduced-motion:reduce){.pg-note i,.pg-bar i.now{animation:none}}
+html[data-motion="off"] .pg-note i,html[data-motion="off"] .pg-bar i.now{animation:none}

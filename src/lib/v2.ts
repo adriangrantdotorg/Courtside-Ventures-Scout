@@ -37,10 +37,18 @@ export function searchUrl(name: string, area?: string | null): string {
 }
 
 /** Amounts in US dollars, so rounds in other currencies add up and meet the cap. */
-const TO_USD: Record<string, number> = { $: 1, USD: 1, EUR: 1.08, GBP: 1.27, INR: 0.012, CAD: 0.73, AUD: 0.66 };
+// older rows saved the symbol ("€") instead of the code ("EUR"): both convert
+const TO_USD: Record<string, number> = { $: 1, USD: 1, EUR: 1.08, "€": 1.08, GBP: 1.27, "£": 1.27, INR: 0.012, "₹": 0.012, CAD: 0.73, AUD: 0.66 };
 export function usd(amount: number | null | undefined, currency = "$"): number | null {
   if (!amount || !isFinite(amount)) return null;
   return amount * (TO_USD[currency] ?? 1);
+}
+
+/** A company's saved raise as Scout shows it everywhere: in dollars, so it agrees with Funds Raised on the same card
+ *  ("₹4 crore" → "$480K", never "₹40.0M" or "$40.0M"). The one producer for the why-fits line, the memo and the card. */
+export function raisedText(amount: number | string | null | undefined, currency = "$"): string {
+  const n = usd(amount === null || amount === undefined || amount === "" ? null : Number(amount), currency);
+  return n ? fmtMoney(n, "$") : "";
 }
 
 function money(n: number): string {

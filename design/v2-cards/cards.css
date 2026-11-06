@@ -316,7 +316,3 @@ html[data-mode="light"] .strip.new b { color:var(--red-ink); }
   .wrap { padding:28px 16px 100px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .strip.new.play::before { animation:none; }
-  .reveal { transition:none; }
-}

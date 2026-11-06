@@ -1,8 +1,9 @@
 // Courtside's eight-part "Why We Invested" outline, filled with every fact and link Scout has.
 import { desc, eq } from "drizzle-orm";
 import { db, schema as S } from "@/db";
-import { areaLabel, fmtDate, fmtMoney, stageLabel } from "./format";
+import { areaLabel, fmtDate, stageLabel } from "./format";
 import { playOf } from "./score";
+import { raisedText } from "./v2";
 import { cleanCopy } from "./copy";
 
 export async function memoOutline(id: number): Promise<{ name: string; markdown: string } | null> {
@@ -12,7 +13,7 @@ export async function memoOutline(id: number): Promise<{ name: string; markdown:
   const filing = (await db().select().from(S.filings).where(eq(S.filings.companyId, id)).limit(1))[0];
   const play = playOf(`${c.name}. ${c.description || ""}`, c.thesisArea);
   const area = areaLabel(c.thesisArea) || "consumer";
-  const round = c.amount ? `${fmtMoney(c.amount, c.currency)} ${stageLabel(c.stage)}` : c.stage !== "unknown" ? stageLabel(c.stage) : "[TBD: round size]";
+  const round = c.amount ? `${raisedText(c.amount, c.currency)} ${stageLabel(c.stage)}` : c.stage !== "unknown" ? stageLabel(c.stage) : "[TBD: round size]";
   const src = sigs.map((s) => `- ${s.title} (${s.source}${s.date ? `, ${fmtDate(s.date)}` : ""}): ${s.url}`).join("\n");
   const founders = filing?.related?.length ? filing.related.join(", ") + ` (named in the Form D: ${filing.url})` : "[TBD: founders and their track record]";
   const md = `# Why We Invested: ${c.name}

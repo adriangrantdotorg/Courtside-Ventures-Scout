@@ -23,8 +23,12 @@ const DAY = 86400000;
 
 /** Does a card pass every filter? One predicate for the list and for the menus' options. */
 export function matches(c: CompanyCard, f: Filters, now: number): boolean {
-  const q = f.q.trim().toLowerCase();
-  if (q && !`${c.name} ${c.domain || ""} ${c.descSegs.map((s) => (typeof s === "string" ? s : s.t)).join("")}`.toLowerCase().includes(q)) return false;
+  // "A OR B" (a trend's Find Startups in This Trend) matches either; anything else is one search
+  const qs = f.q.split(/\s+OR\s+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+  if (qs.length) {
+    const hay = `${c.name} ${c.domain || ""} ${c.descSegs.map((s) => (typeof s === "string" ? s : s.t)).join("")}`.toLowerCase();
+    if (!qs.some((x) => hay.includes(x))) return false;
+  }
   if (f.bucket !== "" && String(c.bucket) !== f.bucket) return false;
   if (f.area && c.thesisArea !== f.area) return false;
   if (f.signal && !c.signals.some((s) => s.type === f.signal)) return false;

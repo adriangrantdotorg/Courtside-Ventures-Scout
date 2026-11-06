@@ -135,7 +135,6 @@ a.gh-c.sm:hover::before { animation-play-state:running; background:conic-gradien
 html[data-theme="light"] a.gh-c::before { background:conic-gradient(from var(--gh-a), var(--border) 0deg, var(--border) 250deg, var(--red) 310deg, #ff8fae 345deg, var(--border) 360deg); }
 html[data-theme="light"] a.gh-c.sm::before { background:var(--border); }
 @keyframes gh-orbit { to { --gh-a:360deg; } }
-@media (prefers-reduced-motion: reduce) { a.gh-c::before { animation:none; } }
 /* D */
 .nav > a.gh-d { margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:22px 10px 20px; font:600 15px/1 Oswald, sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); white-space:nowrap; }
 .nav > a.gh-d:hover { color:var(--heading); }

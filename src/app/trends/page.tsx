@@ -8,7 +8,7 @@ import { ListHead, RowFilter } from "@/components/ListHead";
 import { Rich } from "@/components/Rich";
 import { Ago } from "@/components/Live";
 import { spark, velPill } from "@/components/rows";
-import { favicon, fmtDate, domainOf, AREA_LABEL } from "@/lib/format";
+import { favicon, fmtDate, domainOf, AREA_LABEL, trendPipelineHref } from "@/lib/format";
 
 export const revalidate = 300;
 export const metadata: Metadata = { title: "Trends" };
@@ -56,7 +56,7 @@ export default async function Page() {
               </div>
               <div className="tbar">
                 <TrackTrend id={t.id} term={t.headline} initial={t.tracked} />
-                <Link className="btn" href={`/pipeline?q=${encodeURIComponent(t.slug.split("-")[0])}`} title="Filter the Pipeline to startups in this trend">
+                <Link className="btn" href={trendPipelineHref(t.term)} title="Filter the Pipeline to startups in this trend">
                   Find Startups in This Trend
                 </Link>
                 <TimelineToggle n={t.sources.length}>

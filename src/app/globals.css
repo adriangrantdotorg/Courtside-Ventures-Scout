@@ -566,7 +566,9 @@ html[data-theme="light"] .ov { box-shadow:0 30px 80px rgba(26,27,31,.25); }
 .door .cols > div { padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--bg); font-size:14.5px; color:var(--text-2); }
 .door .cols b { display:block; font:600 12px/1 Oswald, sans-serif; letter-spacing:.16em; text-transform:uppercase; color:var(--red-ink); margin-bottom:8px; }
 .door .cols ul { margin:0; padding-left:18px; display:grid; gap:4px; }
-.door .why2 { margin-right:auto; font:500 13px/1.5 "IBM Plex Mono", monospace; color:var(--text-3); }
+/* the footnote takes its own line and the two buttons sit side by side under it (beside the footnote they wrapped into
+   a column, and at a narrower window the words ran under Cancel) */
+.door .why2 { flex:1 0 100%; margin:0; font:500 13px/1.5 "IBM Plex Mono", monospace; color:var(--text-3); }
 .sheet { top:60px; width:760px; padding:24px 28px; display:grid; gap:14px; }
 .sheet h2 { margin:0; font:600 26px/1 Oswald, sans-serif; text-transform:uppercase; letter-spacing:.04em; color:var(--heading); }
 .sheet table { width:100%; border-collapse:collapse; font-size:14.5px; }

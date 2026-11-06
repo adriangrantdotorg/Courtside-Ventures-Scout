@@ -14,6 +14,7 @@ export const AREA_LABEL: Record<string, string> = {
 export const STAGE_LABEL: Record<string, string> = {
   "pre-seed": "Pre-Seed",
   seed: "Seed",
+  "pre-series-a": "Pre-Series A",
   "series-a": "Series A",
   "series-b": "Series B",
   later: "Series B+",
@@ -36,6 +37,9 @@ export function stageLabel(s?: string | null): string {
   if (!s) return "Unknown";
   return STAGE_LABEL[s] || s;
 }
+
+/** The rounds Scout recommends at: they all earn the same stage points in the fit score and read "In Range". */
+export const IN_RANGE_STAGES = ["pre-seed", "seed", "pre-series-a", "series-a"];
 
 export function pastStage(s?: string | null): boolean {
   return s === "series-b" || s === "later";
@@ -152,6 +156,14 @@ export function titleCase(s: string): string {
     .split(" ")
     .map((w, i) => (i > 0 && SMALL.has(w.toLowerCase()) ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1)))
     .join(" ");
+}
+
+/** Where a trend's Find Startups in This Trend goes (11-05-26: it searched the first word of the trend's id, so "AI video"
+ *  searched "ai" and "The Athletic" searched "the"). It searches the trend's idea, each part of a list as its own
+ *  search ("Pickleball and padel" → "Pickleball OR padel"), which the Pipeline reads as either word. */
+export function trendPipelineHref(term: string): string {
+  const parts = term.split(/,|\s+(?:and|or|&)\s+/i).map((p) => p.trim()).filter(Boolean);
+  return `/pipeline?q=${encodeURIComponent((parts.length ? parts : [term.trim()]).join(" OR "))}`;
 }
 
 export function plural(n: number, one: string, many = one + "s"): string {

@@ -309,9 +309,6 @@ html[data-theme="light"] .x-bar .tr i { background:hsl(95 70% 32%); }
   .x-rr { grid-template-columns:30px 30px minmax(0,1fr) 70px; } .x-rtrack { display:none; }
   .x-fbar { position:static; padding:12px 16px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .x-reveal, .x-rr, .x-rtrack i { transition:none !important; }
-}
 
 /* the live snapshot predates the fix in globals.css: the brand stays white on red in both themes */
 a.brand { color:#fff !important; }
@@ -462,7 +459,6 @@ html[data-o="3"] .x-ov.o3.callout:not([data-only-o] *), [data-only-o="3"] .x-ov.
 .x-letter { font:22px/1 "Bruno Ace",sans-serif; min-width:56px; height:56px; display:grid; place-items:center; border:1px solid var(--border); border-radius:14px; color:var(--heading); }
 
 @media (max-width:1100px) { .x-frow, .x-frow.x-fextra { grid-template-columns:1fr; } .x-f3body { grid-template-columns:1fr; } .x-hbars { grid-template-columns:repeat(2, minmax(0,1fr)); } }
-@media (prefers-reduced-motion: reduce) { .x-hov, .x-tile.link { transition:none !important; } }
 
 .x-tl.static { top:auto; left:auto; }
 .x-row[hidden], .x-tile[hidden] { display:none; }

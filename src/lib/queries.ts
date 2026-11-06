@@ -3,11 +3,11 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, ne, sql } from "dr
 import { cache } from "react";
 import { db, schema } from "@/db";
 import { buildIndex, linkify, type Entity, type Index, type Seg } from "./linkify";
-import { areaLabel, domainOf, favicon, fmtMoney, pastStage, slugify, stageLabel } from "./format";
+import { areaLabel, domainOf, favicon, fmtMoney, pastStage, slugify, stageLabel, IN_RANGE_STAGES } from "./format";
 import { getSetting, getThreshold, type BuildProgress } from "./settings";
 import { cleanCopy, unescapeTwice } from "./copy";
 import { classify } from "./thesis";
-import { CAP, fundsOf, bucketOf, isNew, searchUrl, type Funds } from "./v2";
+import { CAP, fundsOf, bucketOf, isNew, searchUrl, raisedText, type Funds } from "./v2";
 import type { Media } from "@/db/schema";
 export { cleanCopy };
 
@@ -176,8 +176,8 @@ export async function toCards(cos: CoRow[]): Promise<CompanyCard[]> {
       thesisArea: c.thesisArea,
       area: areaLabel(c.thesisArea),
       stage: c.stage,
-      stageText: stageLabel(c.stage) + (c.amount ? ` · ${fmtMoney(c.amount, c.currency)}` : ""),
-      amountText: fmtMoney(c.amount, c.currency),
+      stageText: stageLabel(c.stage) + (c.amount ? ` · ${raisedText(c.amount, c.currency)}` : ""),
+      amountText: raisedText(c.amount, c.currency),
       whySegs: linkify(cleanCopy(c.whyFits || ""), idx, { skip: [c.name] }),
       score: c.score,
       breakdown: c.breakdown || {},
@@ -220,7 +220,7 @@ function checkFit(c: CoRow, cfg: { minCheck: number; maxCheck: number }): Compan
     if (c.amount > cfg.maxCheck * 5) return { text: "Large round", tone: "plain" };
     return { text: "In range", tone: "ok" };
   }
-  if (["pre-seed", "seed", "series-a"].includes(c.stage)) return { text: "In range", tone: "ok" };
+  if (IN_RANGE_STAGES.includes(c.stage)) return { text: "In range", tone: "ok" };
   return { text: "Plausible", tone: "plain" };
 }
 
@@ -291,6 +291,8 @@ export async function lastUpdated(): Promise<string | null> {
 export type TrendCard = {
   id: number;
   slug: string;
+  /** the trend's idea ("Pickleball and padel"): what Find Startups in This Trend searches */
+  term: string;
   headline: string;
   whySegs: Seg[];
   area: string;
@@ -356,6 +358,7 @@ export async function trendCards(limit = 30): Promise<TrendCard[]> {
     return {
       id: t.id,
       slug: t.slug,
+      term: t.term,
       headline: cleanCopy(t.headline),
       whySegs: linkify(cleanCopy(t.why), idx),
       area: areaLabel(t.thesisArea),

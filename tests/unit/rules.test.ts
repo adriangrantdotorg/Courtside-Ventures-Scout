@@ -77,7 +77,7 @@ describe("why it fits and the portfolio check", () => {
   it("no portfolio tie in prose: never \"near X in the portfolio\" (10-30-26)", () => {
     // only real competitors get a tie, as the Overlaps With tag; 305 cards read "near Religion of Sports in the portfolio"
     const l = whyFitsLine({ name: "Chaos", description: "", thesisArea: "media", stage: "pre-seed", amount: 1_000_000, currency: "£", lastSignal: null });
-    expect(l).toBe("A new Media company, inside Courtside's thesis; raised £1.0M pre-seed.");
+    expect(l).toBe("A new Media company, inside Courtside's thesis; raised $1.3M pre-seed.");
     expect(cleanCopy("A new Media company in the Media area of the thesis, near Religion of Sports in the portfolio; raised £1.0M pre-seed.")).toBe("A new Media company, inside Courtside's thesis; raised £1.0M pre-seed.");
     expect(cleanCopy("An AI that runs creators' social content, close to Wizard and Stay Tuned in the portfolio; in Y Combinator.")).toBe("An AI that runs creators' social content; in Y Combinator.");
     expect(cleanCopy("An investment platform for sports and trading cards, next to Rare Candy and Kolex in the portfolio; in Y Combinator.")).toBe("An investment platform for sports and trading cards; in Y Combinator.");
@@ -88,6 +88,22 @@ describe("why it fits and the portfolio check", () => {
       [{ name: "Graphon AI", sector: "Sports", description: "Graphon AI is an AI infrastructure company building the memory layer beneath LLMs and agents, converting messy enterprise data across video, audio, documents, and sensors into persistent, searchable context." }, { name: "Veo", sector: "Sports", description: "Veo is a camera for recording youth sports." }],
     );
     expect(c?.with).toBe("Graphon AI");
+  });
+  it("pre-Series A is its own round: its own label, the same fit score as seed and Series A (11-06-26)", async () => {
+    // Hoopr's "extended pre-Series A round" read as Series A on its card (5 cards: Hoopr, Vytalyou, Gamepoint, Matiks, Decode Age)
+    const { stageOf } = await import("@/lib/companies");
+    const { stageLabel } = await import("@/lib/format");
+    expect(stageOf("Music licensing platform Hoopr raises funds in extended pre-Series A round")).toBe("pre-series-a");
+    expect(stageOf("Longevity Science Startup Decode Age Secures INR 14.48 Cr Pre Series A Funding")).toBe("pre-series-a");
+    expect(stageOf("Social gaming startup Matiks raises $10 Mn in Pre-Series A led by General Catalyst")).toBe("pre-series-a");
+    expect(stageOf("Acme raises $8M Series A")).toBe("series-a");
+    expect(stageLabel("pre-series-a")).toBe("Pre-Series A");
+    const base = { name: "X", description: "A sports fan engagement app for fantasy leagues", thesisArea: "sports", amount: null, currency: "$", signals: [], voiceMentions: 0, sponsorShows: 0, relatedPersons: 0, yc: false, geoText: "", learned: 99, competes: false, checkRange: { minCheck: 5e5, maxCheck: 4e6 } };
+    const w = { thesis: 30, stage: 20, signal: 20, culture: 15, team: 10, geo: 5 };
+    const pre = scoreCompany({ ...base, stage: "pre-series-a" }, w).score;
+    expect(pre).toBe(scoreCompany({ ...base, stage: "seed" }, w).score);
+    expect(pre).toBe(scoreCompany({ ...base, stage: "series-a" }, w).score);
+    expect(whyFitsLine({ name: "Hoopr", description: "", thesisArea: "media", stage: "pre-series-a", amount: 4e7, currency: "INR", lastSignal: null })).toContain("raised $480K pre-Series A.");
   });
   it("past Series A is penalized and the score stays 0-100", () => {
     const base = { name: "X", description: "A sports fan engagement app for fantasy leagues", thesisArea: "sports", amount: null, currency: "$", signals: [], voiceMentions: 0, sponsorShows: 0, relatedPersons: 0, yc: false, geoText: "", learned: 99, competes: false, checkRange: { minCheck: 5e5, maxCheck: 4e6 } };
@@ -176,6 +192,26 @@ describe("guards on the source", () => {
   it("a picture with a fallback is an <Img onFail>, never a bare <img onError> (10-30-26)", () => {
     // a server-rendered picture that failed before React attached onError stayed broken instead of falling back
     for (const { f, s } of SRC) for (const m of s.matchAll(/<img\b[^>]*onError=/g)) expect(m.index === s.indexOf("<img ref={ref} alt={alt} {...p} onError={onFail} />") ? "Img" : m[0], f).toBe("Img");
+  });
+  it("motion follows Scout's own Motion switch, never the Mac's Reduce Motion (10-14-26; 2nd report 11-05-26)", () => {
+    // the V2 port brought back four OS checks, so Brand Sky's drift sat still on a Mac with Reduce Motion on.
+    // Instead: html[data-motion="off"] <selector> (Settings › Appearance › Motion).
+    for (const { f, s } of SRC) expect(s, f).not.toMatch(/prefers-reduced-motion|reducedMotion|reduced-motion/);
+    // the mockups too: porting design/v2's CSS is how the OS checks came back, and every page he reviews must move
+    const design = (dir: string, out: string[] = []): string[] => {
+      for (const f of readdirSync(dir)) {
+        const p = join(dir, f);
+        if (statSync(p).isDirectory()) design(p, out);
+        else if (/\.(css|html|py|js)$/.test(f)) out.push(p);
+      }
+      return out;
+    };
+    for (const f of design("design")) expect(readFileSync(f, "utf8"), f).not.toMatch(/prefers-reduced-motion/);
+  });
+  it("a company's raise is shown through raisedText, in dollars, never fmtMoney on its saved amount (11-05-26)", () => {
+    // Hoopr's ₹4 crore read "$40.0M" in its why-fits line while Funds Raised said $480K on the same card
+    for (const { f, s } of SRC) expect(s, f).not.toMatch(/fmtMoney\(\s*(?:c|co|company)\.amount\b/);
+    expect(readFileSync("src/lib/score.ts", "utf8")).not.toMatch(/fmtMoney\(/); // the why-fits line
   });
   it("nothing truncates text", () => {
     for (const { f, s } of SRC) expect(s, f).not.toMatch(/text-overflow:\s*ellipsis|line-clamp/);

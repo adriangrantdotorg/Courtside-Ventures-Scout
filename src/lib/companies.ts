@@ -121,6 +121,9 @@ export async function upsertCompany(u: Upsert): Promise<{ id: number; created: b
         thesisArea: u.thesisArea ? sql`coalesce(${S.companies.thesisArea}, ${u.thesisArea})` : undefined,
         stage: u.stage && u.stage !== "unknown" ? sql`case when ${S.companies.stage} = 'unknown' then ${u.stage} else ${S.companies.stage} end` : undefined,
         amount: u.amount ? sql`coalesce(${S.companies.amount}, ${u.amount})` : undefined,
+        // the currency travels with the amount: a card saved with no amount kept its default "$", so a later "₹4 crore"
+        // story saved 40,000,000 as dollars ("raised $40.0M", 11-05-26). SET reads the old row, so this is the old amount.
+        currency: u.amount ? sql`case when ${S.companies.amount} is null then ${u.currency || "$"} else ${S.companies.currency} end` : undefined,
         updatedAt: new Date(),
       })
       .where(eq(S.companies.id, found.id));
@@ -172,6 +175,8 @@ export function stageOf(text: string): string {
   const t = text.toLowerCase();
   if (!/\b(round|funding|raises?|raised|capital|led by|investment|financing|investors?|backed|\$|€|£)\b|[$€£]/.test(t)) return "unknown"; // "secures No. 2 seed" is sports
   if (/pre-?seed/.test(t)) return "pre-seed";
+  // "pre-Series A" is its own round, between seed and Series A (Adrian, 11-06-26): it read as Series A on 4 cards
+  if (/pre[-\s]?series\s*a\b/.test(t)) return "pre-series-a";
   if (/series\s*a\b/.test(t)) return "series-a";
   if (/series\s*[b-z]\b|growth round|late[- ]stage/.test(t)) return /series\s*b\b/.test(t) ? "series-b" : "later";
   if (/\bseed\b/.test(t)) return "seed";
