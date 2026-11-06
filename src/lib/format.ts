@@ -114,6 +114,13 @@ export function clock(sec: number): string {
   return `${m}:${String(sec % 60).padStart(2, "0")}`;
 }
 
+/** 0:07, 1:32, 1:02:05: a video's time on the player's scrub bar. */
+export function videoTime(sec: number): string {
+  const t = Math.max(0, Math.floor(sec || 0));
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = String(t % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}
+
 export function fmtMoney(amount: number | string | null | undefined, currency = "$"): string {
   if (amount === null || amount === undefined || amount === "") return "";
   const n = typeof amount === "string" ? Number(amount) : amount;

@@ -338,7 +338,9 @@ test("the on-site player opens with Pause, Mute and Close, and Esc closes it", a
     const th = page.getByTestId("theater");
     await expect(th).toBeVisible();
     await expect(th.locator(".x-thplay")).toBeVisible();
-    await expect(th.locator(".x-thsound")).toBeVisible();
+    // Mute, or "This Video Has No Sound" once the player sees the file has no sound track (11-06-26)
+    await expect(th.locator(".x-thsound, .x-thsilent")).toBeVisible();
+    await expect(th.getByTestId("scrub")).toBeVisible();
     await expect(th.locator("iframe, video")).toHaveCount(1);
     const src = await th.locator("iframe, video").first().getAttribute("src");
     expect(src || "").not.toMatch(/^https:\/\/(www\.)?youtube\.com/); // YouTube plays through youtube-nocookie inside Scout

@@ -12,7 +12,7 @@ import type { CompanyCard } from "@/lib/queries";
 import type { Media } from "@/db/schema";
 import { fitHue, BUCKETS, moneyRange } from "@/lib/v2";
 import { skyPlan, usesSky } from "@/lib/brand";
-import { fmtDate, STAGE_LABEL, plural } from "@/lib/format";
+import { fmtDate, STAGE_LABEL, plural, videoTime } from "@/lib/format";
 import { sigLabel } from "@/lib/labels";
 
 /* ---------- icons ---------- */
@@ -930,6 +930,12 @@ export function Theater() {
   const [p, setP] = useState<Playing | null>(null);
   const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(false);
+  // false once the browser shows the file has no sound track: a product video on a company's own site is often a
+  // silent background loop, so Mute can't make it play sound (11-06-26)
+  const [sound, setSound] = useState<boolean | undefined>(undefined);
+  // the scrub bar (11-06-26): where the video is and how long it runs, from the file itself or from what YouTube reports
+  const [at, setAt] = useState(0);
+  const [dur, setDur] = useState(0);
   const stage = useRef<HTMLDivElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -937,6 +943,9 @@ export function Theater() {
       setP((e as CustomEvent).detail as Playing);
       setPlaying(true);
       setMuted(false);
+      setSound(undefined);
+      setAt(0);
+      setDur(0);
     };
     document.addEventListener("scout:play", on);
     return () => document.removeEventListener("scout:play", on);
@@ -946,7 +955,21 @@ export function Theater() {
     closeBtn.current?.focus();
     const key = (e: KeyboardEvent) => e.key === "Escape" && close();
     document.addEventListener("keydown", key);
-    return () => document.removeEventListener("keydown", key);
+    // YouTube says whether its player is muted (it can start muted on its own), where it is and how long it runs
+    const msg = (e: MessageEvent) => {
+      try {
+        if (!/youtube(-nocookie)?\.com$/.test(new URL(e.origin).hostname)) return;
+        const d = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        if (typeof d?.info?.muted === "boolean") setMuted(d.info.muted);
+        if (typeof d?.info?.duration === "number" && d.info.duration > 0) setDur(d.info.duration);
+        if (typeof d?.info?.currentTime === "number") setAt(d.info.currentTime);
+      } catch {}
+    };
+    window.addEventListener("message", msg);
+    return () => {
+      document.removeEventListener("keydown", key);
+      window.removeEventListener("message", msg);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p]);
   function close() {
@@ -955,7 +978,13 @@ export function Theater() {
     from?.focus?.();
   }
   const video = () => stage.current?.querySelector("video");
-  const yt = (func: string) => stage.current?.querySelector("iframe")?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "*");
+  const yt = (func: string, args: unknown[] = []) => stage.current?.querySelector("iframe")?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+  function seek(to: number) {
+    const v = video();
+    if (v) v.currentTime = to;
+    else yt("seekTo", [to, true]);
+    setAt(to);
+  }
   function togglePlay() {
     const v = video();
     if (v) return void (v.paused ? v.play() : v.pause());
@@ -964,9 +993,21 @@ export function Theater() {
   }
   function toggleSound() {
     const v = video();
-    if (v) v.muted = !muted;
-    else yt(muted ? "unMute" : "mute");
+    if (v) {
+      v.muted = !v.muted;
+      if (!v.muted && v.volume === 0) v.volume = 1;
+      return; // onVolumeChange sets the button from the video itself
+    }
+    yt(muted ? "unMute" : "mute");
     setMuted(!muted);
+  }
+  // After a second of playing, a file with no sound track has decoded no audio (Chrome, Firefox and Safari each say it
+  // their own way); undefined when the browser can't tell, and the button stays as it is.
+  function checkSound(v: HTMLVideoElement) {
+    const x = v as HTMLVideoElement & { webkitAudioDecodedByteCount?: number; mozHasAudio?: boolean; audioTracks?: { length: number } };
+    if (typeof x.mozHasAudio === "boolean") return setSound(x.mozHasAudio);
+    if (x.audioTracks && typeof x.audioTracks.length === "number") return setSound(x.audioTracks.length > 0);
+    if (typeof x.webkitAudioDecodedByteCount === "number") return setSound(x.webkitAudioDecodedByteCount > 0);
   }
   if (!p) return null;
   const m = p.media;
@@ -993,6 +1034,13 @@ export function Theater() {
               playsInline
               onPlay={() => setPlaying(true)}
               onPause={() => setPlaying(false)}
+              onVolumeChange={(e) => setMuted(e.currentTarget.muted || e.currentTarget.volume === 0)}
+              onLoadedMetadata={(e) => Number.isFinite(e.currentTarget.duration) && setDur(e.currentTarget.duration)}
+              onDurationChange={(e) => Number.isFinite(e.currentTarget.duration) && setDur(e.currentTarget.duration)}
+              onTimeUpdate={(e) => {
+                setAt(e.currentTarget.currentTime);
+                if (sound === undefined && e.currentTarget.currentTime > 1) checkSound(e.currentTarget);
+              }}
               onDoubleClick={(e) => e.currentTarget.requestFullscreen?.()}
             />
           ) : (
@@ -1001,18 +1049,31 @@ export function Theater() {
               allow="autoplay; encrypted-media; fullscreen"
               allowFullScreen
               src={`https://www.youtube-nocookie.com/embed/${m.yt}?autoplay=1&controls=0&enablejsapi=1&rel=0&modestbranding=1&playsinline=1`}
+              onLoad={(e) => e.currentTarget.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1 }), "*")}
             />
           )}
         </div>
         <div className="x-thbar">
+          <div className="x-thscrub" data-testid="scrub">
+            <span className="x-thtime">{videoTime(at)}</span>
+            <input type="range" min={0} max={dur || 0} step={0.1} value={Math.min(at, dur || 0)} disabled={!dur} aria-label="Seek" aria-valuetext={`${videoTime(at)} of ${videoTime(dur)}`} onChange={(e) => seek(Number(e.currentTarget.value))} />
+            <span className="x-thtime">{dur ? videoTime(dur) : "--:--"}</span>
+          </div>
           <button className="x-thplay" type="button" onClick={togglePlay}>
             <Ico n={playing ? "pause" : "play"} fill />
             <span>{playing ? "Pause" : "Play"}</span>
           </button>
-          <button className="x-thsound" type="button" onClick={toggleSound}>
-            <Ico n="sound" />
-            <span>{muted ? "Unmute" : "Mute"}</span>
-          </button>
+          {sound === false ? (
+            <span className="x-thsilent" data-testid="silent" title="The file has no sound track: it's the silent loop the company plays on its own website">
+              <Ico n="sound" />
+              <span>This Video Has No Sound</span>
+            </span>
+          ) : (
+            <button className="x-thsound" type="button" onClick={toggleSound} aria-pressed={muted}>
+              <Ico n="sound" />
+              <span>{muted ? "Unmute" : "Mute"}</span>
+            </button>
+          )}
           <span className="x-thnote">Double-click the video for full screen.</span>
           {p.site && (
             <a className="x-btn site cta x-thsite" href={p.site} target="_blank" rel="noopener noreferrer" title="Opens the company's website in a new window">

@@ -260,6 +260,13 @@ html[data-theme="light"] .x-bar .tr i { background:hsl(95 70% 32%); }
 .x-thstage img.back { object-fit:cover; opacity:.35; filter:blur(24px); transform:scale(1.1); }
 .x-thbar { display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px; padding:12px 14px; border-top:1px solid var(--border); }
 .x-thnote { font:500 14px/1.4 "IBM Plex Mono",monospace; color:var(--text-3); }
+/* the scrub bar: always shown under the video, full width above the buttons (11-06-26) */
+.x-thscrub { flex:1 1 100%; display:flex; align-items:center; gap:12px; min-width:0; }
+.x-thscrub input[type=range] { flex:1; min-width:0; height:22px; margin:0; accent-color:var(--red); cursor:pointer; }
+.x-thscrub input[type=range]:disabled { cursor:default; opacity:.5; }
+.x-thtime { flex:none; min-width:4ch; font:500 14px/1 "IBM Plex Mono",monospace; color:var(--text-2); font-variant-numeric:tabular-nums; }
+/* a file with no sound track says so in place of Mute (11-06-26: a company's website video is often a silent loop) */
+.x-thsilent { display:inline-flex; align-items:center; gap:8px; min-height:42px; padding:0 14px; border:1px dashed var(--border); border-radius:10px; color:var(--text-2); font:600 15px/1 Montserrat,sans-serif; }
 .x-thsite { margin-left:auto; }
 .x-thmsg { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); padding:10px 16px; border-radius:10px; background:rgba(8,8,10,.86); color:#fff; font:500 15px/1.4 "IBM Plex Mono",monospace; white-space:normal; text-align:center; max-width:80%; pointer-events:none; }
 

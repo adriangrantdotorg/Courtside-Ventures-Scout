@@ -1,7 +1,7 @@
 // A trend's Find Startups in This Trend (11-05-26: it searched the first word of the trend's id, so "AI video"
 // searched "ai" and "The Athletic" searched "the")
 import { describe, it, expect } from "vitest";
-import { trendPipelineHref } from "@/lib/format";
+import { trendPipelineHref, videoTime } from "@/lib/format";
 import { matches, type Filters } from "@/components/Pipeline";
 import type { CompanyCard } from "@/lib/queries";
 
@@ -29,5 +29,12 @@ describe("the Pipeline search reads A OR B as either", () => {
     expect(matches(pick, f("pickleball courts"), 0)).toBe(true);
     expect(matches(pad, f("pickleball courts"), 0)).toBe(false);
     expect(matches(golf, f("golf or padel"), 0)).toBe(false); // only a capital OR splits the search
+  });
+});
+
+// the video player's scrub bar (11-06-26)
+describe("the scrub bar's times", () => {
+  it("reads 0:07, 1:32 and 1:02:05", () => {
+    expect([videoTime(7), videoTime(92), videoTime(3725), videoTime(-3), videoTime(NaN)]).toEqual(["0:07", "1:32", "1:02:05", "0:00", "0:00"]);
   });
 });
