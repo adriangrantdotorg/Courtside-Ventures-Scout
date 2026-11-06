@@ -437,11 +437,11 @@ test("Draft the Memo past today's 4 drafts: an error card that stays and points 
   const btn = page.getByRole("button", { name: "Draft the Memo" });
   test.skip(!(await btn.count()), "AI drafting is off on this server");
   // the server's answer once the day's cap is used; mocked, so no AI call is made
-  await page.route(`**/api/memo/${id}`, (r) => (r.request().method() === "POST" ? r.fulfill({ status: 429, contentType: "application/json", body: JSON.stringify({ error: "AI drafting is done for today; copy the outline instead." }) }) : r.continue()));
+  await page.route(`**/api/memo/${id}`, (r) => (r.request().method() === "POST" ? r.fulfill({ status: 429, contentType: "application/json", body: JSON.stringify({ error: "AI drafting is done for today; try again tomorrow." }) }) : r.continue()));
   await btn.click();
   const card = page.getByTestId("error-card");
   await expect(card).toContainText("Today's AI drafts are used");
-  await expect(card).toContainText("copy the outline instead");
+  await expect(card).toContainText("try again tomorrow");
   await page.waitForTimeout(6000);
   await expect(card).toBeVisible(); // errors stay until closed
   await expect(btn).toBeEnabled();

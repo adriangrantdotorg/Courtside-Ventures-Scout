@@ -259,7 +259,8 @@ describe("Scout's AI (10-26-26)", async () => {
     // at Claude's 1,600-token limit GPT-5's thinking used it all and the draft came back empty
     expect(src).toMatch(/reasoning: "low"/);
     expect(Number(src.match(/maxOutputTokens: (\d+),\n\s+\}\);\n\s+if \(r\.text/)?.[1])).toBeGreaterThanOrEqual(4000);
-    expect(src).toMatch(/if \(r\.text\.trim\(\)\.length < 200\) return null/);
+    // an empty or cut-off first draft is a failure, never a result (a redraw that comes back empty keeps the first draft)
+    expect(src).toMatch(/if \(r\.text\.trim\(\)\.length < 200\) \{\n\s+if \(!i\) return null;/);
   });
 });
 
@@ -309,7 +310,7 @@ describe("the AI Thesis Check and the daily caps (10-26-26)", async () => {
     expect(job).toMatch(/room < CHECK_GAP_MS \+ CHECK_MIN_MS\) \{\n\s+ctx\.more\(\)/); // out of room: the next round goes on
     expect(job).toMatch(/headlines: heads \}, room, launch\)/);
     expect(job).toMatch(/isNull\(S\.companies\.thesisCheck\)[^\n]*< \$\{CAP\}/); // a card past the $15M cap is never recommended: no check spent on it
-    expect(MEMO_CAP_MESSAGE).toMatch(/copy the outline/);
+    expect(MEMO_CAP_MESSAGE).toMatch(/try again tomorrow/); // the outline is never handed out (11-06-26)
   });
   it("gives every AI call a time limit, in the app and in the live check", async () => {
     const { readFileSync } = await import("node:fs");

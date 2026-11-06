@@ -498,7 +498,7 @@ export function MoreMenu({ c, a, off }: { c: CompanyCard; a: Acts; off?: boolean
           <>
             {(
               [
-                ["memo", "Draft Investment Memo", a.memo, "Copies Courtside's eight-part outline filled with every fact Scout has, for your AI"],
+                ["memo", "Draft Investment Memo", a.memo, `Opens ${c.name}'s page, where Scout drafts it in Courtside's voice`],
                 ["email", "Connection Email", a.email, "Opens your mail app with a connection email filled in. Nothing is sent."],
                 ["note", "Add Note", () => a.setNoting(true), "A note everyone on the team sees"],
                 ["crm", "Copy for CRM", a.crm, "Copies a clean text block for your CRM"],

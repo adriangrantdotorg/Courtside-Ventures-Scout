@@ -34,7 +34,7 @@ async function politeWait(host: string) {
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 }
 
-export type FetchOpts = { timeoutMs?: number; accept?: string; source?: string };
+export type FetchOpts = { timeoutMs?: number; accept?: string; source?: string; method?: "GET" | "POST"; body?: string; contentType?: string };
 export type FetchResult = { ok: boolean; status: number; text: string; error?: string };
 
 // tests swap this out
@@ -55,7 +55,9 @@ export async function fetchRaw(url: string, o: FetchOpts = {}): Promise<FetchRes
   try {
     const r = await transport.fetch(url, {
       signal: ctl.signal,
-      headers: { "user-agent": host.endsWith("sec.gov") ? SEC_UA() : UA(), accept: o.accept || "*/*" },
+      method: o.method || "GET",
+      body: o.body,
+      headers: { "user-agent": host.endsWith("sec.gov") ? SEC_UA() : UA(), accept: o.accept || "*/*", ...(o.contentType ? { "content-type": o.contentType } : {}) },
       redirect: "follow",
       cache: "no-store",
     });

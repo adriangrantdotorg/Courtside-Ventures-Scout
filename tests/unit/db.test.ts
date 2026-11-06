@@ -122,3 +122,42 @@ describe("a company's raise keeps its currency", () => {
     expect(line).not.toMatch(/40\.0M/);
   });
 });
+
+// 11-06-26: Hoopr's memo cited four news.google.com redirect links and asked the founder who backed the round, though
+// Scout knew The Chennai Angels did. The outline now carries each story's own address and the round's investors.
+describe("the memo outline cites the stories' own links and the round's investors", () => {
+  it("opens each Google News link once, lists one Google won't open without a link, and names the investors", async () => {
+    const { transport } = await import("@/lib/sources/http");
+    const { resetLinks } = await import("@/lib/sources/gnews");
+    const { memoOutline } = await import("@/lib/memo");
+    const { db, schema: S } = await import("@/db");
+    const { upsertCompany } = await import("@/lib/companies");
+    const real = transport.fetch;
+    const asked: string[] = [];
+    transport.fetch = (async (url: string) => {
+      asked.push(String(url));
+      if (String(url).includes("/rss/articles/OPENS")) return new Response('<div data-n-a-sg="SIG" data-n-a-ts="123"></div>', { status: 200 });
+      if (String(url).includes("/rss/articles/")) return new Response("no signature here", { status: 200 });
+      return new Response(')]}\'\n[["wrb.fr","Fbv4je","[\\"garturlres\\",\\"https://news.example.com/courtline-seed\\",1]"]]', { status: 200 });
+    }) as typeof fetch;
+    try {
+      resetLinks();
+      const sig = (t: string, url: string) => ({ type: "news", source: "test", title: t, url, date: new Date("2026-02-20") });
+      const r = await upsertCompany({ name: "Courtline Outline Test", thesisArea: "sports", stage: "seed", amount: 25e5, currency: "$", signal: sig("Courtline Outline Test raises $2.5M seed", "https://news.google.com/rss/articles/OPENS?oc=5") });
+      await upsertCompany({ name: "Courtline Outline Test", thesisArea: "sports", stage: "seed", amount: null, currency: "$", signal: sig("Courtline Outline Test seed round", "https://news.google.com/rss/articles/SHUT?oc=5") });
+      const { eq } = await import("drizzle-orm");
+      await db().update(S.companies).set({ rounds: [{ stage: "seed", amount: 25e5, low: 25e5, currency: "$", date: "2026-02-20", investors: "Example Angels", sources: [{ url: "https://news.google.com/rss/articles/OPENS?oc=5", date: "2026-02-20", name: "Test", title: "seed", amount: 25e5 }] }] }).where(eq(S.companies.id, r!.id));
+      const md = (await memoOutline(r!.id))!.markdown;
+      expect(md).toContain("Investors the news names: Example Angels (https://news.example.com/courtline-seed)");
+      expect(md).toContain("raises $2.5M seed (test, ");
+      expect(md).toContain(": https://news.example.com/courtline-seed");
+      expect(md).not.toMatch(/news\.google\.com/);
+      // the same link again is remembered, never opened twice
+      const n = asked.length;
+      await memoOutline(r!.id);
+      expect(asked.length).toBe(n);
+    } finally {
+      transport.fetch = real;
+    }
+  });
+});

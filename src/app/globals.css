@@ -707,6 +707,9 @@ article:target, tr:target, .tile:target, .card2:target, .rowcard:target { box-sh
 /* The item a link landed on, marked by Shell's Landing after an in-app click too (an in-app click never sets :target),
    wears a tint of the red and the edge until the next landing (11-06-26). A table row's tint sits on its cells. */
 [data-landed]:is(article, .tile, .card2, .rowcard, .te, li) { box-shadow:inset 3px 0 0 var(--red); background-color:color-mix(in srgb, var(--red) 12%, transparent); }
+/* A list row has no side padding of its own, so an edge inside it sat on its words (11-06-26, Sponsor Radar's Claude
+   card): its mark is drawn just outside it, the tint 12px to its left with the red edge beyond, and the words stay put. */
+:is([data-landed], :target):is(.rowcard, li) { box-shadow:-12px 0 0 0 color-mix(in srgb, var(--red) 12%, var(--bg)), -15px 0 0 0 var(--red); }
 tr[data-landed] > td { background-color:color-mix(in srgb, var(--red) 12%, transparent); }
 tr[data-landed] > td:first-child { box-shadow:inset 3px 0 0 var(--red); }
 /* The Spotlight headline is a link and says so at rest (Adrian, 10-14-26) */

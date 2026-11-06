@@ -59,7 +59,9 @@ describe("AI time limits (10-26-26)", () => {
     h.stall = false;
     const { draftMemo, checkAi, TIMEOUTS } = await fresh();
     await draftMemo(1, "# Outline");
-    expect(h.calls.at(-1)!.timeout).toBe(TIMEOUTS.memoMs);
+    // the first try and a redraw share one time box (11-06-26: Gaps Become Questions)
+    expect(h.calls.at(-1)!.timeout).toBeLessThanOrEqual(TIMEOUTS.memoMs);
+    expect(h.calls.at(-1)!.timeout).toBeGreaterThan(TIMEOUTS.memoMs - 5_000);
     expect(TIMEOUTS.memoMs).toBeLessThan(300_000); // Vercel stops a function at 300 s: the draft fails cleanly first
     await checkAi();
     expect(h.calls.at(-1)!.timeout).toBe(TIMEOUTS.dailyCheckMs);

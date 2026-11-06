@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pin, PenLine, Mail, Copy, Download, Plus, Lock, Sparkles, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useUI, Overlay, Kbd } from "./ui";
-import { postJSON, readJSON, sendJSON, getJSON, download } from "@/lib/client";
+import { postJSON, readJSON, sendJSON, download } from "@/lib/client";
 import { favicon, STATUS_LABEL } from "@/lib/format";
 import type { CompanyCard } from "@/lib/queries";
 import { sigLabel } from "@/lib/labels";
@@ -224,6 +225,7 @@ export function useShown<T extends { id: number }>(cards: T[]): T[] {
 
 export function useActions(c: CompanyCard) {
   const ui = useUI();
+  const router = useRouter();
   const [tracked, setTracked] = useState(c.tracked);
   const [noting, setNoting] = useState(false);
   const isGone = useGone(c.id);
@@ -254,16 +256,10 @@ export function useActions(c: CompanyCard) {
     }
     ui.toast(`${c.name} ${next ? "Tracked" : "Untracked"}`);
   }
-  async function memo() {
-    const r = await getJSON<{ markdown: string }>(`/api/memo/${c.id}`);
-    if (!r.ok || !r.data) return ui.error("The outline didn't load", r.error || "The server did not answer.");
-    try {
-      await navigator.clipboard.writeText(r.data.markdown);
-      ui.toast("Outline Copied");
-    } catch {
-      download(`${c.name} investment memo outline.md`, r.data.markdown, "text/markdown");
-      ui.toast("Outline Downloaded");
-    }
+  // Draft Investment Memo opens the company page's memo panel, where Draft the Memo writes it (11-06-26: the unfinished
+  // outline is never handed out on its own; its [TBD] gaps are of no use to an investor)
+  function memo() {
+    router.push(`/company/${c.id}#memo`);
   }
   function email() {
     const why = c.whySegs.map((s) => (typeof s === "string" ? s : s.t)).join("");
@@ -333,7 +329,7 @@ export function Actions({ c, onNote }: { c: CompanyCard; onNote?: (n: { id: numb
         {a.tracked ? <Check className="ico" /> : <Pin className="ico" />}
         {a.tracked ? "Tracking" : "Track"}
       </button>
-      <button className="btn" data-act="memo" onClick={a.memo} title="Draft Investment Memo: copies Courtside's eight-part outline filled with every fact Scout has, for your AI">
+      <button className="btn" data-act="memo" onClick={a.memo} title={`Draft Investment Memo: opens ${c.name}'s page, where Scout drafts it in Courtside's voice`}>
         <PenLine className="ico" />
         <span className="long">Draft Investment Memo</span>
         <span className="short">Memo</span>

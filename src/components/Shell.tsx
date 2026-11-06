@@ -255,7 +255,7 @@ function Palette({ close }: { close: () => void }) {
       const acts: Hit[] = first
         ? [
             { kind: `Actions on ${first.title}`, title: `Track ${first.title}`, sub: "a daily check and a timeline", href: "#track", act: "track", id: first.id },
-            { kind: `Actions on ${first.title}`, title: "Draft Investment Memo", sub: "copy the eight-part outline", href: `${first.href}#memo` },
+            { kind: `Actions on ${first.title}`, title: "Draft Investment Memo", sub: "draft it on the company page", href: `${first.href}#memo` },
           ]
         : [];
       const order = ["Companies", `Actions on ${first?.title}`, "Pages", "Trends", "People", "Brands"];

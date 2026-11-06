@@ -44,6 +44,12 @@ export async function getJSON<T = unknown>(url: string): Promise<Res<T>> {
   }
 }
 
+/** Copies text to the clipboard; the last copy is kept on window for the browser tests to read. */
+export async function copyText(text: string) {
+  (window as { __lastCopied?: string }).__lastCopied = text;
+  await navigator.clipboard.writeText(text);
+}
+
 export function download(name: string, text: string, type = "text/plain") {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement("a");

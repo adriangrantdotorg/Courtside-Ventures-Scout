@@ -5,6 +5,10 @@ import { areaLabel, fmtDate, stageLabel } from "./format";
 import { playOf } from "./score";
 import { raisedText } from "./v2";
 import { cleanCopy } from "./copy";
+import { articleUrl } from "./sources/gnews";
+
+/** The most stories a memo cites: each Google News link is opened once (about 4 s the first time, then remembered). */
+export const MEMO_SOURCES = 8;
 
 export async function memoOutline(id: number): Promise<{ name: string; markdown: string } | null> {
   const [c] = await db().select().from(S.companies).where(eq(S.companies.id, id));
@@ -14,12 +18,26 @@ export async function memoOutline(id: number): Promise<{ name: string; markdown:
   const play = playOf(`${c.name}. ${c.description || ""}`, c.thesisArea);
   const area = areaLabel(c.thesisArea) || "consumer";
   const round = c.amount ? `${raisedText(c.amount, c.currency)} ${stageLabel(c.stage)}` : c.stage !== "unknown" ? stageLabel(c.stage) : "[TBD: round size]";
-  const src = sigs.map((s) => `- ${s.title} (${s.source}${s.date ? `, ${fmtDate(s.date)}` : ""}): ${s.url}`).join("\n");
+  // the stories' own addresses, never Google News redirects (11-06-26: a memo's Sources were long news.google.com
+  // links); a link Google won't open is listed without one
+  const shown = sigs.slice(0, MEMO_SOURCES);
+  const own = new Map<string, string | null>();
+  for (const s of shown) own.set(s.url, await articleUrl(s.url));
+  const src = shown.map((s) => `- ${s.title} (${s.source}${s.date ? `, ${fmtDate(s.date)}` : ""})${own.get(s.url) ? `: ${own.get(s.url)}` : ""}`).join("\n");
+  // the round's investors, as the news names them, with that story's own link (11-06-26: the draft asked the founder
+  // who backed Hoopr's round though Scout knew The Chennai Angels did)
+  const backed = [...(c.rounds || [])].filter((r) => r.investors).sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
+  let backers = "";
+  if (backed) {
+    let link: string | null = null;
+    for (const s of backed.sources) if (!link && s.url) link = own.get(s.url) ?? (await articleUrl(s.url));
+    backers = `Investors the news names: ${backed.investors}${link ? ` (${link})` : ""}. Who led: [TBD: lead investor, if the news doesn't say].`;
+  }
   const founders = filing?.related?.length ? filing.related.join(", ") + ` (named in the Form D: ${filing.url})` : "[TBD: founders and their track record]";
   const md = `# Why We Invested: ${c.name}
 
-> Draft for internal discussion. Verify every figure.
-> Write this in Courtside's "Why We Invested" voice: confident, specific, optimistic, never hype-y. 600 to 900 words. Keep every [TBD] as a placeholder; never guess a number.
+> What Scout hands the AI that writes the draft (src/lib/memo-draft.ts): every [TBD] is a gap it turns into a question
+> for the founder, never a word in the memo; never guess a number.
 
 ## 1. Title
 Why We Invested: ${c.name}
@@ -28,7 +46,7 @@ Why We Invested: ${c.name}
 Open in first person plural ("At Courtside, we've been closely tracking…") on the ${area} trend this company rides${play ? ` (${play.label}, the play behind Courtside's investment in ${play.parallel})` : ""}. Back it with 2 to 4 sourced stats: [TBD: market stats with sources].
 
 ## 3. The turn
-"It is with this backdrop that we are thrilled to announce…" ${c.name}'s ${round}. Who led: [TBD: lead investor]. Who participated: [TBD: participants].
+"It is with this backdrop that we are thrilled to announce…" ${c.name}'s ${round}. ${backers || "Who led: [TBD: lead investor]. Who participated: [TBD: participants]."}
 
 ## 4. What the company does
 ${cleanCopy(c.description) || "[TBD: one paragraph in plain words]"}${c.descriptionUrl ? `\nSource: ${c.descriptionUrl}` : ""}${c.domain ? `\nWebsite: https://${c.domain}` : ""}

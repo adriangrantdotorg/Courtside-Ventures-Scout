@@ -21,10 +21,12 @@ export const CHECK_GAP_MS = 12_500;
  *  function at 300 s. (The 15- and 32-minute "stalls" of 10-26-26 were the Mac asleep, not the AI.) A check answers
  *  in about 2 s; a memo draft stays under the 300 s limit. */
 export const TIMEOUTS = { checkMs: 30_000, memoMs: 200_000, dailyCheckMs: 20_000 };
+/** A redraw of a memo that broke the rules is tried only with this much of the memo's time left. */
+export const MEMO_REDRAW_MIN_MS = 60_000;
 /** The shortest room worth starting a check in. */
 export const CHECK_MIN_MS = 5_000;
 let lastCheck = 0;
-export const MEMO_CAP_MESSAGE = "AI drafting is done for today; copy the outline instead.";
+export const MEMO_CAP_MESSAGE = "AI drafting is done for today; try again tomorrow.";
 
 export async function aiAvailable(): Promise<boolean> {
   const s = await getSetting<{ ok: boolean; at: string } | null>("aiCheck", null);
@@ -58,30 +60,47 @@ async function underCap(kind: "memo" | "check", extra = 0): Promise<boolean> {
   return Number(r.rows[0]?.checks || 0) <= cap + extra;
 }
 
-/** A memo draft, "cap" when today's 4 are used, or null when the draft didn't come back. */
+/** A memo draft, "cap" when today's 4 are used, or null when the draft didn't come back. Gaps Become Questions
+ *  (src/lib/memo-draft.ts, 11-06-26): a draft that writes a gap into a section or cites a link Scout never gave is
+ *  drawn once more, quoting what it broke; if it still breaks the rules, or there's no time or no AI left today, the
+ *  offending sentences are taken out. */
 export async function draftMemo(id: number, outline: string): Promise<string | "cap" | null> {
-  const key = `memo2:${id}:${new Date().toISOString().slice(0, 10)}`; // memo2: drafts cached before GPT-5 could be empty
+  const key = `memo3:${id}:${new Date().toISOString().slice(0, 10)}`; // memo3: Gaps Become Questions (11-06-26)
   const cached = await getSetting<string | null>(key, null);
   if (cached) return cached; // the same company again today is free: it never counts against the cap
   if (!(await underCap("memo"))) return "cap";
+  const { memoPrompt, draftProblems, tidyDraft, scrubDraft } = await import("./memo-draft");
+  const end = Date.now() + TIMEOUTS.memoMs; // both tries together stay under Vercel's 300 s
+  let text = "";
+  let fix: string[] = [];
   try {
     const { generateText } = await import("ai");
-    // GPT-5 thinks before it writes, and the thinking counts against the output limit: at Claude's 1,600 it left
-    // no room for the memo (an empty draft, 10-26-26). Low thinking and room for the whole memo.
-    const r = await generateText({
-      model: MODELS.writer,
-      reasoning: "low",
-      timeout: TIMEOUTS.memoMs,
-      prompt: `Write a first draft of this investment memo in Courtside Ventures' "Why We Invested" voice, following the outline exactly. Cite sources inline with their links. Keep every [TBD] placeholder; never invent a number, name or date.\n\n${outline}`,
-      maxOutputTokens: 8000,
-    });
-    if (r.text.trim().length < 200) return null; // an empty or cut-off draft is a failure, never a result
-    const text = `> Draft for internal discussion. Verify every figure.\n\n${r.text}`;
-    await setSetting(key, text);
-    return text;
+    for (let i = 0; i < 2; i++) {
+      if (i && (end - Date.now() < MEMO_REDRAW_MIN_MS || !(await underCap("memo")))) break;
+      // GPT-5 thinks before it writes, and the thinking counts against the output limit: at Claude's 1,600 it left
+      // no room for the memo (an empty draft, 10-26-26). Low thinking and room for the whole memo.
+      const r = await generateText({
+        model: MODELS.writer,
+        reasoning: "low",
+        timeout: end - Date.now(),
+        prompt: memoPrompt({ outline, fix }),
+        maxOutputTokens: 8000,
+      });
+      if (r.text.trim().length < 200) {
+        if (!i) return null; // an empty or cut-off draft is a failure, never a result
+        break; // a failed redraw: the first draft, scrubbed
+      }
+      text = r.text.trim();
+      fix = draftProblems(text, outline);
+      if (!fix.length) break;
+    }
   } catch {
-    return null;
+    if (!text) return null;
   }
+  // the panel says "A first draft for the team to talk through …" above the draft: the text doesn't repeat it
+  const done = fix.length ? scrubDraft(text, outline) : tidyDraft(text);
+  await setSetting(key, done);
+  return done;
 }
 
 /** The question the AI Thesis Check asks. It judges the NAME Scout found, not the story around it: "DJ Reinier

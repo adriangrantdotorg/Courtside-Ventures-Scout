@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Download, LockOpen, Sparkles } from "lucide-react";
+import { Copy, Sparkles } from "lucide-react";
 import { useUI } from "./ui";
 import { Ago, Clock } from "./Live";
 import { AiChip } from "./cards";
-import { postJSON, sendJSON, getJSON, download } from "@/lib/client";
+import { postJSON, sendJSON, download, copyText } from "@/lib/client";
 
 type Note = { id: number; body: string; createdAt: string };
 
@@ -69,39 +69,15 @@ export function MemoPanel({ id, name, ai }: { id: number; name: string; ai: bool
   const [draft, setDraft] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [since, setSince] = useState<number | null>(null);
-  async function outline(): Promise<string | null> {
-    const r = await getJSON<{ markdown: string }>(`/api/memo/${id}`);
-    if (!r.ok || !r.data) {
-      ui.error("The outline didn't load", r.error || "The server did not answer.");
-      return null;
-    }
-    return r.data.markdown;
-  }
-  async function copy() {
-    const md = await outline();
-    if (!md) return;
-    try {
-      await navigator.clipboard.writeText(md);
-      ui.toast("Outline Copied");
-    } catch {
-      download(`${name} investment memo outline.md`, md, "text/markdown");
-      ui.toast("Outline Downloaded");
-    }
-  }
-  async function dl() {
-    const md = draft || (await outline());
-    if (!md) return;
-    download(`${name} investment memo${draft ? "" : " outline"}.md`, md, "text/markdown");
-    ui.toast(".md Downloaded");
-  }
+  // no outline to copy or download (11-06-26): it held [TBD] gaps, of no use to an investor; only the finished draft
   async function aiDraft() {
     setBusy(true);
     setSince(Date.now());
     const r = await postJSON<{ markdown: string }>(`/api/memo/${id}`, {});
     setBusy(false);
     setSince(null);
-    if (r.status === 429) return ui.error("Today's AI drafts are used", r.error || "Copy the outline instead.");
-    if (!r.ok) return ui.error("The draft didn't come back", r.error || "Copy the outline instead.");
+    if (r.status === 429) return ui.error("Today's AI drafts are used", r.error || "Try again tomorrow.");
+    if (!r.ok) return ui.error("The draft didn't come back", r.error || "Try again in a minute.");
     setDraft(r.data!.markdown);
     ui.toast("Draft Ready");
   }
@@ -112,12 +88,12 @@ export function MemoPanel({ id, name, ai }: { id: number; name: string; ai: bool
         {!ai && <AiChip />}
       </h3>
       {ai ? (
-        <p>A first draft in Courtside&apos;s &quot;Why We Invested&quot; voice, built from every fact and link Scout has. Every number keeps its source.</p>
+        <p>A first draft of {name}&apos;s memo in Courtside&apos;s &quot;Why We Invested&quot; voice, built from what Scout has found. Every data point links to its source, and anything Scout can&apos;t confirm goes to Questions for Founders at the end.</p>
       ) : (
-        <p>Scout fills Courtside&apos;s eight-part memo outline with every fact and link it has on {name}. Copy it, paste it into your AI, and you have a first draft in a minute.</p>
+        <p>Drafting is off right now: it needs Scout&apos;s AI, which comes back on with the next daily check.</p>
       )}
-      <div className="row">
-        {ai ? (
+      {ai && (
+        <div className="row">
           <button className="btn" onClick={aiDraft} disabled={busy} title="Writes a first draft here in Courtside's voice">
             <Sparkles className="ico" />
             {busy ? (
@@ -128,27 +104,31 @@ export function MemoPanel({ id, name, ai }: { id: number; name: string; ai: bool
               "Draft the Memo"
             )}
           </button>
-        ) : (
-          <button className="btn" onClick={copy} title="Copies the eight-part outline, filled in, for your AI">
-            <Copy className="ico" />
-            Copy the Outline for Your AI
-          </button>
-        )}
-        <button className="btn" onClick={dl} title="Downloads the outline as a Markdown file">
-          <Download className="ico" />
-          Download .md
-        </button>
-      </div>
-      {!ai && (
-        <p className="tip">
-          <LockOpen className="ico" />
-          Unlock AI in Settings and Scout writes the draft right here.
-        </p>
+        </div>
       )}
       {draft && (
         <>
-          <p style={{ fontSize: 13, color: "var(--text-3)" }}>Draft for internal discussion. Verify every figure.</p>
+          <p style={{ fontSize: 13, color: "var(--text-3)" }}>A first draft for the team to talk through. Give the figures a quick look before it goes further.</p>
           <pre>{draft}</pre>
+          {/* Copy the Draft: the finished draft only, never the outline, titled so it pastes into a doc or an email */}
+          <div className="row">
+            <button
+              className="btn"
+              title="Copies the draft as Markdown, to paste into a doc or an email"
+              onClick={async () => {
+                try {
+                  await copyText(`# Why We Invested: ${name}\n\n${draft}\n`);
+                  ui.toast("Draft Copied");
+                } catch {
+                  download(`${name} investment memo.md`, `# Why We Invested: ${name}\n\n${draft}\n`, "text/markdown");
+                  ui.toast("Draft Downloaded");
+                }
+              }}
+            >
+              <Copy className="ico" />
+              Copy the Draft
+            </button>
+          </div>
         </>
       )}
     </section>
