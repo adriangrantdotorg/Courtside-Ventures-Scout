@@ -216,6 +216,20 @@ describe("guards on the source", () => {
     expect(jobs).toMatch(/if \(SLACK\) await postSlackHits\(ctx\)/);
     expect(jobs).toMatch(/if \(!SLACK\) return;\n\s+const \{ slackPost \}/);
   });
+  it("the consumer trade feeds are read, and About lists exactly the feeds the job reads (11-06-26)", async () => {
+    const { INDUSTRY_FEEDS } = await import("@/lib/jobs/collect-signals");
+    const names = INDUSTRY_FEEDS.map(([n]) => n);
+    for (const n of ["Glossy", "Beauty Independent", "NOSH", "Food Dive", "BevNET", "Retail Dive", "Practical Ecommerce", "Insurance Journal"]) expect(names, n).toContain(n);
+    expect(new Set(names).size).toBe(names.length); // no feed twice
+    for (const [, u] of INDUSTRY_FEEDS) expect(u).toMatch(/^https:\/\//);
+    // About reads the same list, so it can't name a feed the job no longer reads, or miss a new one
+    expect(readFileSync("src/app/about/page.tsx", "utf8")).toMatch(/INDUSTRY_FEEDS\.map\(\(\[n\]\) => n\)/);
+  });
+  it("unit tests never reach the live database (11-06-26: test runs wrote 8 fake failures into Settings › Sources)", async () => {
+    for (const k of Object.keys(process.env)) expect(k, "vitest.config.ts drops every database setting").not.toMatch(/^(DATABASE_URL|POSTGRES_|PG[A-Z]|NEON_)/);
+    const { hasDb } = await import("@/db");
+    expect(hasDb(), "this file has no test database, so it has no database at all").toBe(false);
+  });
   it("no native confirm() or alert(), and no error through toast()", () => {
     for (const { f, s } of SRC) {
       expect(s, f).not.toMatch(/(^|[^.\w])(window\.)?(confirm|alert)\(/);

@@ -1,3 +1,4 @@
+import { INDUSTRY_FEEDS } from "@/lib/jobs/collect-signals";
 import { Phase2Link } from "@/components/Phase2Link";
 import type { Metadata } from "next";
 import { DocHead, Toc } from "@/components/doc";
@@ -44,7 +45,7 @@ export default function Page() {
           <ul>
             <li>SEC EDGAR: the daily Form D and Form C index, filing details and full-text search</li>
             <li>Hacker News, Y Combinator&apos;s company list, Product Hunt, App Store charts</li>
-            <li>Google News, Google Trends&apos; daily feed, and industry news: Front Office Sports, Sportico, TechCrunch, Crunchbase News, Passionfruit, Tubefilter, Variety, Deadline, Puck, GamesIndustry.biz, The Verge</li>
+            <li>Google News, Google Trends&apos; daily feed, and industry news: {INDUSTRY_FEEDS.map(([n]) => n).join(", ")}</li>
             <li>The creators and shows: YouTube channel feeds and podcast feeds (titles, descriptions and show notes)</li>
             <li>Fund watch: news, blogs, newsletters, videos and Form D filings for about 107 funds</li>
             <li>Courtside itself: its Medium posts, its portfolio page and The 4th Quarter</li>

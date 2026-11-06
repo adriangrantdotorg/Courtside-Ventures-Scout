@@ -27,6 +27,18 @@ export const INDUSTRY_FEEDS: [string, string][] = [
   ["Puck", "https://puck.news/feed/"],
   ["GamesIndustry.biz", "https://www.gamesindustry.biz/feed"],
   ["The Verge", "https://www.theverge.com/rss/index.xml"],
+  // consumer trade press (Adrian, 11-06-26: every feed with at least one item a week in Courtside's areas, measured that
+  // day: Glossy 6, Beauty Independent 3, NOSH 2, Food Dive 2, BevNET 1, Retail Dive 1, Practical Ecommerce 1, Insurance
+  // Journal 1). Left out: Modern Retail, Healthcare Dive and Payments Dive (0), Fierce Healthcare (blocks readers) and
+  // FoodNavigator-USA (no feed).
+  ["Glossy", "https://www.glossy.co/feed/"],
+  ["Beauty Independent", "https://www.beautyindependent.com/feed/"],
+  ["NOSH", "https://www.nosh.com/feed/"],
+  ["Food Dive", "https://www.fooddive.com/feeds/news/"],
+  ["BevNET", "https://www.bevnet.com/feed/"],
+  ["Retail Dive", "https://www.retaildive.com/feeds/news/"],
+  ["Practical Ecommerce", "https://www.practicalecommerce.com/feed"],
+  ["Insurance Journal", "https://www.insurancejournal.com/rss/news/"],
 ];
 
 export const FUNDING = /\b(raises|raised|secures|closes|nabs|bags|clinches|lands|funding|seed round|pre-seed|series a|investment in|invests in|backs)\b/i;

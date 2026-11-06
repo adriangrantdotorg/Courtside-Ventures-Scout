@@ -677,11 +677,15 @@ function ThesisPane({ data, refresh }: { data: Data; refresh: () => void }) {
   );
 }
 
+/** The sources Settings › Sources can switch off one by one. */
+const SWITCHABLE = /^(youtube|podcasts|google-news|hn|yc|producthunt|appstore)$/;
 const SOURCE_NAMES = ["sec-index", "sec-latest-D", "sec-latest-C", "sec-search", "hn", "yc", "producthunt", "appstore", "google-news", "google-trends", "youtube", "podcasts", "courtside-medium", "fourth-quarter", "github", "gdelt"];
 function Sources({ data, refresh }: { data: Data; refresh: () => void }) {
   const s = useShared({ extraSources: data.extra, sourcesOff: data.off }, refresh);
   const off = s.draft.sourcesOff as string[];
-  const rows = [...new Set([...SOURCE_NAMES, ...data.health.map((h: any) => h.source)])];
+  // the sources a switch can turn off come first (11-06-26), then the rest in their usual order
+  const all = [...new Set([...SOURCE_NAMES, ...data.health.map((h: any) => h.source)])];
+  const rows = [...all.filter((x) => SWITCHABLE.test(x)), ...all.filter((x) => !SWITCHABLE.test(x))];
   return (
     <>
       <p className="sub">Every source with its health: when it last answered, when it last failed, and when it is read next. A source that fails returns nothing and the site keeps its last good data.</p>
@@ -719,7 +723,7 @@ function Sources({ data, refresh }: { data: Data; refresh: () => void }) {
                 <span>
                   next read <Until date={nextRun(9)} ch={9} />
                 </span>
-                {/^(youtube|podcasts|google-news|hn|yc|producthunt|appstore)$/.test(src) && (
+                {SWITCHABLE.test(src) && (
                   <Toggle label={`Read ${src}`} on={!off.includes(src)} onChange={(v) => s.setDraft({ ...s.draft, sourcesOff: v ? off.filter((x) => x !== src) : [...off, src] })} />
                 )}
               </span>
