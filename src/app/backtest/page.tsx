@@ -3,7 +3,6 @@ import { backtestRows } from "@/lib/queries";
 import { DocHead, Toc } from "@/components/doc";
 import { BacktestAny } from "@/components/BacktestAny";
 import { EvidenceRows } from "@/components/Evidence";
-import { Vote } from "@/components/cards";
 import { favicon, fmtDate } from "@/lib/format";
 
 export const revalidate = 300;
@@ -47,7 +46,6 @@ export default async function Page() {
                       {b.verified ? " · Hand-verified" : ""}
                     </div>
                   </div>
-                  <Vote k={`backtest:${b.slug}`} row upTitle="Convincing" downTitle="Not convincing" />
                 </div>
                 {b.verdict === "win" ? (
                   <p className="verdict">

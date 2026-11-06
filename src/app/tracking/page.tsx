@@ -3,7 +3,7 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import { companyCards, trendCards } from "@/lib/queries";
-import { LockChip, Vote } from "@/components/cards";
+import { LockChip } from "@/components/cards";
 import { Row } from "@/components/V2";
 import { AddedProvider, TrackingTabs, AddedList, AddPersonAdded, NewAlertAdded } from "@/components/Added";
 import { AddTracked } from "@/components/AddTracked";
@@ -134,7 +134,6 @@ export default async function Page() {
                       <LockChip door="linkedin">LinkedIn posts</LockChip>
                     </div>
                   </div>
-                  <Vote k={`person:${p.id}`} name={p.name} upTitle="Worth following" downTitle="Not useful" />
                 </article>
               );
             })}
@@ -158,7 +157,6 @@ export default async function Page() {
                       {rule && <span>alert: {rule.title}</span>}
                     </div>
                   </div>
-                  <Vote k={`alert_hit:${h.id}`} row upTitle="Useful hit" downTitle="Not useful" />
                 </div>
               );
             })}

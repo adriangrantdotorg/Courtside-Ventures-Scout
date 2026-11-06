@@ -94,32 +94,33 @@ export function Vote({ k, initial = 0, row, upTitle = "This fits Courtside", dow
     store.counts[k] = r.data!.count;
     emit();
   }
+  // down on the left, up on the right, in every vote on the site (11-06-26); a stacked vote keeps up on top (globals.css)
   if (v2)
     return (
       <span className="x-votes" data-vote={k}>
-        <button type="button" className={"up" + (mine === 1 ? " on" : "")} data-act="up" aria-pressed={mine === 1} title={upTitle} aria-label={`${upTitle}${name ? `: ${name}` : ""}`} onClick={() => press(1)}>
-          <svg className="x-ico fill" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M8 3l6 9H2z" />
-          </svg>
-        </button>
-        <b data-testid="vote-count">{count}</b>
         <button type="button" className={"dn" + (mine === -1 ? " on" : "")} data-act="down" aria-pressed={mine === -1} title={downTitle} aria-label={`${downTitle}${name ? `: ${name}` : ""}`} onClick={() => press(-1)}>
           <svg className="x-ico fill" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M8 13L2 4h12z" />
+          </svg>
+        </button>
+        <b data-testid="vote-count">{count}</b>
+        <button type="button" className={"up" + (mine === 1 ? " on" : "")} data-act="up" aria-pressed={mine === 1} title={upTitle} aria-label={`${upTitle}${name ? `: ${name}` : ""}`} onClick={() => press(1)}>
+          <svg className="x-ico fill" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 3l6 9H2z" />
           </svg>
         </button>
       </span>
     );
   return (
     <span className={"votes" + (row ? " row" : "")} data-vote={k}>
-      <button data-act="up" aria-pressed={mine === 1} title={upTitle} aria-label={`${upTitle}${name ? `: ${name}` : ""}`} onClick={() => press(1)}>
-        <Up />
+      <button data-act="down" aria-pressed={mine === -1} title={downTitle} aria-label={`${downTitle}${name ? `: ${name}` : ""}`} onClick={() => press(-1)}>
+        <Down />
       </button>
       <span className="n mono" data-testid="vote-count">
         {count}
       </span>
-      <button data-act="down" aria-pressed={mine === -1} title={downTitle} aria-label={`${downTitle}${name ? `: ${name}` : ""}`} onClick={() => press(-1)}>
-        <Down />
+      <button data-act="up" aria-pressed={mine === 1} title={upTitle} aria-label={`${upTitle}${name ? `: ${name}` : ""}`} onClick={() => press(1)}>
+        <Up />
       </button>
     </span>
   );

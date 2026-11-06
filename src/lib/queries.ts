@@ -306,7 +306,6 @@ export type TrendCard = {
   faces: { name: string; href: string; img: string | null }[];
   lastSeen: string | null;
   tracked: boolean;
-  votes: number;
   momentum: string;
 };
 
@@ -346,9 +345,8 @@ export async function hasTrends(): Promise<boolean> {
 export async function trendCards(limit = 30): Promise<TrendCard[]> {
   const ts = await db().select().from(S.trends).orderBy(desc(S.trends.tracked), desc(S.trends.score)).limit(limit);
   if (!ts.length) return [];
-  const [idx, counts, voices] = await Promise.all([
+  const [idx, voices] = await Promise.all([
     entityIndex(),
-    voteCounts(ts.map((t) => `trend:${t.id}`)),
     db().select({ name: S.voices.name, image: S.voices.image, site: S.voices.site }).from(S.voices),
   ]);
   const vmap = new Map(voices.map((v) => [v.name, v]));
@@ -378,7 +376,6 @@ export async function trendCards(limit = 30): Promise<TrendCard[]> {
       faces,
       lastSeen: t.lastSeen ? t.lastSeen.toISOString() : null,
       tracked: t.tracked,
-      votes: counts[`trend:${t.id}`] || 0,
       momentum: cleanCopy(t.momentum || ""),
     };
   });
@@ -417,7 +414,6 @@ export type SponsorCard = {
   fresh: boolean;
   hot: boolean;
   sightings: { show: string; date: string | null; url: string; evidence: string | null }[];
-  votes: number;
 };
 
 function spanText(from: Date | null, now: number): string {
@@ -433,7 +429,6 @@ export async function sponsorCards(limit?: number): Promise<SponsorCard[]> {
   const sp = await db().select().from(S.sponsors);
   if (!sp.length) return [];
   const sights = await db().select().from(S.sponsorSightings).orderBy(desc(S.sponsorSightings.date));
-  const counts = await voteCounts(sp.map((s) => `sponsor:${s.id}`));
   const now = Date.now();
   const by = new Map<number, typeof sights>();
   for (const s of sights) {
@@ -466,7 +461,6 @@ export async function sponsorCards(limit?: number): Promise<SponsorCard[]> {
       fresh: fresh || !!newShow,
       hot: shows.length >= 2 && fresh,
       sightings: list.slice(0, 12).map((x) => ({ show: x.show, date: x.date?.toISOString() || null, url: x.url, evidence: x.evidence ? unescapeTwice(x.evidence) : null })),
-      votes: counts[`sponsor:${s.id}`] || 0,
     };
   });
   cards.sort((a, b) => b.shows.length - a.shows.length || (b.lastSeen || "").localeCompare(a.lastSeen || ""));
@@ -504,8 +498,8 @@ export async function cultureOverlaps(days = 30, limit = 40): Promise<Overlap[]>
   }
   out.sort((a, b) => b.score - a.score);
   const top = out.slice(0, limit);
-  const counts = await voteCounts(top.map((o) => `culture:${o.slug}`));
-  for (const o of top) o.votes = counts[`culture:${o.slug}`] || 0;
+  const counts = await voteCounts(top.filter((o) => o.companyId).map((o) => `company:${o.companyId}`));
+  for (const o of top) o.votes = counts[`company:${o.companyId}`] || 0;
   return top;
 }
 
@@ -519,8 +513,8 @@ export async function filingRows(opts: { thesisOnly?: boolean; limit?: number } 
     .where(and(...conds))
     .orderBy(desc(S.filings.filedAt));
   const r = opts.limit ? await q.limit(opts.limit) : await q;
-  const counts = await voteCounts(r.map((f) => `filing:${f.id}`));
-  return r.map((f) => ({ ...f, votes: counts[`filing:${f.id}`] || 0 }));
+  const counts = await voteCounts(r.filter((f) => f.companyId).map((f) => `company:${f.companyId}`));
+  return r.map((f) => ({ ...f, votes: counts[`company:${f.companyId}`] || 0 }));
 }
 
 /* ---------- funds ---------- */
@@ -560,13 +554,15 @@ export async function fundFeed(kind: "neighborhood" | "synergistic", limit = 60)
     });
   }
   const top = kept.slice(0, limit);
-  const counts = await voteCounts(top.map((i) => `fund_item:${i.id}`));
+  // a deal names its startup: one Scout knows takes that startup's vote (11-06-26: only startups take a vote)
+  const withCo = top.map((i) => {
+    const c = i.company ? cmap.get(i.company.toLowerCase()) : undefined;
+    return { i, c, companyId: i.companyId ?? c?.id ?? null };
+  });
+  const counts = await voteCounts(withCo.filter((x) => x.companyId).map((x) => `company:${x.companyId}`));
   return {
     funds: fs,
-    items: top.map((i) => {
-      const c = i.company ? cmap.get(i.company.toLowerCase()) : undefined;
-      return { ...i, fund: fmap.get(i.fundId)!, votes: counts[`fund_item:${i.id}`] || 0, inPipeline: !!c, score: c?.score ?? null };
-    }),
+    items: withCo.map(({ i, c, companyId }) => ({ ...i, companyId, fund: fmap.get(i.fundId)!, votes: companyId ? counts[`company:${companyId}`] || 0 : 0, inPipeline: !!c, score: c?.score ?? null })),
   };
 }
 

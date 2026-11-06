@@ -178,6 +178,15 @@ function files(dir: string, out: string[] = []): string[] {
 const SRC = files("src").map((f) => ({ f, s: readFileSync(f, "utf8") }));
 
 describe("guards on the source", () => {
+  it("only a startup takes a vote: every vote button is that startup's own vote (11-06-26)", () => {
+    // a vote on a deal, filing, trend, founder, alert hit, sponsor or Backtest card was saved and counted, and nothing
+    // read it; only a startup's vote moves its fit score (src/lib/jobs/score.ts). A row tied to a startup votes for it.
+    const bad: string[] = [];
+    for (const { f, s } of SRC)
+      for (const m of s.matchAll(/<Vote\s+k=\{`([a-z_]+):/g)) if (m[1] !== "company") bad.push(`${f}: a "${m[1]}" vote (vote for the row's startup, k={\`company:\${id}\`}, or show none)`);
+    expect(bad).toEqual([]);
+    expect(readFileSync("src/app/api/vote/route.ts", "utf8")).toMatch(/const TYPES = new Set\(\["company"\]\)/);
+  });
   it("no native confirm() or alert(), and no error through toast()", () => {
     for (const { f, s } of SRC) {
       expect(s, f).not.toMatch(/(^|[^.\w])(window\.)?(confirm|alert)\(/);

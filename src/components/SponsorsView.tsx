@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { ClearX } from "./ui";
-import { Vote } from "./cards";
 import { Ago } from "./Live";
 import { favicon, fmtDate } from "@/lib/format";
 import type { SponsorCard } from "@/lib/queries";
@@ -120,7 +119,6 @@ export function SponsorsView({ cards }: { cards: SponsorCard[] }) {
                 ))}
               </ul>
             </div>
-            <Vote k={`sponsor:${c.id}`} initial={c.votes} name={c.brand} upTitle="Worth watching" downTitle="Not useful" />
           </article>
         ))}
         {!list.length && <p className="empty">No brand matches these filters.</p>}

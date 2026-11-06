@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { trendCards } from "@/lib/queries";
-import { Vote, LockChip } from "@/components/cards";
+import { LockChip } from "@/components/cards";
 import { TrackTrend } from "@/components/TrackTrend";
 import { TimelineToggle } from "@/components/TimelineToggle";
 import { ListHead, RowFilter } from "@/components/ListHead";
@@ -77,7 +77,6 @@ export default async function Page() {
                 <span className="lockchip">
                   <LockChip door="realtime">Real-time</LockChip>
                 </span>
-                <Vote k={`trend:${t.id}`} initial={t.votes} name={t.headline} upTitle="This matters to Courtside" downTitle="Not for Courtside" row />
               </div>
             </div>
           </article>

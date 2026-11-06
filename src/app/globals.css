@@ -230,7 +230,8 @@ html[data-theme="light"] .spark polyline { filter:none; }
 .cdesc { margin:6px 0 8px; font-size:15.5px; color:var(--text); }
 .cdesc .per { font-size:13px; color:var(--text-3); }
 .why { font-size:15px; color:var(--text-2); border-left:3px solid var(--red); padding-left:10px; margin:0 0 10px; }
-.votes { display:inline-flex; flex-direction:column; align-items:center; gap:2px; padding:6px 8px; border:1px solid var(--border); border-radius:10px; background:var(--surface); font:600 13px/1 "IBM Plex Mono", monospace; color:var(--text-2); height:fit-content; }
+/* the markup runs down, count, up (down on the left in a row); a stacked vote reverses it so up stays on top */
+.votes { display:inline-flex; flex-direction:column-reverse; align-items:center; gap:2px; padding:6px 8px; border:1px solid var(--border); border-radius:10px; background:var(--surface); font:600 13px/1 "IBM Plex Mono", monospace; color:var(--text-2); height:fit-content; }
 .votes.row { flex-direction:row; padding:4px 8px; gap:6px; }
 .votes button { border:0; background:transparent; color:var(--text-2); line-height:1; padding:4px 6px; cursor:pointer; min-height:26px; min-width:26px; display:grid; place-items:center; border-radius:6px; }
 .votes button svg { width:14px; height:14px; fill:currentColor; }

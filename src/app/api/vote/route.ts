@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { db, schema as S } from "@/db";
 import { visitor, rateLimit } from "@/lib/visitor";
 
-const TYPES = new Set(["company", "trend", "sponsor", "brief", "alert_hit", "culture", "voice", "source", "memo", "filing", "fund_item", "spotlight", "backtest", "person"]);
+// only a startup takes a vote: it moves that startup's fit score (src/lib/jobs/score.ts); a vote on anything else changed
+// nothing, so its buttons and these types left the site (11-06-26)
+const TYPES = new Set(["company"]);
 
 export async function POST(req: Request) {
   const { key, value } = await req.json().catch(() => ({}));
