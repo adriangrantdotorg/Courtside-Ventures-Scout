@@ -90,6 +90,27 @@ describe("News Links", () => {
     expect(await d.select().from(schema.signals).where(eq(schema.signals.companyId, co.id))).toHaveLength(1);
   });
 
+  it("reads a feed copy only when its link is already opened (11-06-26: 2.3 MB of every sweep's 3.3 MB on Neon's free tier)", async () => {
+    const shut = "https://news.google.com/rss/articles/CBMiTESTONLYFEEDSHUT?oc=5";
+    const open = "https://news.google.com/rss/articles/CBMiTESTONLYFEEDOPEN?oc=5";
+    await d.insert(schema.feedItems).values([
+      { kind: "news", source: "Elsewhere", title: "A feed copy never opened", url: shut },
+      { kind: "news", source: "Elsewhere", title: "A feed copy already opened", url: open },
+    ]);
+    await d.insert(schema.cache).values({ key: "gnews:CBMiTESTONLYFEEDOPEN", value: { url: "https://example.com/opened" } });
+    const { rowsIn, PLACES } = await import("@/lib/jobs/links");
+    const feed = PLACES.find((p) => p.table === schema.feedItems)!;
+    const read = (await rowsIn(feed)).map((r) => r.v);
+    expect(read).toContain(open);
+    expect(read).not.toContain(shut);
+    expect(read).not.toContain(G2); // the first test's unopened feed copy
+    const { sweepLinks } = await import("@/lib/jobs/links");
+    await sweepLinks({ deadline: Date.now() + 60_000 });
+    const urls = (await d.select().from(schema.feedItems)).map((f) => f.url);
+    expect(urls).toContain("https://example.com/opened");
+    expect(urls).toContain(shut);
+  });
+
   it("removes the second copy when the same story was saved under both addresses", async () => {
     const [co] = await d.insert(schema.companies).values({ key: "rebuy2", name: "Rebuy Engine" }).returning();
     await d.insert(schema.signals).values([

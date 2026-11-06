@@ -82,11 +82,17 @@ const LIKE = "%news.google.com/%articles/%";
 
 type Row = { id: number; v: string };
 
-async function rowsIn(p: Place): Promise<Row[]> {
+/** The rows of a place that hold a Google News link. A place no page shows (feed_items) is only swapped, never opened,
+ *  so the database returns only the rows whose link is already opened: on 11-06-26 its 7,619 Google rows were 2.3 MB of
+ *  every sweep's 3.3 MB read, on Neon's free 5 GB a month of network transfer. */
+export async function rowsIn(p: Place): Promise<Row[]> {
   const t = sql.raw(`"${getTableName(p.table)}"`);
   const c = sql.raw(`"${p.column.name}"`);
   const pk = sql.raw(getTableName(p.table) === "settings" ? `"key"` : `"id"`);
-  const r = (await db().execute(sql`select ${pk} as id, ${c}::text as v from ${t} where ${c}::text like ${LIKE}`)) as unknown as { rows: Row[] };
+  const opened = p.shown
+    ? sql``
+    : sql` and exists (select 1 from cache k where k.key = 'gnews:' || substring(${c}::text from 'articles/([A-Za-z0-9_-]+)') and k.value->>'url' is not null)`;
+  const r = (await db().execute(sql`select ${pk} as id, ${c}::text as v from ${t} where ${c}::text like ${LIKE}${opened}`)) as unknown as { rows: Row[] };
   return r.rows;
 }
 
@@ -105,16 +111,16 @@ export async function shownLinks(): Promise<Set<string>> {
  *  `deadline`, then put each opened link's article address everywhere it is stored. `waiting`: the ones left for time. */
 export async function sweepLinks(o: { deadline: number; only?: Set<string>; onStart?: (toOpen: number) => unknown; onOpen?: () => unknown }): Promise<Sweep> {
   const out: Sweep = { opened: 0, refused: 0, left: 0, swapped: 0, removed: 0, failed: 0, waiting: [] };
-  const found = await Promise.all(PLACES.map(async (p) => ({ p, rows: await rowsIn(p) })));
+  // the places a page shows first; the feed copies are read after the opening, so they include this run's links
+  const found = await Promise.all(PLACES.filter((p) => p.shown).map(async (p) => ({ p, rows: await rowsIn(p) })));
   const shown = new Set<string>();
   const all = new Set<string>();
-  for (const { p, rows } of found)
+  for (const { rows } of found)
     for (const r of rows)
       for (const id of idsOf(r.v)) {
         all.add(id);
-        if (p.shown) shown.add(id);
+        shown.add(id);
       }
-  if (!all.size) return out;
   const memo = await remembered([...all]);
   const toOpen = [...shown].filter((id) => !memo.has(id) && (!o.only || o.only.has(id)));
   await o.onStart?.(toOpen.length);
@@ -130,6 +136,15 @@ export async function sweepLinks(o: { deadline: number; only?: Set<string>; onSt
     else out.refused++;
     await o.onOpen?.();
   }
+  // the feed copies whose link is opened (the database picks them: rowsIn), this run's included
+  for (const p of PLACES.filter((x) => !x.shown)) {
+    const rows = await rowsIn(p);
+    found.push({ p, rows });
+    for (const r of rows) for (const id of idsOf(r.v)) all.add(id);
+  }
+  if (!all.size) return out;
+  const unknown = [...all].filter((id) => !memo.has(id));
+  if (unknown.length) for (const [id, m] of await remembered(unknown)) memo.set(id, m);
   // every stored copy of an opened link gets the article's address
   const failed = new Set<string>();
   for (const { p, rows } of found) {
