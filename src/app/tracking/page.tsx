@@ -1,3 +1,4 @@
+import { SLACK } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
@@ -50,9 +51,11 @@ export default async function Page() {
         )}{" "}
         next <Until date={nextRun(11)} ch={9} />
         <LockChip door="realtime">Real-time</LockChip>
-        <Link href="/settings?s=slack" title="Post alert hits to a Slack channel">
-          Want this in Slack? Connect Slack
-        </Link>
+        {SLACK && (
+          <Link href="/settings?s=slack" title="Post alert hits to a Slack channel">
+            Want this in Slack? Connect Slack
+          </Link>
+        )}
       </p>
       <AddedProvider>
       <TrackingTabs

@@ -3,7 +3,7 @@
 A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: https://courtside-ventures-scout.vercel.app
 
 ## Audience and voice (Adrian, 10-15-26)
-- *Trigger:* you write or edit any words a person reads: page copy, labels, tooltips, empty states, alerts, the Monday brief, Slack posts, the README.
+- *Trigger:* you write or edit any words a person reads: page copy, labels, tooltips, empty states, alerts, the Monday brief, the README.
 - *Who reads it:* busy venture capitalists at Courtside Ventures, who invest in pre-seed and seed startups in the entertainment space (sports, gaming, lifestyle, health, media).
 - *Voice:* professional and concise, with a casual startup vibe. Lead with the value to an investor: what they learn or can act on in seconds.
 - *Discrimination:* code comments, commit messages, CLAUDE.md and test names are for developers and keep their own plain style. Existing copy is not rewritten just to match; the rule applies to copy you write or touch from now on.
@@ -63,6 +63,7 @@ A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: 
   never the firm (Adrian, 10-31-26).
 - `scripts/step.ts` drives the build-progress page (`~/.courtside-ventures-scout/`) and `settings.build_progress`; `done: true` turns the Building page off.
 - `RECURRING.md` is the defect ledger: add one line per fix.
+- No Slack (Adrian, 11-06-26): `SLACK = false` in `src/lib/features.ts` hides Settings › Slack, Share to Slack, the Connect Slack links and the alert-hit and Monday-brief posts, and `/api/slack/*` answers 404; the code stays for a firm that wants it back. Anything new that touches Slack reads that switch; `tests/e2e/no-slack.spec.ts` fails on the word Slack on any page.
 - The memo (11-06-26): the outline is never handed out; More › Draft Investment Memo opens the company page's memo panel (Draft the Memo, then Copy the Draft). The draft states only what Scout knows, each fact with its link, and every gap is a numbered question in Questions for Founders (at most 15, by section, never under Title or Sign-off); a draft with a gap word or a link Scout never gave is redrawn once, else those sentences are taken out (`src/lib/memo-draft.ts`). The outline cites up to 8 stories by their own address: `articleUrl()` (`src/lib/sources/gnews.ts`) opens each Google News link once and remembers it (cache `gnews:<id>`), since no saved Google link decodes on its own any more.
 - Only a startup takes a vote (11-06-26): its vote moves the fit score, nothing else reads one. A deal, filing or Culture row whose startup is in Scout shows that startup's vote (`company:<id>`), other rows none; every vote reads ▼ count ▲ (up on the right, up on top when stacked). `tests/unit/rules.test.ts` fails on any other kind of vote; `/api/vote` takes only `company`.
 - Trends hides itself in a week with no trend: the layout reads `hasTrends()` (`src/lib/queries.ts`), the Shell's `usePages()` drops it from the top bar, the phone tab bar (Tracking takes its spot), ⌘K, g t and the shortcuts list, and `/trends` redirects to Today (11-06-26). A new menu or page list in the Shell reads `usePages()`, never `NAV` / `ALL_PAGES` directly (`tests/unit/trends-hidden.test.ts`).

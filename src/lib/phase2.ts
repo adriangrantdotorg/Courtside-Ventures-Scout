@@ -8,7 +8,7 @@ export const DOORS: Record<string, Door> = {
     title: "Real-time alerts",
     today: "In this prototype Scout checks once a day, around 8 AM ET. Watching all day is Phase II work.",
     now: ["Once-a-day runs, hits by 8 AM ET", "Every hit linked to its source", "Built solo, on free public sources"],
-    later: ["Minutes, not mornings: a watcher on Form D, HN, YC and news", "The Spotlight, Trending and the taste map through the day", "Email digests and Slack posts as hits land"],
+    later: ["Minutes, not mornings: a watcher on Form D, HN, YC and news", "The Spotlight, Trending and the taste map through the day", "Email digests as hits land"],
   },
   funding: {
     title: "Funding history",
@@ -54,8 +54,8 @@ export const DOORS: Record<string, Door> = {
   },
   email: {
     title: "Email alerts",
-    today: "In this prototype alerts land inside the site, and in Slack when it is connected. Email is Phase II work.",
-    now: ["Alerts inbox on the site", "Hits on Today", "Optional Slack posts"],
+    today: "In this prototype alerts land inside the site. Email is Phase II work.",
+    now: ["Alerts inbox on the site", "Hits on Today"],
     later: ["A morning email digest", "One email per alert hit, if wanted", "The Monday brief by email"],
   },
 };

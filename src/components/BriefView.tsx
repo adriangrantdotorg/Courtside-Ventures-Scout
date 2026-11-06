@@ -1,3 +1,4 @@
+import { SLACK } from "@/lib/features";
 import Link from "next/link";
 import { DocHead, Toc } from "./doc";
 import { Row, StorySources } from "./V2";
@@ -29,9 +30,11 @@ export function BriefView({ week, data, archive, top }: { week: string; data: an
         lede={
           <>
             The week inside Courtside&apos;s thesis, every item with its source, ready for Monday&apos;s meeting.{" "}
-            <Link href="/settings?s=slack" title="Post the brief to a Slack channel every Monday">
-              Want this in Slack? Connect Slack
-            </Link>
+            {SLACK && (
+              <Link href="/settings?s=slack" title="Post the brief to a Slack channel every Monday">
+                Want this in Slack? Connect Slack
+              </Link>
+            )}
             <span className="mono" style={{ display: "block", marginTop: 6, fontSize: 14, color: "var(--text-3)" }}>
               Next brief Monday 12 AM ET · <Until date={nextRun(4, new Date(), 1)} ch={9} />
             </span>

@@ -1,3 +1,4 @@
+import { SLACK } from "@/lib/features";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { desc, eq, sql } from "drizzle-orm";
@@ -27,7 +28,7 @@ export default async function Page() {
     db().select({ id: S.trends.id, headline: S.trends.headline }).from(S.trends).where(eq(S.trends.tracked, true)),
     db().select({ id: S.people.id, name: S.people.name }).from(S.people).where(eq(S.people.tracked, true)),
     db().select().from(S.alerts).orderBy(S.alerts.id),
-    slackConnection(),
+    SLACK ? slackConnection() : null,
     aiAvailable(),
     db().select().from(S.changeLog).orderBy(desc(S.changeLog.createdAt)).limit(60),
     db().select().from(S.feedback).orderBy(desc(S.feedback.createdAt)).limit(50),
@@ -54,7 +55,7 @@ export default async function Page() {
           people,
           alerts: alerts.map((a) => ({ id: a.id, title: a.title, active: a.active })),
           slack,
-          slackReady: slackConfigured(),
+          slackReady: SLACK && slackConfigured(),
           ai,
           log: log.map((l) => ({ id: l.id, summary: l.summary, createdAt: s(l.createdAt)!, undone: !!l.undoneAt })),
           feedback: feedback.map((f) => ({ id: f.id, page: f.page, element: f.element, chips: f.chips, note: f.note, meToo: f.meToo, status: f.status, createdAt: s(f.createdAt)! })),

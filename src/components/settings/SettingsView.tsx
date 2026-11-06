@@ -1,5 +1,6 @@
 "use client";
 
+import { SLACK } from "@/lib/features";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,7 +29,7 @@ const SECTIONS: Sec[] = [
   { id: "trackers", label: "Trackers", key: "i", group: "Shared", words: "tracked companies trends people" },
   { id: "hidden", label: "Hidden Startups", key: "h", group: "Shared", words: "hidden not a startup blog placeholder big company restore filter" },
   { id: "alerts", label: "Alerts", key: "l", group: "Shared", words: "alerts" },
-  { id: "slack", label: "Slack", key: "s", group: "Shared", words: "slack connect channel" },
+  ...(SLACK ? [{ id: "slack", label: "Slack", key: "s", group: "Shared" as const, words: "slack connect channel" }] : []),
   { id: "ai", label: "AI", key: "g", group: "Shared", words: "ai drafting memo gateway cap" },
   { id: "phase2", label: "Phase II", key: "p", group: "Shared", words: "phase ii together" },
   { id: "log", label: "Change Log", key: "o", group: "Record", words: "change log undo history" },
@@ -157,8 +158,8 @@ export function SettingsView({ data }: { data: Data }) {
   }, []);
   useEffect(() => {
     if (params.get("s")) setSec(params.get("s")!);
-    if (params.get("explain")) ui.toast("Slack Setup Needed");
-    if (params.get("connected")) ui.toast("Slack Connected");
+    if (SLACK && params.get("explain")) ui.toast("Slack Setup Needed");
+    if (SLACK && params.get("connected")) ui.toast("Slack Connected");
   }, [params, ui]);
 
   const hits = useMemo(() => {
@@ -313,7 +314,7 @@ function Pane({ id, data, refresh }: { id: string; data: Data; refresh: () => vo
         </>
       );
     case "slack":
-      return <SlackPane data={data} refresh={refresh} />;
+      return SLACK ? <SlackPane data={data} refresh={refresh} /> : null;
     case "ai":
       return <AiPane data={data} refresh={refresh} />;
     case "phase2":

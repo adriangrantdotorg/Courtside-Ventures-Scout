@@ -1,4 +1,5 @@
 // Alerts, the Monday brief, the weekly upkeep and Refresh Now.
+import { SLACK } from "../features";
 import { and, desc, eq, gte, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import * as F from "../sources/fetchers";
@@ -50,7 +51,7 @@ export async function alertsJob(ctx: Ctx) {
     }
     ctx.tick();
   }
-  await postSlackHits(ctx);
+  if (SLACK) await postSlackHits(ctx);
 }
 
 async function postSlackHits(ctx: Ctx) {
@@ -111,6 +112,7 @@ export async function mondayBrief(ctx: Ctx, weekOverride?: string) {
   };
   await db().insert(S.briefs).values({ week, data }).onConflictDoUpdate({ target: S.briefs.week, set: { data, createdAt: new Date() } });
   ctx.item();
+  if (!SLACK) return;
   const { slackPost } = await import("../slack");
   const site = process.env.SITE_URL || "";
   await slackPost(`The Monday brief for ${week} is ready: ${startups.map((s) => s.name).join(", ")}.\n<${site}/brief/${week}|Open the brief>`);

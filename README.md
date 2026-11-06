@@ -20,7 +20,7 @@
 - 📈 **Trends** — The ideas picking up steam across news, creators, filings and the App Store
 - 📻 **Sponsor Radar** — Brands buying ads on the shows the Courtside world listens to (i.e. often the first sign a company just raised or is scaling)
 - 🎧 **Culture** — The brands and startups 100+ creators and shows are talking about, so you catch taste shifts before the press does
-- 🔔 **Tracking** — The companies, trends and people you follow, plus custom alerts, checked every morning and ready for Slack
+- 🔔 **Tracking** — The companies, trends and people you follow, plus custom alerts, checked every morning
 - ⏪ **Backtest** — How many days before the investment announcement would Scout have the deal
 - 💵 **Throw Some D's on It** — Fresh SEC Form D and Form C filings inside the thesis, flagged when no press has covered them yet
 - 🏘️ **Neighborhood** — What Courtside's co-investors just backed, i.e. hear about the next shared deal early
@@ -85,7 +85,6 @@ The agent will:
 | **Extra** | **What it adds** | **How to turn it on** |
 | --------- | ---------------- | --------------------- |
 | 🤖 AI drafting | Memo drafts, written summaries, plain-English alerts | Say "turn on AI" to your agent. Runs on Vercel's free AI credit, which asks for a card on file; nothing is charged on the free credit |
-| 💬 Slack | Alert hits and the Monday brief in a channel | Say "set up Slack". About 4 clicks, once |
 
 ---
 
@@ -133,7 +132,7 @@ The code lives at https://github.com/adriangrantdotorg/Courtside-Ventures-Scout 
 
 ## 2. Ground rules
 
-1. **Everything that needs the person at Courtside happens FIRST, in the first minutes, then they walk away.** Their touches, at most three: (a) their Mac password, only if git or Node has to be installed (section 3); (b) the Vercel sign-in page the launch opens: they sign in, or create a free account right there (an email code, or GitHub / GitLab / Bitbucket; Vercel sometimes asks to confirm a phone number); (c) the database terms page the launch opens: they click Accept. The launch waits for each and continues by itself. After the walk-away line (section 4) nothing needs them until the handoff. Two optional extras exist for later, both offered once in the handoff and never pushed: Slack and AI drafting.
+1. **Everything that needs the person at Courtside happens FIRST, in the first minutes, then they walk away.** Their touches, at most three: (a) their Mac password, only if git or Node has to be installed (section 3); (b) the Vercel sign-in page the launch opens: they sign in, or create a free account right there (an email code, or GitHub / GitLab / Bitbucket; Vercel sometimes asks to confirm a phone number); (c) the database terms page the launch opens: they click Accept. The launch waits for each and continues by itself. After the walk-away line (section 4) nothing needs them until the handoff. One optional extra exists for later, offered once in the handoff and never pushed: AI drafting.
 2. **Fix your own errors.** Never show Courtside a stack trace or ask anyone there to debug. Every failure the launch prints comes with the way past it (section 5).
 3. **Install, never rebuild.** Do not edit the site's code, do not change its design, do not add features, do not create a GitHub repository, do not push anything anywhere. Adrian maintains the code; `npm run update` brings Courtside's copy up to the newest version whenever someone there asks for it later.
 4. **Free tiers only.** Everything runs on Vercel's free Hobby plan and Neon's free plan. Add no paid plan, no paid key, no card.
@@ -233,7 +232,7 @@ When the launch prints its ✅ line, send Courtside exactly this kind of message
 > **Try first:** 1) Must See and The Combine: today's best-fit startups. 2) Sponsor Radar: the brands buying ads on your industry's shows. 3) Tracking: follow a company, a trend or a person, and set an alert.
 > **It runs itself:** fresh finds every morning on your Vercel account, a Refresh Now button any time, and the IC Meeting brief every Monday. The first pull of fresh sources is running behind the site right now.
 > **Scout would have flagged Eloelo 785 days, Fanstake 162 days and Baller League 106 days before you announced them:** see Backtest.
-> **Optional, whenever you want:** alerts in Slack (say "set up Slack", about 4 clicks); AI memo drafts and the AI Thesis Check (say "turn on AI"; Vercel needs a card on file for its free AI credit, no charge).
+> **Optional, whenever you want:** AI memo drafts and the AI Thesis Check (say "turn on AI"; Vercel needs a card on file for its free AI credit, no charge).
 > **Later:** say "update Scout" and I run `npm run update`, which brings in whatever Adrian has improved since.
 > **Phase I is this prototype; Phase II is built together.** The Phase II link on every page opens the details, and Talk to Adrian goes to his LinkedIn.
 

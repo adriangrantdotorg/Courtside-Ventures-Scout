@@ -1,11 +1,12 @@
 "use client";
 
+import { SLACK } from "@/lib/features";
 import { useEffect, useState, type ReactNode } from "react";
 import { Printer, Send } from "lucide-react";
 import { useUI } from "./ui";
 import { readJSON } from "@/lib/client";
 
-/** The Document template's head tools: Print and Share to Slack. */
+/** The Document template's head tools: Print, and Share to Slack while Slack is on (src/lib/features.ts). */
 export function DocTools({ slackText }: { slackText: string }) {
   const ui = useUI();
   async function share() {
@@ -20,10 +21,12 @@ export function DocTools({ slackText }: { slackText: string }) {
         <Printer className="ico" />
         Print
       </button>
-      <button className="btn" onClick={share} title="Post a link to this page in the connected Slack channel">
-        <Send className="ico" />
-        Share to Slack
-      </button>
+      {SLACK && (
+        <button className="btn" onClick={share} title="Post a link to this page in the connected Slack channel">
+          <Send className="ico" />
+          Share to Slack
+        </button>
+      )}
     </div>
   );
 }

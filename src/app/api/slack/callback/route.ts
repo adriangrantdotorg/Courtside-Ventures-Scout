@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { SLACK } from "@/lib/features";
 import { saveSlack, slackPost } from "@/lib/slack";
 import { transport } from "@/lib/sources/http";
 
 export async function GET(req: Request) {
+  if (!SLACK) return new NextResponse(null, { status: 404 }); // Slack is off (src/lib/features.ts)
   const code = new URL(req.url).searchParams.get("code");
   const site = process.env.SITE_URL || "";
   if (!code) return NextResponse.redirect(`${site}/settings?s=slack&error=cancelled`);

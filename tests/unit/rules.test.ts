@@ -205,6 +205,17 @@ describe("guards on the source", () => {
     expect(shell).toMatch(/\n      <Landing \/>\n/);
     expect(readFileSync("src/app/actions.ts", "utf8")).toMatch(/^"use server";[\s\S]*revalidatePath\("\/", "layout"\)/);
   });
+  it("Slack is off in one place, and every Slack address checks it first (11-06-26: no Slack anywhere)", () => {
+    expect(readFileSync("src/lib/features.ts", "utf8")).toMatch(/export const SLACK = false;/);
+    for (const r of readdirSync("src/app/api/slack")) {
+      const src = readFileSync(`src/app/api/slack/${r}/route.ts`, "utf8");
+      expect(src, r).toMatch(/export async function (GET|POST)\([^)]*\) \{\n\s+if \(!SLACK\) return new NextResponse\(null, \{ status: 404 \}\)/);
+    }
+    // the automatic posts check it too
+    const jobs = readFileSync("src/lib/jobs/other.ts", "utf8");
+    expect(jobs).toMatch(/if \(SLACK\) await postSlackHits\(ctx\)/);
+    expect(jobs).toMatch(/if \(!SLACK\) return;\n\s+const \{ slackPost \}/);
+  });
   it("no native confirm() or alert(), and no error through toast()", () => {
     for (const { f, s } of SRC) {
       expect(s, f).not.toMatch(/(^|[^.\w])(window\.)?(confirm|alert)\(/);
