@@ -10,6 +10,7 @@
     { "path": "/api/cron/trends",          "schedule": "0 13 * * *" },
     { "path": "/api/cron/sponsors",        "schedule": "0 14 * * *" },
     { "path": "/api/cron/enrich",          "schedule": "0 15 * * *" },
+    { "path": "/api/cron/links",           "schedule": "0 16 * * *" },
     { "path": "/api/cron/monday-brief",    "schedule": "0 4 * * 1" },
     { "path": "/api/cron/weekly",          "schedule": "0 6 * * 0" }
   ]

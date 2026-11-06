@@ -10,7 +10,7 @@ const { execFileSync } = await import("node:child_process");
 const args = process.argv.slice(2);
 const maxRounds = Number(args.find((a) => a.startsWith("--rounds="))?.split("=")[1]) || 3;
 const named = args.filter((a) => !a.startsWith("--"));
-const order = named.length ? named : ["collect-media", "collect-signals", "culture", "sponsors", "trends", "funds-neighborhood", "funds-synergistic", "score", "enrich", "alerts", "monday-brief"];
+const order = named.length ? named : ["collect-media", "collect-signals", "culture", "sponsors", "trends", "funds-neighborhood", "funds-synergistic", "score", "enrich", "alerts", "monday-brief", "links"];
 const note = (t: string) => {
   if (process.env.SCOUT_PGLITE) return; // a run on the local copy never touches the shared database's progress record
   try {

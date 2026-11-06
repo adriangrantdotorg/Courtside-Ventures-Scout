@@ -1,6 +1,7 @@
 // Fetch + parse for every source. Any failure returns [] (or null) and logs source health.
 import { fetchText, fetchJSON, health } from "./http";
 import * as P from "./parse";
+import { ownAddresses } from "./gnews";
 
 const GN = (q: string, when = "7d", before?: string, after?: string) =>
   `https://news.google.com/rss/search?q=${encodeURIComponent(q + (after ? ` after:${after}` : "") + (before ? ` before:${before}` : ` when:${when}`))}&hl=en-US&gl=US&ceid=US:en`;
@@ -61,9 +62,11 @@ export async function appLookup(id: string): Promise<{ sellerUrl: string | null;
   return r ? { sellerUrl: r.sellerUrl || null, releaseDate: r.releaseDate || null, description: r.description || "" } : null;
 }
 
+/** A Google News search. A story whose link Scout already opened comes back with the article's own address (the News
+ *  Links sweep, src/lib/jobs/links.ts), so a story seen again is saved under the address it already holds. */
 export async function googleNews(q: string, when = "7d", before?: string, after?: string) {
   const t = await fetchText(GN(q, when, before, after), { source: "google-news" });
-  return t ? P.parseGoogleNews(t) : [];
+  return t ? ownAddresses(P.parseGoogleNews(t)) : [];
 }
 
 export async function googleTrends() {

@@ -1,7 +1,8 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { db, schema as S } from "@/db";
-import { runNamed } from "@/lib/jobs";
+import { openNewLinks, runNamed } from "@/lib/jobs";
 import { rateLimit } from "@/lib/visitor";
 
 export const maxDuration = 120;
@@ -10,6 +11,13 @@ export const dynamic = "force-dynamic";
 /** Refresh Now: the fastest sources inside one function call, streamed as stage + count. Once an hour for everyone. */
 export async function GET() {
   const enc = new TextEncoder();
+  // the news links this refresh saved are opened after its answer is sent, so the wait stays the same
+  let ran = false;
+  after(async () => {
+    if (!ran) return;
+    await openNewLinks(Date.now() + 45_000);
+    revalidatePath("/", "layout");
+  });
   const [last] = await db().select({ t: S.jobRuns.startedAt }).from(S.jobRuns).where(eq(S.jobRuns.job, "refresh")).orderBy(desc(S.jobRuns.startedAt)).limit(1);
   const stream = new ReadableStream({
     async start(ctl) {
@@ -25,6 +33,7 @@ export async function GET() {
         return;
       }
       let finished = false;
+      ran = true;
       const job = runNamed("refresh", 60_000).finally(() => (finished = true));
       while (!finished) {
         await new Promise((r) => setTimeout(r, 1500));

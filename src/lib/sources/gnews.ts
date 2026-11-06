@@ -3,8 +3,9 @@
 // Sources were long redirect links. Google's own redirect page carries a signature that its `batchexecute` call trades
 // for the address. That call is not an official API: when it stops working, Settings › Sources turns
 // "google-news-links" red and the memo lists that story without a link, never the redirect.
-// Every link is opened once: the answer is remembered in the cache table ("gnews:<id>").
-import { inArray } from "drizzle-orm";
+// Every link is opened once: the answer is remembered in the cache table ("gnews:<id>"), and the News Links sweep
+// (src/lib/jobs/links.ts) puts the article's address in every place the link is stored.
+import { and, inArray, sql } from "drizzle-orm";
 import { db, hasDb, schema as S } from "@/db";
 import { decodeGoogleNews } from "../backtest";
 import { fetchRaw, health } from "./http";
@@ -39,17 +40,28 @@ const KEY = "gnews:";
 /** A link Google wouldn't open is tried again after this many days. */
 export const RETRY_DAYS = 7;
 
-async function remembered(id: string): Promise<{ url: string | null } | undefined> {
-  if (!hasDb()) return undefined;
+/** What Scout remembers about one link: the article's address (null: Google wouldn't give it), and whether every stored
+ *  copy of the link now holds that address ("swept"), so a story seen again is saved under the same address. */
+export type Memo = { url: string | null; swept?: boolean };
+
+/** The memory for these link ids; a refusal older than RETRY_DAYS counts as never tried. */
+export async function remembered(ids: string[]): Promise<Map<string, Memo>> {
+  const out = new Map<string, Memo>();
+  const keys = [...new Set(ids.filter(Boolean))].map((i) => KEY + i);
+  if (!keys.length || !hasDb()) return out;
   try {
-    const [r] = await db().select().from(S.cache).where(inArray(S.cache.key, [KEY + id])).limit(1);
-    if (!r) return undefined;
-    const m = r.value as { url: string | null };
-    if (!m.url && Date.now() - r.createdAt.getTime() > RETRY_DAYS * 86400000) return undefined;
-    return m;
+    for (let k = 0; k < keys.length; k += 500) {
+      const rows = await db().select().from(S.cache).where(inArray(S.cache.key, keys.slice(k, k + 500)));
+      for (const r of rows) {
+        const m = r.value as Memo;
+        if (!m.url && Date.now() - r.createdAt.getTime() > RETRY_DAYS * 86400000) continue;
+        out.set(r.key.slice(KEY.length), m);
+      }
+    }
   } catch {
-    return undefined; // no memory: the link is opened again
+    /* no memory: links are opened again */
   }
+  return out;
 }
 
 async function remember(id: string, url: string | null) {
@@ -62,6 +74,28 @@ async function remember(id: string, url: string | null) {
   } catch {
     /* opened again next time */
   }
+}
+
+/** The sweep has put these links' addresses everywhere they were stored. */
+export async function markSwept(ids: string[]) {
+  const keys = [...new Set(ids)].map((i) => KEY + i);
+  for (let k = 0; k < keys.length; k += 500)
+    await db()
+      .update(S.cache)
+      .set({ value: sql`${S.cache.value} || '{"swept":true}'::jsonb` })
+      .where(and(inArray(S.cache.key, keys.slice(k, k + 500)), sql`${S.cache.value}->>'url' is not null`));
+}
+
+/** A search's stories with the article's own address for every link already swept: a story Scout saved before is
+ *  saved again under the address it already holds, so it is never a second row (F.googleNews calls this). */
+export async function ownAddresses<T extends { url: string }>(items: T[]): Promise<T[]> {
+  const ids = items.map((i) => googleId(i.url)).filter((x): x is string => !!x);
+  if (!ids.length) return items;
+  const m = await remembered(ids);
+  return items.map((i) => {
+    const r = m.get(googleId(i.url) || "");
+    return r?.url && r.swept ? { ...i, url: r.url } : i;
+  });
 }
 
 /** Settings › Sources: "google-news-links" is red once fewer than half of the links tried could be opened. */
@@ -77,7 +111,7 @@ export async function articleUrl(url: string): Promise<string | null> {
   const id = googleId(url);
   if (!id) return url.includes("news.google.com") ? null : url;
   if (cache.has(id)) return cache.get(id)!;
-  const memo = await remembered(id);
+  const memo = (await remembered([id])).get(id);
   if (memo) {
     cache.set(id, memo.url);
     return memo.url;
