@@ -704,6 +704,11 @@ table.t tr[hidden] { display:none; }
 /* Deep links land under the sticky top bar unless every target keeps room for it; the landed item gets a red edge. */
 [id] { scroll-margin-top:84px; }
 article:target, tr:target, .tile:target, .card2:target, .rowcard:target { box-shadow:inset 3px 0 0 var(--red); }
+/* The item a link landed on, marked by Shell's Landing after an in-app click too (an in-app click never sets :target),
+   wears a tint of the red and the edge until the next landing (11-06-26). A table row's tint sits on its cells. */
+[data-landed]:is(article, .tile, .card2, .rowcard, .te, li) { box-shadow:inset 3px 0 0 var(--red); background-color:color-mix(in srgb, var(--red) 12%, transparent); }
+tr[data-landed] > td { background-color:color-mix(in srgb, var(--red) 12%, transparent); }
+tr[data-landed] > td:first-child { box-shadow:inset 3px 0 0 var(--red); }
 /* The Spotlight headline is a link and says so at rest (Adrian, 10-14-26) */
 .band h2 a { color:#fff; text-decoration:underline dotted; text-decoration-color:var(--red-ink); text-underline-offset:6px; }
 .band h2 a:hover, .band h2 a:focus-visible { text-decoration:underline dotted; text-decoration-color:#fff; text-underline-offset:6px; } /* same offset and style: nothing jumps (10-14-26) */

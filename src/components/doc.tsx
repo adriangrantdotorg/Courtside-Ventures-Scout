@@ -3,13 +3,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Printer, Send } from "lucide-react";
 import { useUI } from "./ui";
-import { postJSON } from "@/lib/client";
+import { readJSON } from "@/lib/client";
 
 /** The Document template's head tools: Print and Share to Slack. */
 export function DocTools({ slackText }: { slackText: string }) {
   const ui = useUI();
   async function share() {
-    const r = await postJSON("/api/slack/test", { text: `${slackText} ${location.href}` });
+    const r = await readJSON("/api/slack/test", { text: `${slackText} ${location.href}` });
     if (r.status === 409) return ui.error("Slack isn't connected yet", "Connect Slack once in Settings › Slack, then share from here.", { label: "Open Settings › Slack", href: "/settings?s=slack" });
     if (!r.ok) return ui.error("Slack didn't take the post", r.error || "The server did not answer.");
     ui.toast("Shared to Slack");

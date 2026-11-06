@@ -5,7 +5,7 @@ import { Copy, Download, LockOpen, Sparkles } from "lucide-react";
 import { useUI } from "./ui";
 import { Ago, Clock } from "./Live";
 import { AiChip } from "./cards";
-import { postJSON, getJSON, download } from "@/lib/client";
+import { postJSON, sendJSON, getJSON, download } from "@/lib/client";
 
 type Note = { id: number; body: string; createdAt: string };
 
@@ -20,7 +20,7 @@ export function CompanyNotes({ companyId, name, initial }: { companyId: number; 
     const r = await ui.undoable("Note", postJSON<{ note: Note }>("/api/note", { companyId, body: text }), async (r) => {
       const id = r.data!.note.id;
       setNotes((n) => n.filter((x) => x.id !== id));
-      await fetch("/api/note", { method: "DELETE", body: JSON.stringify({ id }) });
+      await sendJSON("DELETE", "/api/note", { id });
     });
     setBusy(false);
     if (!r.ok) return ui.error("The note didn't save", r.error || "The server did not answer.");

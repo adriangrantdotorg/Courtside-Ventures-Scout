@@ -187,6 +187,24 @@ describe("guards on the source", () => {
     expect(bad).toEqual([]);
     expect(readFileSync("src/app/api/vote/route.ts", "utf8")).toMatch(/const TYPES = new Set\(\["company"\]\)/);
   });
+  it("every save goes through the shared helper, so the next page shows it (11-06-26)", () => {
+    // the browser keeps its own copies of pages; only a save through src/lib/client.ts (postJSON / sendJSON) tells the
+    // Shell to drop them, and a save with a bare fetch would bring the old page back
+    const clientFiles = SRC.filter(({ f, s }) => !f.endsWith("src/lib/client.ts") && /^["']use client["']/m.test(s));
+    const bare = clientFiles.flatMap(({ f, s }) => s.split("\n").map((l, i) => ({ f, i: i + 1, l }))).filter(({ l }) => /fetch\(/.test(l) && /method:\s*"(POST|PATCH|PUT|DELETE)"/.test(l)).map(({ f, i }) => `${f}:${i}`);
+    expect(bare, "save through postJSON / sendJSON from @/lib/client").toEqual([]);
+    // a POST that only reads never announces a save (it would make every page refresh itself, forever)
+    const READ_ROUTES = /(postJSON|sendJSON)[^(]*\(\s*(?:"POST",\s*)?"\/api\/(votes|backtest|slack\/test)"/;
+    const reads = SRC.flatMap(({ f, s }) => s.split("\n").map((l, i) => ({ f, i: i + 1, l }))).filter(({ l }) => READ_ROUTES.test(l)).map(({ f, i }) => `${f}:${i}`);
+    expect(reads, "read the live counts, a backtest step and Slack's test through readJSON").toEqual([]);
+    expect(readFileSync("src/lib/client.ts", "utf8")).toMatch(/if \(!opts\.read\) changed\(\);\n\s+return \{ ok: true/);
+    // a Server Action, not router.refresh alone: refresh clears only the page on screen (Next.js 16 docs, use-router)
+    const shell = readFileSync("src/components/Shell.tsx", "utf8");
+    expect(shell).toMatch(/pagesChanged\(\)/);
+    expect(shell).toMatch(/\n      <SaveRefresh \/>\n/);
+    expect(shell).toMatch(/\n      <Landing \/>\n/);
+    expect(readFileSync("src/app/actions.ts", "utf8")).toMatch(/^"use server";[\s\S]*revalidatePath\("\/", "layout"\)/);
+  });
   it("no native confirm() or alert(), and no error through toast()", () => {
     for (const { f, s } of SRC) {
       expect(s, f).not.toMatch(/(^|[^.\w])(window\.)?(confirm|alert)\(/);

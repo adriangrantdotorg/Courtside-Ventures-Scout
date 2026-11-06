@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Search, Check } from "lucide-react";
 import { useUI, ClearX } from "./ui";
 import { Clock } from "./Live";
-import { postJSON } from "@/lib/client";
+import { readJSON } from "@/lib/client";
 import { EvidenceRows } from "./Evidence";
 import type { Evidence } from "@/db/schema";
 
@@ -30,7 +30,7 @@ export function BacktestAny() {
     setResult(null);
     setStarted(Date.now());
     setStage("announce");
-    const r = await postJSON<{ announce: { date: string; url: string; title: string } | null }>("/api/backtest", { step: "announce", name });
+    const r = await readJSON<{ announce: { date: string; url: string; title: string } | null }>("/api/backtest", { step: "announce", name });
     if (!r.ok) {
       setStage("idle");
       return ui.error("The backtest didn't start", r.error || "The server did not answer.");
@@ -41,7 +41,7 @@ export function BacktestAny() {
   }
   async function confirmAnnounce() {
     setStage("website");
-    const r = await postJSON<{ website: string }>("/api/backtest", { step: "website", name });
+    const r = await readJSON<{ website: string }>("/api/backtest", { step: "website", name });
     setSite(r.data?.website || "");
     setStage("confirm-website");
   }

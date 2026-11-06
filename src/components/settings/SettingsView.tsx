@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Check, Plus, Trash2, Lock, Sparkles, Undo2, Send } from "lucide-react";
 import { useUI, ClearX, Kbd } from "../ui";
 import { Ago, Until, Clock } from "../Live";
-import { postJSON, getJSON } from "@/lib/client";
+import { postJSON, readJSON, sendJSON, getJSON } from "@/lib/client";
 import { ACTIONS, loadBindings, saveBindings, comboOf, prettyCombo } from "@/lib/shortcuts";
 import { PHASE2_ITEMS, ADRIAN_LINKEDIN } from "@/lib/phase2";
 import { nextRun } from "@/lib/format";
@@ -820,10 +820,10 @@ function Voices({ data, refresh }: { data: Data; refresh: () => void }) {
     });
     if (!ok) return;
     setList((l) => l.filter((x) => x.id !== v.id));
-    const r = await fetch("/api/voices", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: v.id }) });
+    const r = await sendJSON("DELETE", "/api/voices", { id: v.id });
     if (!r.ok) {
       setList(data.voices);
-      return ui.error(`${v.name} wasn't removed`, (await r.json().catch(() => ({}))).error || `${r.status}`);
+      return ui.error(`${v.name} wasn't removed`, r.error || "The server did not answer.");
     }
     ui.toast(`${v.name} Removed`);
   }
@@ -875,15 +875,15 @@ function Funds({ data, refresh }: { data: Data; refresh: () => void }) {
   }
   async function focus(x: any, v: string) {
     setList((l) => l.map((y) => (y.id === x.id ? { ...y, focus: v } : y)));
-    const r = await fetch("/api/funds", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: x.id, focus: v }) });
-    if (!r.ok) return ui.error("The focus tag didn't change", `${r.status}`);
+    const r = await sendJSON("PATCH", "/api/funds", { id: x.id, focus: v });
+    if (!r.ok) return ui.error("The focus tag didn't change", r.error || "The server did not answer.");
     ui.toast(`${x.name} Is ${v === "specialist" ? "Specialist" : "Broad"}`);
   }
   async function remove(x: any) {
     const ok = await ui.confirm({ title: `Remove ${x.name}?`, facts: [["Fund", x.name], ["List", x.kind === "neighborhood" ? "Neighborhood" : "Synergistic Funders"]], consequence: "Its items stay in the change log; Undo puts the fund back.", verb: "Remove", danger: true, icon: <Trash2 className="ico" /> });
     if (!ok) return;
     setList((l) => l.filter((y) => y.id !== x.id));
-    await fetch("/api/funds", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: x.id }) });
+    await sendJSON("DELETE", "/api/funds", { id: x.id });
     ui.toast(`${x.name} Removed`);
   }
   return (
@@ -963,7 +963,7 @@ function Trackers({ data, refresh }: { data: Data; refresh: () => void }) {
 function SlackPane({ data, refresh }: { data: Data; refresh: () => void }) {
   const ui = useUI();
   async function test() {
-    const r = await postJSON("/api/slack/test", {});
+    const r = await readJSON("/api/slack/test", {});
     if (!r.ok) return ui.error("Slack didn't take the test message", r.error || "The server did not answer.", { label: "Reconnect Slack", href: "/api/slack/start" });
     ui.toast("Test Message Sent");
   }

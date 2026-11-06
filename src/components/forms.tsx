@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Sparkles } from "lucide-react";
 import { useUI } from "./ui";
-import { postJSON } from "@/lib/client";
+import { postJSON, sendJSON } from "@/lib/client";
 
 const ATTRS = { autoComplete: "off", autoCorrect: "off", autoCapitalize: "off", spellCheck: false } as const;
 
@@ -99,7 +99,7 @@ export function AlertToggle({ id, active }: { id: number; active: boolean }) {
   const [on, setOn] = useState(active);
   async function flip() {
     setOn(!on);
-    const r = await fetch("/api/alerts", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, active: !on }) }).then((x) => ({ ok: x.ok, error: x.ok ? undefined : `${x.status}` })).catch((e) => ({ ok: false, error: String(e) }));
+    const r = await sendJSON("PATCH", "/api/alerts", { id, active: !on });
     if (!r.ok) {
       setOn(on);
       ui.error("The alert didn't change", r.error || "The server did not answer.");

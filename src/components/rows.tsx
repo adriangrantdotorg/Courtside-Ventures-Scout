@@ -164,7 +164,7 @@ export function FilingRow({ f, compact }: { f: Filing; compact?: boolean }) {
   );
 }
 
-type FundItem = { id: number; kind: string; title: string; url: string; date: Date | null; company: string | null; round: string | null; amount: number | null; currency: string; role: string | null; thesisArea: string | null; possible: boolean; source: string | null; fund: { name: string; slug: string; focus: string; kind: string }; votes: number; inPipeline: boolean; score: number | null; companyId: number | null };
+type FundItem = { id: number; kind: string; title: string; url: string; date: Date | null; company: string | null; round: string | null; amount: number | null; currency: string; role: string | null; thesisArea: string | null; possible: boolean; source: string | null; fund: { name: string; slug: string; focus: string; kind: string }; also?: { id: number; possible: boolean; fund: { name: string; slug: string; kind: string } }[]; votes: number; inPipeline: boolean; score: number | null; companyId: number | null };
 export function FundItemRow({ i, compact }: { i: FundItem; compact?: boolean }) {
   const label = i.kind === "newfund" ? "New fund raised" : i.kind === "said" ? "They said it" : "New deal";
   return (
@@ -306,12 +306,18 @@ export function FundItemTable({ items, compact }: { items: FundItem[]; compact?:
       </thead>
       <tbody>
         {items.map((i) => (
-          <tr key={i.id} id={`fi${i.id}`} data-item data-filter={`${i.title} ${i.fund.name} ${i.company || ""}`} data-area={i.thesisArea || ""}>
+          // one row per deal: a link to any fund's copy of it lands here (data-also, read by Shell's Landing)
+          <tr key={i.id} id={`fi${i.id}`} data-also={(i.also || []).map((a) => `fi${a.id}`).join(" ") || undefined} data-item data-filter={`${i.title} ${i.fund.name} ${(i.also || []).map((a) => a.fund.name).join(" ")} ${i.company || ""}`} data-area={i.thesisArea || ""}>
             <td>
               <Link className="fund" href={`/${i.fund.kind === "neighborhood" ? "neighborhood" : "synergistic-funders"}#${i.fund.slug}`} title={`Open ${i.fund.name}`}>
                 {i.fund.name}
               </Link>
               {i.role === "lead" && <span className="sub">led</span>}
+              {(i.also || []).filter((a) => !a.possible).map((a) => (
+                <span className="sub" key={a.id}>
+                  with <Link href={`/${a.fund.kind === "neighborhood" ? "neighborhood" : "synergistic-funders"}#${a.fund.slug}`} title={`Open ${a.fund.name}`}>{a.fund.name}</Link>
+                </span>
+              ))}
             </td>
             <td>{backed(i)}</td>
             {compact ? (

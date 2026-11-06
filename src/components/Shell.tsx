@@ -6,7 +6,8 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { Search, Sun, Moon, House, ListChecks, TrendingUp, Users2, Menu, FileText } from "lucide-react";
 import { UIProvider, useUI, Overlay, Kbd, ClearX } from "./ui";
 import { ACTIONS, loadBindings, comboOf, prettyCombo, type Action } from "@/lib/shortcuts";
-import { postJSON } from "@/lib/client";
+import { postJSON, CHANGED } from "@/lib/client";
+import { pagesChanged } from "@/app/actions";
 import { Theater } from "./V2";
 
 export const NAV: { href: string; label: string }[] = [
@@ -612,6 +613,99 @@ function ScrollTop() {
   return null;
 }
 
+/** A link to an item (`/synergistic-funders#fi12`, `/trends#<slug>`) scrolls to it and marks it, after an in-app click
+ *  too: an in-app click never sets :target, so a ticker deal opened the page at the top with nothing marked (11-06-26).
+ *  A deal shown once for several funds answers to every one of their addresses (`data-also`). */
+function Landing() {
+  const path = usePathname();
+  useEffect(() => {
+    let frame = 0;
+    let tries = 0;
+    const land = () => {
+      cancelAnimationFrame(frame);
+      tries = 0;
+      const id = decodeURIComponent(location.hash.slice(1));
+      document.querySelectorAll("[data-landed]").forEach((el) => el.removeAttribute("data-landed"));
+      if (!id) return;
+      const find = () => document.getElementById(id) || document.querySelector(`[data-also~="${CSS.escape(id)}"]`);
+      const step = () => {
+        const el = find();
+        if (!el) {
+          if (++tries < 120) frame = requestAnimationFrame(step);
+          return;
+        }
+        el.setAttribute("data-landed", "");
+        el.scrollIntoView({ block: "start", behavior: document.documentElement.dataset.motion === "off" ? "auto" : "smooth" });
+      };
+      step();
+    };
+    land();
+    addEventListener("hashchange", land);
+    return () => {
+      cancelAnimationFrame(frame);
+      removeEventListener("hashchange", land);
+    };
+  }, [path]);
+  return null;
+}
+
+/** How long after the last save the second purge runs (SaveRefresh). */
+export const SECOND_PURGE_MS = 2500;
+
+/** After any save (src/lib/client.ts), every page shows it on the next visit: the Server Action purges the browser's
+ *  copies of every page, then the page on screen redraws (11-06-26: a page visited after a save could need a refresh). */
+function SaveRefresh() {
+  const router = useRouter();
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    // while the purge is on its way, a link clicked opens only after it lands, so it never opens the browser's old copy
+    let pending: Promise<void> | null = null;
+    let done: (() => void) | null = null;
+    // a second purge once the saves stop: a page the server began rebuilding just before the save (another visitor's
+    // request) can finish just after the first purge and be kept as the current copy; 2.5 s on, every such rebuild has
+    // finished, and this purge drops it and redraws the page on screen
+    let again: ReturnType<typeof setTimeout> | undefined;
+    const onChange = () => {
+      clearTimeout(t);
+      clearTimeout(again);
+      again = setTimeout(() => void pagesChanged().catch(() => undefined).then(() => router.refresh()), SECOND_PURGE_MS);
+      if (!pending) pending = new Promise<void>((res) => (done = res));
+      // the Server Action purges the browser's copies of every page; refresh redraws the one on screen
+      t = setTimeout(
+        () =>
+          void pagesChanged()
+            .catch(() => undefined)
+            .then(() => {
+              router.refresh();
+              done?.();
+              pending = null;
+              done = null;
+            }),
+        250,
+      );
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!pending || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+      const url = new URL(a.href, location.href);
+      if (url.origin !== location.origin || (url.pathname === location.pathname && url.hash)) return;
+      e.preventDefault();
+      const go = pending;
+      void go.then(() => router.push(url.pathname + url.search + url.hash));
+    };
+    window.addEventListener(CHANGED, onChange);
+    document.addEventListener("click", onClick, true);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(again);
+      window.removeEventListener(CHANGED, onChange);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, [router]);
+  return null;
+}
+
 export function Shell({ children, ticker, trends = true }: { children: ReactNode; ticker: ReactNode; trends?: boolean }) {
   return (
     <TrendsOn.Provider value={trends}>
@@ -625,7 +719,9 @@ export function Shell({ children, ticker, trends = true }: { children: ReactNode
       <Keys />
       <Swipe />
       <ScrollTop />
+      <Landing />
       <Theater />
+      <SaveRefresh />
     </UIProvider>
     </TrendsOn.Provider>
   );

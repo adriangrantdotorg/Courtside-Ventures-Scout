@@ -521,7 +521,7 @@ export async function filingRows(opts: { thesisOnly?: boolean; limit?: number } 
 export async function fundFeed(kind: "neighborhood" | "synergistic", limit = 60) {
   const fs = await db().select().from(S.funds).where(eq(S.funds.kind, kind));
   const ids = fs.map((f) => f.id);
-  if (!ids.length) return { funds: fs, items: [] as ((typeof S.fundItems.$inferSelect) & { fund: (typeof fs)[number]; votes: number; inPipeline: boolean; score: number | null })[] };
+  if (!ids.length) return { funds: fs, items: [] as ((typeof S.fundItems.$inferSelect) & { fund: (typeof fs)[number]; also: { id: number; possible: boolean; fund: (typeof fs)[number] }[]; votes: number; inPipeline: boolean; score: number | null })[] };
   const items = await db()
     .select()
     .from(S.fundItems)
@@ -531,16 +531,23 @@ export async function fundFeed(kind: "neighborhood" | "synergistic", limit = 60)
   const fmap = new Map(fs.map((f) => [f.id, f]));
   const cos = await db().select({ id: S.companies.id, name: S.companies.name, score: S.companies.score }).from(S.companies);
   const cmap = new Map(cos.map((c) => [c.name.toLowerCase(), c]));
-  // broad funds only show deals inside the thesis; duplicate headlines collapse per company
-  const seen = new Set<string>();
-  const kept = items.filter((it) => {
+  // broad funds only show deals inside the thesis; duplicate headlines collapse per company into ONE row, shown under
+  // the fund the story names (a proven row beats a possible one), and the row answers to every collapsed deal's
+  // address, so a ticker link to any of them lands on it (11-06-26: the page kept the first story of a shared deal, so
+  // a ticker link to the other fund's copy opened the page at the top with nothing marked)
+  const groups = new Map<string, typeof items>();
+  for (const it of items) {
     const f = fmap.get(it.fundId)!;
-    if (it.kind === "deal" && f.focus === "broad" && !it.thesisArea) return false;
-    if (it.kind === "deal" && it.possible && !it.thesisArea) return false;
+    if (it.kind === "deal" && f.focus === "broad" && !it.thesisArea) continue;
+    if (it.kind === "deal" && it.possible && !it.thesisArea) continue;
     const key = it.kind + ":" + (it.company || it.title).toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+    const g = groups.get(key);
+    if (g) g.push(it);
+    else groups.set(key, [it]);
+  }
+  const kept = [...groups.values()].map((g) => {
+    const lead = g.find((it) => !it.possible) || g[0];
+    return { ...lead, date: g[0].date, also: g.filter((it) => it !== lead).map((it) => ({ id: it.id, possible: it.possible, fund: fmap.get(it.fundId)! })) };
   });
   // neighborhood: funds from the most recent shared deal first, then by date
   if (kind === "neighborhood") {

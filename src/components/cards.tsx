@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pin, PenLine, Mail, Copy, Download, Plus, Lock, Sparkles, Check } from "lucide-react";
 import { useUI, Overlay, Kbd } from "./ui";
-import { postJSON, getJSON, download } from "@/lib/client";
+import { postJSON, readJSON, sendJSON, getJSON, download } from "@/lib/client";
 import { favicon, STATUS_LABEL } from "@/lib/format";
 import type { CompanyCard } from "@/lib/queries";
 import { sigLabel } from "@/lib/labels";
@@ -28,7 +28,7 @@ function want(key: string) {
     timer = null;
     const keys = [...pending];
     pending.clear();
-    const r = await postJSON<{ counts: Record<string, number>; mine: Record<string, number> }>("/api/votes", { keys });
+    const r = await readJSON<{ counts: Record<string, number>; mine: Record<string, number> }>("/api/votes", { keys });
     if (r.ok && r.data) {
       for (const k of keys) {
         store.counts[k] = r.data.counts[k] ?? 0;
@@ -295,7 +295,7 @@ export function NoteDialog({ c, close, onSaved }: { c: { id: number; name: strin
     if (!text.trim() || busy) return;
     setBusy(true);
     const r = await ui.undoable("Note", postJSON<{ note: { id: number; body: string; createdAt: string } }>("/api/note", { companyId: c.id, body: text }), async (r) => {
-      await fetch("/api/note", { method: "DELETE", body: JSON.stringify({ id: r.data!.note.id }) });
+      await sendJSON("DELETE", "/api/note", { id: r.data!.note.id });
     });
     setBusy(false);
     if (!r.ok) return ui.error("The note didn't save", r.error || "The server did not answer.");
