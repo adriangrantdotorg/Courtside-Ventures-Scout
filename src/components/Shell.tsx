@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Search, Sun, Moon, House, ListChecks, TrendingUp, Users2, Menu, FileText } from "lucide-react";
 import { UIProvider, useUI, Overlay, Kbd, ClearX } from "./ui";
 import { ACTIONS, loadBindings, comboOf, prettyCombo, type Action } from "@/lib/shortcuts";
@@ -29,6 +29,15 @@ export const MORE = [
   { href: "/about", label: "About" },
 ];
 const ALL_PAGES = [...NAV, ...MONEY, ...MORE];
+// a week with no trend hides Trends everywhere: the top bar, the phone tab bar, ⌘K, g t and the shortcuts list
+// (11-06-26); the layout reads whether there is one
+const TrendsOn = createContext(true);
+const NAV_NO_TRENDS = NAV.filter((p) => p.href !== "/trends");
+const ALL_NO_TRENDS = ALL_PAGES.filter((p) => p.href !== "/trends");
+function usePages() {
+  const trends = useContext(TrendsOn);
+  return { trends, nav: trends ? NAV : NAV_NO_TRENDS, all: trends ? ALL_PAGES : ALL_NO_TRENDS };
+}
 
 export function Logo() {
   return (
@@ -124,6 +133,7 @@ function TopBar() {
   const path = usePathname();
   const ui = useUI();
   const [more, setMore] = useState(false);
+  const { trends, nav, all } = usePages();
   useEffect(() => setMore(false), [path]);
   return (
     <>
@@ -137,7 +147,7 @@ function TopBar() {
           </span>
         </Link>
         <nav className="nav" aria-label="Pages">
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <Link key={n.href} href={n.href} className={isOn(path, n.href) ? "on" : ""}>
               {n.label}
             </Link>
@@ -168,10 +178,17 @@ function TopBar() {
           <ListChecks className="ico" />
           Pipeline
         </Link>
-        <Link href="/trends" className={isOn(path, "/trends") ? "on" : ""} title="Trends">
-          <TrendingUp className="ico" />
-          Trends
-        </Link>
+        {trends ? (
+          <Link href="/trends" className={isOn(path, "/trends") ? "on" : ""} title="Trends">
+            <TrendingUp className="ico" />
+            Trends
+          </Link>
+        ) : (
+          <Link href="/tracking" className={isOn(path, "/tracking") ? "on" : ""} title="Tracking">
+            <ListChecks className="ico" />
+            Tracking
+          </Link>
+        )}
         <Link href="/culture" className={isOn(path, "/culture") ? "on" : ""} title="Culture">
           <Users2 className="ico" />
           Culture
@@ -182,7 +199,7 @@ function TopBar() {
         </button>
       </nav>
       <div className="tabmenu" hidden={!more}>
-        {ALL_PAGES.filter((p) => !["/", "/pipeline", "/trends", "/culture"].includes(p.href)).map((p) => (
+        {all.filter((p) => !["/", "/pipeline", trends ? "/trends" : "/tracking", "/culture"].includes(p.href)).map((p) => (
           <Link key={p.href} href={p.href}>
             {p.label}
           </Link>
@@ -214,10 +231,11 @@ function Palette({ close }: { close: () => void }) {
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
   const [sel, setSel] = useState(0);
+  const { all: pageList } = usePages();
   useEffect(() => {
     const ctl = new AbortController();
     const t = setTimeout(async () => {
-      const pages: Hit[] = ALL_PAGES.filter((p) => !q || p.label.toLowerCase().includes(q.toLowerCase())).map((p) => ({ kind: "Pages", title: p.label, href: p.href }));
+      const pages: Hit[] = pageList.filter((p) => !q || p.label.toLowerCase().includes(q.toLowerCase())).map((p) => ({ kind: "Pages", title: p.label, href: p.href }));
       const actions: Hit[] = [
         { kind: "Pages", title: "Settings › Scoring", sub: "weights, penalties, Worth a Look threshold", href: "/settings?s=scoring" },
         { kind: "Pages", title: "Switch theme", sub: "Night or Day", href: "#theme", act: "theme" },
@@ -249,7 +267,7 @@ function Palette({ close }: { close: () => void }) {
       clearTimeout(t);
       ctl.abort();
     };
-  }, [q]);
+  }, [q, pageList]);
 
   async function go(h: Hit, newWin = false) {
     if (h.act === "theme") {
@@ -349,6 +367,7 @@ function Palette({ close }: { close: () => void }) {
 /* ---------- ? sheet ---------- */
 function Sheet({ close }: { close: () => void }) {
   const [b, setB] = useState<Record<string, string[]>>({});
+  const { trends } = usePages();
   useEffect(() => setB(loadBindings()), []);
   return (
     <Overlay className="sheet" label="Keyboard shortcuts" onClose={close} testid="sheet">
@@ -358,7 +377,7 @@ function Sheet({ close }: { close: () => void }) {
       </p>
       <table>
         <tbody>
-          {ACTIONS.map((a) => (
+          {ACTIONS.filter((a) => trends || a.id !== "goTrends").map((a) => (
             <tr key={a.id}>
               <td>{a.label}</td>
               <td className="mono">{(b[a.id] || a.keys).map(prettyCombo).join(" / ")}</td>
@@ -383,6 +402,7 @@ function Sheet({ close }: { close: () => void }) {
 function Keys() {
   const ui = useUI();
   const router = useRouter();
+  const { trends } = usePages();
   const path = usePathname();
   const idx = useRef(-1);
   const pendingG = useRef(0);
@@ -475,7 +495,7 @@ function Keys() {
           router.push("/pipeline");
           return true;
         case "goTrends":
-          router.push("/trends");
+          if (trends) router.push("/trends");
           return true;
         case "goCulture":
           router.push("/culture");
@@ -538,7 +558,7 @@ function Keys() {
       document.removeEventListener("keydown", onKey);
       window.removeEventListener("scout:bindings", onStore);
     };
-  }, [router, ui]);
+  }, [router, ui, trends]);
   return null;
 }
 
@@ -592,8 +612,9 @@ function ScrollTop() {
   return null;
 }
 
-export function Shell({ children, ticker }: { children: ReactNode; ticker: ReactNode }) {
+export function Shell({ children, ticker, trends = true }: { children: ReactNode; ticker: ReactNode; trends?: boolean }) {
   return (
+    <TrendsOn.Provider value={trends}>
     <UIProvider palette={(c) => <Palette close={c} />} sheet={(c) => <Sheet close={c} />} >
       <div className="app">
         <TopBar />
@@ -606,6 +627,7 @@ export function Shell({ children, ticker }: { children: ReactNode; ticker: React
       <ScrollTop />
       <Theater />
     </UIProvider>
+    </TrendsOn.Provider>
   );
 }
 

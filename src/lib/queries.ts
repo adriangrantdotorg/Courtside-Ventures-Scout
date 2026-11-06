@@ -334,6 +334,15 @@ export function velocity(weekly: number[]) {
   return { delta, weeks: Math.min(weeks, 4), isNew, up: delta >= 0 };
 }
 
+/** Is there a trend to show? A week with none hides Trends everywhere (the top bar, the phone tab bar, ⌘K, g t). */
+export async function hasTrends(): Promise<boolean> {
+  try {
+    return (await db().select({ id: S.trends.id }).from(S.trends).limit(1)).length > 0;
+  } catch {
+    return true; // a database that can't answer keeps the page in the menu rather than hide it by mistake
+  }
+}
+
 export async function trendCards(limit = 30): Promise<TrendCard[]> {
   const ts = await db().select().from(S.trends).orderBy(desc(S.trends.tracked), desc(S.trends.score)).limit(limit);
   if (!ts.length) return [];

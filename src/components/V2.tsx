@@ -602,6 +602,8 @@ export function Hero({ c }: { c: CompanyCard }) {
       <div className="x-tm">
         {usesSky(c.media) ? <BrandSky c={c} /> : <MediaView c={c} sky />}
         <div className="x-scrim" />
+        {/* the whole picture opens the company page (11-06-26); the buttons and links on it keep their own clicks */}
+        <Link className="x-tmlink" href={`/company/${c.id}`} data-act="open" aria-label={`Open ${c.name} in Scout`} title={`Open ${c.name} in Scout`} tabIndex={-1} />
         <div className="x-tl">
           <FitRing fit={c.score} name={c.name} size="lg" />
         </div>
@@ -612,7 +614,11 @@ export function Hero({ c }: { c: CompanyCard }) {
             <NewChip c={c} />
             <OverlapTag c={c} />
           </div>
-          <h3 className="x-name">{c.name}</h3>
+          <h3 className="x-name">
+            <Link href={`/company/${c.id}`} data-act="open" title={`Open ${c.name} in Scout`}>
+              {c.name}
+            </Link>
+          </h3>
           {c.funds.known && <Funds c={c} size="tile" />}
           <div className="x-reveal">
             <div>

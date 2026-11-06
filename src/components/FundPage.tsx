@@ -1,9 +1,7 @@
-import { Phase2Link } from "./Phase2Link";
 import Link from "next/link";
 import { fundFeed } from "@/lib/queries";
 import { FundItemTable } from "./rows";
 import { RowFilter } from "./ListHead";
-import { LockChip } from "./cards";
 import { AREA_LABEL, fmtDate, slugify } from "@/lib/format";
 
 export async function FundPage({ kind }: { kind: "neighborhood" | "synergistic" }) {
@@ -34,15 +32,20 @@ export async function FundPage({ kind }: { kind: "neighborhood" | "synergistic" 
       </p>
       <RowFilter placeholder={nb ? "Search co-investor deals" : "Search synergistic funders"} areas={areas} target="#fund-feed" clear={false} />
       <div className="list" id="fund-feed">
+        {/* two sections, each named for what it holds (11-06-26): the deals these funds just did, then the funds */}
+        <div className="h">
+          <h2>Their Latest Deals</h2>
+          <span className="x-count">(What These Funds Just Backed, Newest First)</span>
+        </div>
         <FundItemTable items={items} />
         {!items.length && <p className="empty">No new items from these funds in the last two weeks. The fund watch runs every morning.</p>}
       </div>
       <section className="list" aria-label="The funds">
         <div className="h">
-          <h2>{nb ? "Co-Investors" : "The Funds"}</h2>
-          {!nb && <LockChip door="pitchbook">PitchBook, X and LinkedIn</LockChip>}
+          <h2>{nb ? "Co-Investors" : "The Funders Scout Watches"}</h2>
+          {!nb && <span className="x-count">({funds.length} Funds Inside Courtside&apos;s Thesis)</span>}
         </div>
-        {!nb && <p className="explain">PitchBook, X and LinkedIn are links only in this prototype. Reading them is <Phase2Link />, through the firm&apos;s accounts.</p>}
+        {/* no PitchBook, X and LinkedIn chip or line here (11-06-26); the Phase II list still names them */}
         <div className="brands wide4">
           {sorted.map((f) => (
             <div className="tile" key={f.id} id={f.slug || slugify(f.name)}>

@@ -4,6 +4,7 @@ import "./progress.css";
 import "./v2.css";
 import { Shell } from "@/components/Shell";
 import { Ticker } from "@/components/Ticker";
+import { hasTrends } from "@/lib/queries";
 import { sharePreview, siteUrl } from "@/lib/share";
 
 // The address link previews resolve opengraph-image.jpg against: LinkedIn, Slack and X need an absolute https URL.
@@ -30,7 +31,9 @@ export const viewport: Viewport = {
 // Night is written into the HTML; Day (a saved choice) is applied before paint.
 const prePaint = `try{var t=localStorage.getItem("scout.theme");if(t==="light")document.documentElement.dataset.theme="light";var d=localStorage.getItem("scout.density");if(d)document.documentElement.dataset.density=d;var s=localStorage.getItem("scout.text");if(s)document.documentElement.dataset.text=s;var m=localStorage.getItem("scout.motion");if(m==="off")document.documentElement.dataset.motion="off";}catch(e){}`;
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // a week with no trend hides Trends in every menu (11-06-26)
+  const trends = await hasTrends();
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
@@ -52,7 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </linearGradient>
           </defs>
         </svg>
-        <Shell ticker={<Ticker />}>{children}</Shell>
+        <Shell ticker={<Ticker />} trends={trends}>{children}</Shell>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { trendCards } from "@/lib/queries";
 import { Vote, LockChip } from "@/components/cards";
@@ -17,6 +18,8 @@ const SRC: Record<string, string> = { news: "News", industry: "News", "google-tr
 
 export default async function Page() {
   const trends = await trendCards(30);
+  // no trend: Trends is hidden (11-06-26), and an old link to it lands on Today rather than an empty page
+  if (!trends.length) redirect("/");
   const tracked = trends.filter((t) => t.tracked).length;
   const areas = Object.entries(AREA_LABEL).map(([key, label]) => ({ key, label, n: trends.filter((t) => t.thesisArea === key).length }));
   return (
