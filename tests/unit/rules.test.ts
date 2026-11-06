@@ -330,3 +330,27 @@ describe("round 3 fixes (10-14-26)", () => {
     expect(m[0]?.quote.startsWith("Scott")).toBe(true);
   });
 });
+
+// Neon's free plan allows 5 GB of network transfer a month, and the month was at 85% by 11-06-26: one browser run on
+// the live database read 243 MB. Local checks run on a local copy; long runs on GitHub start only by Adrian's button.
+describe("the live database's free transfer (11-06-26)", () => {
+  it("npm run check builds and runs the browser tests on a local copy", () => {
+    const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+    expect(pkg.scripts.check).toBe("bash scripts/check.sh");
+    const sh = readFileSync("scripts/check.sh", "utf8");
+    expect(sh).toMatch(/export SCOUT_PGLITE=/);
+    expect(sh.indexOf("export SCOUT_PGLITE=")).toBeLessThan(sh.indexOf("npx next build"));
+    expect(readFileSync("playwright.config.ts", "utf8")).toMatch(/if \(!LIVE && !process\.env\.SCOUT_PGLITE\)\s*throw/);
+  });
+  it("Live Runs starts only from the Run workflow button, and offers only runs Scout has", async () => {
+    const y = readFileSync(".github/workflows/live-runs.yml", "utf8");
+    const on = y.slice(y.indexOf("\non:"), y.indexOf("\nconcurrency:"));
+    expect(on).toMatch(/workflow_dispatch:/);
+    expect(on).not.toMatch(/\b(push|pull_request|schedule|workflow_run):/);
+    expect(y).not.toMatch(/\$\{\{\s*inputs\.[^}]*\}\}[^\n]*\bnpx\b/); // inputs reach the shell as env, never pasted in
+    const { JOBS, ON_DEMAND } = await import("@/lib/jobs");
+    const opts = [...on.matchAll(/^\s+- ([\w-]+)$/gm)].map((m) => m[1]);
+    expect(opts.length).toBeGreaterThan(0);
+    for (const o of opts) expect(o in JOBS || o in ON_DEMAND, o).toBe(true);
+  });
+});

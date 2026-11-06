@@ -15,12 +15,19 @@ export function db(): DB {
   const g = globalThis as { __scoutTestDb?: unknown };
   if (g.__scoutTestDb) return g.__scoutTestDb as DB;
   if (!cached && process.env.SCOUT_PGLITE && !process.env.VERCEL) {
-    const req = createRequire(import.meta.url);
-    const { PGlite } = req("@electric-sql/pglite");
-    const { drizzle: pgliteDrizzle } = req("drizzle-orm/pglite");
-    const { readFileSync } = req("node:fs");
-    local = new PGlite({ loadDataDir: new Blob([readFileSync(process.env.SCOUT_PGLITE)]) });
-    cached = pgliteDrizzle(local, { schema }) as unknown as DB;
+    // one copy per process, kept on globalThis: Next builds the routes and the pages as separate bundles, and a copy
+    // per bundle hid a save from the page that shows it (11-06-26: Track on a company page, then Tracking)
+    const shared = globalThis as { __scoutLocal?: { local: NonNullable<typeof local>; db: DB } };
+    if (!shared.__scoutLocal) {
+      const req = createRequire(import.meta.url);
+      const { PGlite } = req("@electric-sql/pglite");
+      const { drizzle: pgliteDrizzle } = req("drizzle-orm/pglite");
+      const { readFileSync } = req("node:fs");
+      const pg = new PGlite({ loadDataDir: new Blob([readFileSync(process.env.SCOUT_PGLITE)]) });
+      shared.__scoutLocal = { local: pg, db: pgliteDrizzle(pg, { schema }) as unknown as DB };
+    }
+    local = shared.__scoutLocal.local;
+    cached = shared.__scoutLocal.db;
   }
   if (!cached) {
     const url = process.env.DATABASE_URL;

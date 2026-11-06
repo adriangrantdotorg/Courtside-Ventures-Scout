@@ -1,0 +1,45 @@
+# Live Runs: a long run on the live data, on GitHub's servers instead of Adrian's Mac (11-06-26). Only the Run workflow
+# button on the Actions tab starts it, never a push. Neon counts what this reads exactly as it counts a run on the Mac
+# (the rest of the News Links backlog: about 17 MB). Needs the DATABASE_URL repository secret.
+name: Live Runs
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: "What to run"
+        type: choice
+        options:
+          - links-all
+        default: links-all
+      rounds:
+        description: "At most this many 270-second rounds (about 58 links each)"
+        type: number
+        default: 40
+concurrency:
+  group: live-runs
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SITE_URL: https://courtside-ventures-scout.vercel.app
+      SCOUT_NO_PROGRESS: "1"
+      RUN: ${{ inputs.run }}
+      ROUNDS: ${{ inputs.rounds }}
+    steps:
+      - name: Check the database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Add the DATABASE_URL secret: Settings, Secrets and variables, Actions, New repository secret"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Run
+        run: npx tsx scripts/pipeline-all.ts "$RUN" "--rounds=$ROUNDS"

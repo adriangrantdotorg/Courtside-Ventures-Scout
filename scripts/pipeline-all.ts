@@ -12,7 +12,8 @@ const maxRounds = Number(args.find((a) => a.startsWith("--rounds="))?.split("=")
 const named = args.filter((a) => !a.startsWith("--"));
 const order = named.length ? named : ["collect-media", "collect-signals", "culture", "sponsors", "trends", "funds-neighborhood", "funds-synergistic", "score", "enrich", "alerts", "monday-brief", "links"];
 const note = (t: string) => {
-  if (process.env.SCOUT_PGLITE) return; // a run on the local copy never touches the shared database's progress record
+  // a run on the local copy, or on GitHub Actions (SCOUT_NO_PROGRESS), never touches the launch page's progress record
+  if (process.env.SCOUT_PGLITE || process.env.SCOUT_NO_PROGRESS) return;
   try {
     execFileSync("npx", ["tsx", "scripts/step.ts", "5", "Open", "--note", t], { stdio: "ignore" });
   } catch {

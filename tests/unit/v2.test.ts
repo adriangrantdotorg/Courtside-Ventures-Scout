@@ -175,7 +175,7 @@ describe("V2 guards on the source (10-26-26)", async () => {
     expect(readFileSync("src/lib/jobs/other.ts", "utf8").match(/recommendable\(\)/g)?.length).toBeGreaterThanOrEqual(2);
   });
   it("a local run never writes to the shared database: the progress note is skipped, PGlite never loads on Vercel", () => {
-    expect(readFileSync("scripts/pipeline-all.ts", "utf8")).toMatch(/if \(process\.env\.SCOUT_PGLITE\) return;/);
+    expect(readFileSync("scripts/pipeline-all.ts", "utf8")).toMatch(/if \(process\.env\.SCOUT_PGLITE \|\| process\.env\.SCOUT_NO_PROGRESS\) return;/);
     expect(readFileSync("src/db/index.ts", "utf8")).toMatch(/process\.env\.SCOUT_PGLITE && !process\.env\.VERCEL/);
   });
   it("only real competitors get an overlap on a card", () => {
