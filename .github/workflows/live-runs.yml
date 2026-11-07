@@ -1,6 +1,8 @@
 # Live Runs: a long run on the live data, on GitHub's servers instead of Adrian's Mac (11-06-26). Only the Run workflow
-# button on the Actions tab starts it, never a push. Neon counts what this reads exactly as it counts a run on the Mac
-# (the rest of the News Links backlog: about 17 MB). Needs the DATABASE_URL repository secret.
+# button on the Actions tab starts it, never a push. Neon counts what this reads exactly as it counts a run on the Mac.
+# Needs the DATABASE_URL repository secret; the AI runs (ship-day-fill, thesis-check-all) also need AI_GATEWAY_API_KEY,
+# since the Vercel token the Mac pulls expires within a day. ship-day-fill is ship day's step 3 (CLAUDE.md): the
+# backfill, the Library, scores and enrich, then the AI Thesis Check of every waiting card (about 1.5 hours).
 name: Live Runs
 on:
   workflow_dispatch:
@@ -10,9 +12,11 @@ on:
         type: choice
         options:
           - links-all
+          - ship-day-fill
+          - thesis-check-all
         default: links-all
       rounds:
-        description: "At most this many 270-second rounds (about 58 links each)"
+        description: "At most this many 270-second rounds per job"
         type: number
         default: 40
 concurrency:
@@ -24,22 +28,33 @@ jobs:
     timeout-minutes: 340
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
       SITE_URL: https://courtside-ventures-scout.vercel.app
       SCOUT_NO_PROGRESS: "1"
       RUN: ${{ inputs.run }}
       ROUNDS: ${{ inputs.rounds }}
     steps:
-      - name: Check the database secret
+      - name: Check the secrets
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::Add the DATABASE_URL secret: Settings, Secrets and variables, Actions, New repository secret"
             exit 1
           fi
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+          if [ "$RUN" != links-all ] && [ -z "$AI_GATEWAY_API_KEY" ]; then
+            echo "::error::Add the AI_GATEWAY_API_KEY secret (an AI Gateway key from the Vercel dashboard): Settings, Secrets and variables, Actions, New repository secret"
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Run
-        run: npx tsx scripts/pipeline-all.ts "$RUN" "--rounds=$ROUNDS"
+        run: |
+          case "$RUN" in
+            ship-day-fill)
+              npx tsx scripts/pipeline-all.ts backfill library score enrich "--rounds=$ROUNDS"
+              npx tsx scripts/pipeline-all.ts thesis-check-all "--rounds=$ROUNDS" ;;
+            *) npx tsx scripts/pipeline-all.ts "$RUN" "--rounds=$ROUNDS" ;;
+          esac

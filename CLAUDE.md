@@ -26,7 +26,7 @@ A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: 
 - Ship day for V2, in this order (Adrian, 10-26-26: the live site complete the moment it ships; shipped 10-27-26, about 1.5 hours; the recipe for any release that changes the schema):
   1. `npx vercel@latest env pull .env.local` (the local AI token expires), then the full check on a fresh local copy: `npx tsx scripts/local-db.ts .local-db/ship.tar.gz`, and with `SCOUT_PGLITE=.local-db/ship.tar.gz` the typecheck, lint, vitest, `next build` and `playwright test` (the shared database has no new columns yet, so `npm run check` against it would fail).
   2. `npm run db:migrate` on the shared database (additive: V1 keeps working).
-  3. Fill the live data in the background with the Mac kept awake (about 1.5 hours; a sleeping Mac pauses it): `npm run pipeline:all -- backfill library score enrich --rounds=5`, then `npm run pipeline:all -- thesis-check-all --rounds=20`.
+  3. Fill the live data on GitHub, not the Mac (Adrian, 11-06-26): the repo's Actions tab › Live Runs › Run workflow › `ship-day-fill` (backfill, library, score, enrich, then thesis-check-all; about 1.5 hours). It needs the `AI_GATEWAY_API_KEY` repository secret beside `DATABASE_URL` (the Vercel token the Mac pulls expires within a day); without it the run stops at its first step and says so.
   4. Hide Sprocket Sports (`/api/hidden` keep: false; the AI check lets it in).
   5. `npm run update` (builds, deploys V2, light live check), then POST `/api/revalidate`.
   6. `npm run verify:live -- <url>` and `npm run check:ai`.
