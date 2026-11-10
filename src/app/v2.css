@@ -392,11 +392,15 @@ html[data-motion="off"] .x-hov, html[data-motion="off"] .x-tile.link { transitio
 .x-tr .x-wbadge { width:26px; height:26px; }
 .x-tr .x-wbadge .x-ico { width:14px; height:14px; }
 .x-sec .x-fwrap { margin:0 0 20px; }
-.x-pfilters { flex-wrap:nowrap; }
-.x-pfilters .fsearch { flex:0 1 240px; min-width:180px; }
-.x-pfilters .fsel { flex:1 1 120px; min-width:0; }
+.x-pfilters .fsearch { flex:1 1 180px; min-width:180px; max-width:240px; }
+/* a menu never shrinks below its label and its pick, so a pick never shows cut (Adrian, 11-10-26: "Under $" in Funds
+   Raised, "broken design"): Sel sets the select's width to the pick's; the row wraps only when picks don't fit */
+.x-pfilters .fsel { flex:1 1 120px; min-width:auto; }
 .x-pfilters .fclear, .fclear { color:var(--text-3) !important; }
-@media (max-width:1200px) { .x-pfilters { flex-wrap:wrap; } }
+.x-pfilters { flex-wrap:wrap; }
+/* search + six menus + Clear need about 1,050px (11-10-26): below that the search takes its own line, so the menus stay
+   on one line together */
+@media (max-width:1300px) { .x-pfilters .fsearch { flex:1 1 100%; max-width:none; } }
 
 /* links: no live underline */
 a.x-sig, a.x-btn, a.x-web, a.x-rr, a.x-logo, a.x-howlink, .x-sim > a, .x-siglist li > a, a.x-thsite { text-decoration:none !important; }
@@ -466,7 +470,10 @@ html[data-theme="light"] .x-btn.x-track:hover, html[data-theme="light"] .x-btn.x
 .x-rounds td a:hover, .x-ov.callout a:hover { text-decoration-color:var(--heading); }
 .x-funds.xxl .x-amt.none { font-size:44px; overflow-wrap:anywhere; }
 /* the Pipeline menus share the row and shrink with it, like the old filter row */
-.x-pfilters .fsel select { width:100%; min-width:0; }
+/* the pill is the frame: no browser focus box drawn inside it (the List / Board toggle's rule, 11-04-26); a focused
+   menu's pill border lights instead */
+.x-pfilters .fsel select { flex:1 0 auto; min-width:0; outline:none; }
+.x-pfilters .fsel:focus-within { border-color:var(--heading); }
 @media (max-width:980px) { .x-pfilters .fsel { flex:1 1 160px; } }
 /* the logo pair never shrinks beside a long overlap reason (WebKit squeezed it under the title, 10-26-26) */
 .x-ov .pair { flex:none; }

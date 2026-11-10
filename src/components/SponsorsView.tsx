@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { ClearX } from "./ui";
+import { Sel } from "./Pipeline";
 import { Ago } from "./Live";
 import { favicon, fmtDate } from "@/lib/format";
 import type { SponsorCard } from "@/lib/queries";
@@ -37,37 +38,10 @@ export function SponsorsView({ cards }: { cards: SponsorCard[] }) {
         </button>
         </div>
         <div className="frow sels">
-        <label className={"fsel" + (show ? " on" : "")}>
-          Show
-          <select value={show} onChange={(e) => setShow(e.target.value)} aria-label="Show">
-            <option value="">All</option>
-            {shows.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={"fsel" + (fit ? " on" : "")}>
-          Fit
-          <select value={fit} onChange={(e) => setFit(e.target.value)} aria-label="Fit tag">
-            <option value="">All</option>
-            {Object.entries(FIT).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={"fsel" + (seen ? " on" : "")}>
-          First Seen
-          <select value={seen} onChange={(e) => setSeen(e.target.value)} aria-label="First seen">
-            <option value="">All</option>
-            <option value="7">This week</option>
-            <option value="30">This month</option>
-            <option value="90">Last 90 days</option>
-          </select>
-        </label>
+        {/* the Pipeline's menus, each as wide as its pick: a long show name showed cut in an equal share (11-10-26) */}
+        <Sel label="Show" value={show} onChange={setShow} opts={shows.map((s) => [s, s] as [string, string])} />
+        <Sel label="Fit" aria="Fit tag" value={fit} onChange={setFit} opts={Object.entries(FIT)} />
+        <Sel label="First Seen" aria="First seen" value={seen} onChange={setSeen} opts={[["7", "This week"], ["30", "This month"], ["90", "Last 90 days"]]} />
         </div>
       </div>
       <div className="rule" />

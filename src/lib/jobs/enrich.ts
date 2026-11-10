@@ -5,10 +5,11 @@ import { db, schema as S } from "@/db";
 import * as F from "../sources/fetchers";
 import { fetchRaw, mediaLoads } from "../sources/http";
 import { isSubject, decodeGoogleNews } from "../backtest";
-import { buildRounds, totalOf, startupVerdict, TEAM_HIDDEN, duplicateOf, guessDomains, factsOf, isOfficialSite, searchReportOk, siteBits, pickMedia, appIdOf, SKIP_HOSTS, type Report, type DupIn, type SiteBits } from "../enrich";
+import { buildRounds, totalOf, startupVerdict, TEAM_HIDDEN, duplicateOf, guessDomains, factsOf, isOfficialSite, searchReportOk, siteBits, siteDescription, pickMedia, appIdOf, SKIP_HOSTS, type Report, type DupIn, type SiteBits } from "../enrich";
 import { normKey } from "../companies";
 import { domainOf } from "../format";
 import { usd, CAP } from "../v2";
+import { weakDescription } from "../score";
 import { saveItems } from "./collect-media";
 import { fromHeadline, secondLook, FUNDING_SEARCHES, FUNDING_Q } from "./collect-signals";
 import { getSetting, setSetting, DEFAULT_QUERIES } from "../settings";
@@ -152,6 +153,10 @@ export async function enrichCompanies(ctx: Ctx, opts: { ids?: number[]; limit?: 
           ctx.change(`Website found: ${c.name} → ${domain}`);
         }
       } else page = await F.homepage(`https://${domain}`);
+      // a missing or empty description is filled from the company's own homepage (the score job rewrites its line)
+      const fromSite = page && weakDescription(c.description) ? siteDescription(page.html, c.name) : null;
+      const described = fromSite && !weakDescription(fromSite) ? { description: fromSite, descriptionUrl: page!.url } : {};
+      if (fromSite && "description" in described) ctx.change(`Description from its website: ${c.name}`);
       let bits: SiteBits | null = page ? siteBits(page.html, page.url) : null;
       if (bits?.ogImage && /favicon|logo|icon/i.test(bits.ogImage) && !/og|share|social|preview|banner|hero/i.test(bits.ogImage)) bits = { ...bits, ogImage: null };
       if (bits) bits = await loadingOnly(bits);
@@ -162,7 +167,7 @@ export async function enrichCompanies(ctx: Ctx, opts: { ids?: number[]; limit?: 
       else if (!brand && c.media?.brand) media.brand = c.media.brand;
       await db()
         .update(S.companies)
-        .set({ rounds, totalRaised: total, media, domain: domain || null, enrichedAt: new Date() })
+        .set({ rounds, totalRaised: total, media, domain: domain || null, enrichedAt: new Date(), ...described })
         .where(eq(S.companies.id, c.id));
       ctx.item();
     } catch (e) {

@@ -7,7 +7,7 @@ import { areaLabel, domainOf, favicon, fmtMoney, pastStage, slugify, stageLabel,
 import { getSetting, getThreshold, type BuildProgress } from "./settings";
 import { cleanCopy, unescapeTwice } from "./copy";
 import { classify } from "./thesis";
-import { CAP, fundsOf, bucketOf, isNew, searchUrl, raisedText, type Funds } from "./v2";
+import { CAP, fundsOf, bucketOf, hasDetails, isNew, searchUrl, raisedText, type Funds } from "./v2";
 import type { Media } from "@/db/schema";
 export { cleanCopy };
 
@@ -45,6 +45,8 @@ export type CompanyCard = {
   logo: string | null;
   funds: Funds;
   bucket: number;
+  /** false when Scout has no description of its own and no website for it (the Pipeline's Details menu) */
+  known: boolean;
   overlap: { with: string; reason: string; logo: string | null; href: string | null } | null; // real competitors only
   isNew: boolean;
   recommend: boolean; // a startup under the $15M cap, not a duplicate
@@ -208,6 +210,8 @@ function v2Fields(c: CoRow, overlap: CompanyCard["overlap"], now: number) {
     logo,
     funds,
     bucket: bucketOf(funds.total),
+    // the line the row shows:  the why-it-fits line
+    known: hasDetails(cleanCopy(c.whyFits || "")),
     overlap,
     isNew: isNew(c.lastSignal ? c.lastSignal.toISOString() : null, now),
     recommend: !c.notStartup && !c.mergedInto && !(funds.total && funds.total >= CAP),

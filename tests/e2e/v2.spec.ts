@@ -198,11 +198,100 @@ test("a tile opens its company page; its own buttons and links don't", async ({ 
   await expect(page.locator("h1.x-dname")).toBeVisible();
 });
 
+test("every Pipeline menu shows its pick whole, with no focus box inside the pill (Adrian, 11-10-26: \"Under $\", broken design)", async ({ page }) => {
+  for (const [width, path, bar] of [[1440, "/pipeline", ".x-pfilters"], [1100, "/pipeline", ".x-pfilters"], [1100, "/sponsors", ".frow.sels"]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(path);
+    await ready(page);
+    for (const label of await page.locator(`${bar} .fsel select`).evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")!))) {
+      const sel = page.locator(`${bar} select[aria-label="${label}"]`);
+      const values = await sel.locator("option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
+      for (const v of values) {
+        await sel.selectOption(v);
+        const fit = await sel.evaluate((el: HTMLSelectElement) => {
+          const cs = getComputedStyle(el);
+          const ctx = document.createElement("canvas").getContext("2d")!;
+          ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          const text = el.selectedOptions[0].text;
+          const need = ctx.measureText(cs.textTransform === "uppercase" ? text.toUpperCase() : text).width + 18; // 18: the arrow
+          const bar = el.closest(".x-pfilters, .frow.sels")!;
+          return { text, need: Math.ceil(need), has: el.clientWidth, outline: cs.outlineStyle, overflow: bar.scrollWidth - bar.clientWidth };
+        });
+        expect(fit.has, `${width}px · ${label}: "${fit.text}" needs ${fit.need}px, has ${fit.has}px`).toBeGreaterThanOrEqual(fit.need);
+        expect(fit.outline, `${width}px · ${label}: a focus box inside the pill`).toBe("none");
+        expect(fit.overflow, `${width}px · ${label}: the menus run past the bar`).toBeLessThanOrEqual(0);
+        // a short pick (not the long industry names) keeps the six menus on one line
+        if (path === "/pipeline" && fit.text.length <= 12) expect(await page.locator(".x-pfilters .fsel").evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().top))).size), `${width}px · ${label}: "${fit.text}" split the menus`).toBe(1);
+      }
+      await sel.selectOption("");
+    }
+  }
+});
+
+test("Back from a startup returns to the Pipeline's filters and page (Adrian, 11-10-26: it opened page 1)", async ({ page }) => {
+  await page.goto("/pipeline");
+  await ready(page);
+  const funds = page.locator('select[aria-label="Funds Raised"]');
+  await funds.selectOption("lt5");
+  await expect(page).toHaveURL(/[?&]funds=lt5(&|$)/);
+  const names = await page.locator(`#prows .x-row a[data-act="open"][href^="/company/"]`).evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute("href")))]);
+  expect(names.length).toBeGreaterThan(0);
+  await page.locator(`#prows .x-row a[data-act="open"][href^="/company/"]`).first().click();
+  await expect(page).toHaveURL(/\/company\/\d+$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/pipeline\?funds=lt5$/);
+  await expect(funds).toHaveValue("lt5");
+  expect(await page.locator(`#prows .x-row a[data-act="open"][href^="/company/"]`).evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute("href")))])).toEqual(names);
+  // Back lands where the click was, not only on the page (a nav link still opens at the top)
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const max = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  if (max > 40) {
+    const link = page.locator(`#prows .x-row a[data-act="open"][href^="/company/"]`).last();
+    await link.scrollIntoViewIfNeeded();
+    const y = await page.evaluate(() => scrollY);
+    expect(y).toBeGreaterThan(0);
+    await link.click();
+    await expect(page).toHaveURL(/\/company\/\d+$/);
+    await page.goBack();
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(y);
+  }
+  // the page rides in the address too, and the Seen menu shows only while the masthead's link sets it
+  await page.goto("/pipeline?seen=today&page=2");
+  await ready(page);
+  await expect(page.locator('select[aria-label="Seen"]')).toHaveValue("today");
+  await expect(page).toHaveURL(/[?&]page=2(&|$)/);
+  await page.goto("/pipeline");
+  await ready(page);
+  await expect(page.locator('select[aria-label="Seen"]')).toHaveCount(0);
+  // Today's On the Radar, its twin: a filter survives Back from a startup
+  await page.goto(HOME);
+  await ready(page);
+  if (await page.locator("#radar").count()) {
+    await page.locator(".x-ddbtn", { hasText: "Funds Raised" }).click();
+    await page.locator(".x-ddmenu button", { hasText: "Under $5M" }).click();
+    await expect(page).toHaveURL(/[?&]funds=lt5(&|$)/);
+    const tiles = await page.locator("#radar .x-tile").count();
+    // the tile's own link to its company (a click on the tile's corner can land on a button or the picture)
+    await page.locator("#radar .x-tile a[href^='/company/']").first().click();
+    await expect(page).toHaveURL(/\/company\/\d+$/);
+    await page.goBack();
+    await expect(page.locator(".x-ddbtn", { hasText: "Funds Raised" }).locator("[data-shown]")).toHaveText("Under $5M");
+    await expect(page.locator("#radar .x-tile")).toHaveCount(tiles);
+  }
+  await page.goto("/pipeline");
+  await ready(page);
+  // Details offers only what the list holds: the sample startups all have a description
+  const details = await page.locator('select[aria-label="Details"] option').evaluateAll((els) => els.map((e) => (e as HTMLOptionElement).value));
+  expect(details[0]).toBe("");
+  expect(details).toContain("known");
+});
+
 test("the Pipeline: Tile rows sorted by fit, one row of menus, Category replaces Status, no area chips", async ({ page }) => {
   await page.goto("/pipeline");
   await ready(page);
   const labels = await page.locator(".x-pfilters .fsel").evaluateAll((els) => els.map((e) => (e.firstChild?.textContent || "").trim())); // textContent: CSS uppercase would hide the real casing
-  expect(labels).toEqual(["Funds Raised", "Category", "Fit", "Signal", "Seen", "Rating"]);
+  // Details replaced Seen (11-10-26); Seen shows only for the masthead's New Today link (?seen=today)
+  expect(labels).toEqual(["Funds Raised", "Category", "Fit", "Signal", "Details", "Rating"]);
   await expect(page.locator(".lanes, .lane-chip")).toHaveCount(0);
   const fits = (await page.locator("#prows .x-row .x-key .x-fit b").allInnerTexts()).map((t) => parseInt(t));
   expect([...fits].sort((a, b) => b - a)).toEqual(fits);

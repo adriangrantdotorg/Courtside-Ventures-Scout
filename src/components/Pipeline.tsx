@@ -1,23 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { List, Columns3, Search } from "lucide-react";
 import { Vote, Signals, StatusPill, partOf } from "./cards";
 import { Row } from "./V2";
-import { BUCKETS } from "@/lib/v2";
+import { FUNDS_OPTS, inFunds } from "@/lib/v2";
 import { useUI, ClearX } from "./ui";
 import { Rich } from "./Rich";
-import { postJSON } from "@/lib/client";
+import { postJSON, rememberSpot, returnToSpot, setAddress } from "@/lib/client";
 import { STATUSES, STATUS_LABEL, favicon } from "@/lib/format";
 import type { CompanyCard } from "@/lib/queries";
 
 const AREAS = ["health", "sports", "media", "gaming", "lifestyle"];
 const AREA_NAME: Record<string, string> = { health: "Health", sports: "Sports", media: "Media", gaming: "Gaming", lifestyle: "Lifestyle" };
 // V2 (10-26-26): one row of menus. Funds Raised replaced Stage, Category replaced Status and the area chips.
-export type Filters = { q: string; area: string; bucket: string; signal: string; score: string; seen: string; rating: string };
-const EMPTY: Filters = { q: "", area: "", bucket: "", signal: "", score: "", seen: "", rating: "" };
+// Details replaced Seen (Adrian, 11-10-26); Seen stays for the masthead's New Today link, shown only while set.
+export type Filters = { q: string; area: string; bucket: string; signal: string; score: string; seen: string; rating: string; details: string };
+const EMPTY: Filters = { q: "", area: "", bucket: "", signal: "", score: "", seen: "", rating: "", details: "" };
+/** Each filter's name in the address. Filters, the page and the view live in the address (Adrian, 11-10-26: Back from
+ *  a startup on page 3 opened page 1), so Back, a reload and a shared link all land on the same list. */
+const URL_KEYS: [keyof Filters, string][] = [["q", "q"], ["bucket", "funds"], ["area", "area"], ["score", "min"], ["signal", "signal"], ["seen", "seen"], ["details", "details"], ["rating", "rating"]];
+type ParamsLike = { get(k: string): string | null };
+export function filtersFrom(p: ParamsLike): Filters {
+  const f = { ...EMPTY };
+  for (const [k, u] of URL_KEYS) f[k] = p.get(u) || "";
+  return f;
+}
+/** The page in the address counts from 1 (?page=3 is the third page); the state counts from 0. */
+export function pageFrom(p: ParamsLike): number {
+  const n = parseInt(p.get("page") || "", 10);
+  return Number.isFinite(n) && n > 1 ? n - 1 : 0;
+}
+/** The Pipeline's own keys in the address: each filter, the page (1-based, page 1 left out) and the Board view. */
+export function pipelineKeys(f: Filters, page: number, view: "list" | "board"): Record<string, string> {
+  const k: Record<string, string> = {};
+  for (const [key, n] of URL_KEYS) k[n] = f[key];
+  k.page = view === "list" && page > 0 ? String(page + 1) : "";
+  k.view = view === "board" ? "board" : "";
+  return k;
+}
+export function pipelineQuery(f: Filters, page: number, view: "list" | "board"): string {
+  const u = new URLSearchParams();
+  for (const [n, v] of Object.entries(pipelineKeys(f, page, view))) if (v) u.set(n, v);
+  return u.toString();
+}
 const PAGE = 20;
 const DAY = 86400000;
 
@@ -29,7 +57,9 @@ export function matches(c: CompanyCard, f: Filters, now: number): boolean {
     const hay = `${c.name} ${c.domain || ""} ${c.descSegs.map((s) => (typeof s === "string" ? s : s.t)).join("")}`.toLowerCase();
     if (!qs.some((x) => hay.includes(x))) return false;
   }
-  if (f.bucket !== "" && String(c.bucket) !== f.bucket) return false;
+  if (!inFunds(c.bucket, f.bucket)) return false;
+  if (f.details === "known" && !c.known) return false;
+  if (f.details === "unknown" && c.known) return false;
   if (f.area && c.thesisArea !== f.area) return false;
   if (f.signal && !c.signals.some((s) => s.type === f.signal)) return false;
   if (f.score && c.score < Number(f.score)) return false;
@@ -44,11 +74,39 @@ export function matches(c: CompanyCard, f: Filters, now: number): boolean {
   return true;
 }
 
-function Sel({ label, value, onChange, opts }: { label: string; value: string; onChange: (v: string) => void; opts: [string, string][] }) {
+let ruler: CanvasRenderingContext2D | null = null;
+/** The width a select needs to show `text` whole, in its own font, plus its arrow. */
+function pickWidth(el: HTMLSelectElement, text: string): number {
+  ruler ||= document.createElement("canvas").getContext("2d");
+  if (!ruler) return 0;
+  const cs = getComputedStyle(el);
+  ruler.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const t = cs.textTransform === "uppercase" ? text.toUpperCase() : text;
+  const spacing = parseFloat(cs.letterSpacing) || 0;
+  return Math.ceil(ruler.measureText(t).width + spacing * t.length) + 30; // 30: the arrow and its gap
+}
+
+/** A filter menu (the Pipeline's, and Sponsor Radar's): a pill with its label, as wide as its pick. */
+export function Sel({ label, value, onChange, opts, aria }: { label: string; value: string; onChange: (v: string) => void; opts: [string, string][]; aria?: string }) {
+  // the select is as wide as its pick (a native select is as wide as its LONGEST choice, and the bar squeezed that to
+  // "Under $", 11-10-26); measured again once the firm's font has loaded
+  const ref = useRef<HTMLSelectElement>(null);
+  const shown = opts.find(([v]) => v === value)?.[1] || "All";
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => (el.style.width = `${pickWidth(el, shown)}px`);
+    fit();
+    let on = true;
+    document.fonts?.ready.then(() => on && fit());
+    return () => {
+      on = false;
+    };
+  }, [shown]);
   return (
     <label className={"fsel" + (value ? " on" : "")}>
       {label}
-      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
+      <select ref={ref} value={value} onChange={(e) => onChange(e.target.value)} aria-label={aria || label}>
         <option value="">All</option>
         {opts.map(([v, l]) => (
           <option key={v} value={v}>
@@ -63,29 +121,41 @@ function Sel({ label, value, onChange, opts }: { label: string; value: string; o
 export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; threshold: number }) {
   const ui = useUI();
   const params = useSearchParams();
-  const [view, setView] = useState<"list" | "board">("list");
-  const [f, setF] = useState<Filters>(EMPTY);
-  const [page, setPage] = useState(0);
+  // read on the first render, so Back from a startup draws the page it left at once (and the browser's scroll fits it)
+  const [view, setView] = useState<"list" | "board">(() => (params.get("view") === "board" ? "board" : "list"));
+  const [f, setF] = useState<Filters>(() => filtersFrom(params));
+  const [page, setPage] = useState(() => pageFrom(params));
+  const cur = useRef(""); // the address the state last asked for
   const [items, setItems] = useState(cards);
   const [now, setNow] = useState(0);
   useEffect(() => setItems(cards), [cards]);
   useEffect(() => {
     setNow(Date.now());
     // Filters come only from the URL (10-14-26: a saved search came back on a plain nav click, "that should not be the case")
-    const fromUrl: Partial<Filters> = {};
-    if (params.get("q")) fromUrl.q = params.get("q")!;
-    if (params.get("min")) fromUrl.score = params.get("min")!;
-    if (params.get("seen")) fromUrl.seen = params.get("seen")!;
-    if (params.get("area")) fromUrl.area = params.get("area")!;
-    setF({ ...EMPTY, ...fromUrl });
+    if (params.toString() === cur.current) return; // our own write below: already the state
+    setF(filtersFrom(params));
+    setPage(pageFrom(params));
     setView(params.get("view") === "board" ? "board" : "list");
   }, [params]);
+  // Back lands on the row you left from, not only its page
+  useEffect(() => {
+    returnToSpot();
+    document.addEventListener("click", rememberSpot, true);
+    return () => document.removeEventListener("click", rememberSpot, true);
+  }, []);
+  // every change goes back into the address, replacing it (a filter change is not a step Back has to undo)
+  useEffect(() => {
+    cur.current = pipelineQuery(f, page, view);
+    setAddress(pipelineKeys(f, page, view));
+  }, [f, page, view]);
   const set = (k: keyof Filters) => (v: string) => {
     setF((x) => ({ ...x, [k]: v }));
     setPage(0);
   };
 
   const shown = useMemo(() => items.filter((c) => matches(c, f, now)), [items, f, now]);
+  // a page past the end (an old link, a list that got shorter) shows the last page
+  const pg = Math.max(0, Math.min(page, Math.ceil(shown.length / PAGE) - 1));
   // A dropdown option that would show nothing is not offered (Adrian, 10-14-26); the chosen one always stays.
   const live = (k: keyof Filters, opts: [string, string][]) => opts.filter(([v]) => v === f[k] || items.some((c) => matches(c, { ...f, [k]: v }, now)));
   const active = Object.values(f).some(Boolean);
@@ -156,13 +226,23 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
           />
           <ClearX show={!!f.q} onClear={() => set("q")("")} />
         </label>
-        <Sel label="Funds Raised" value={f.bucket} onChange={set("bucket")} opts={live("bucket", BUCKETS.map((b, i) => [String(i), b] as [string, string]))} />
+        <Sel label="Funds Raised" value={f.bucket} onChange={set("bucket")} opts={live("bucket", FUNDS_OPTS)} />
         <Sel label="Category" value={f.area} onChange={set("area")} opts={live("area", AREAS.map((a) => [a, AREA_NAME[a]] as [string, string]))} />
         <Sel label="Fit" value={f.score} onChange={set("score")} opts={live("score", [[String(threshold), `Worth a Look (${threshold}%+)`], ["50", "50%+"], ["40", "40%+"], ["30", "30%+"]])} />
         <Sel label="Signal" value={f.signal} onChange={set("signal")} opts={live("signal", [["formd", "Form D"], ["formc", "Form C"], ["yc", "Y Combinator"], ["hn", "Show HN"], ["producthunt", "Product Hunt"], ["appstore", "App Store"], ["news", "News"]])} />
-        <Sel label="Seen" value={f.seen} onChange={set("seen")} opts={live("seen", [["today", "Today"], ["week", "This Week"], ["month", "This Month"]])} />
+        <Sel label="Details" value={f.details} onChange={set("details")} opts={live("details", [["known", "Has Details"], ["unknown", "No Details"]])} />
+        {/* shown only while set: the masthead's New Today opens ?seen=today */}
+        {f.seen && <Sel label="Seen" value={f.seen} onChange={set("seen")} opts={live("seen", [["today", "Today"], ["week", "This Week"], ["month", "This Month"]])} />}
         <Sel label="Rating" value={f.rating} onChange={set("rating")} opts={live("rating", [["up", "Voted Up"], ["down", "Voted Down"]])} />
-        <button className="fclear" disabled={!active} onClick={() => setF(EMPTY)} title="Clear every filter">
+        <button
+          className="fclear"
+          disabled={!active}
+          onClick={() => {
+            setF(EMPTY);
+            setPage(0);
+          }}
+          title="Clear every filter"
+        >
           Clear Filters
         </button>
       </div>
@@ -170,20 +250,20 @@ export function PipelineView({ cards, threshold }: { cards: CompanyCard[]; thres
       {view === "list" ? (
         <>
           <div className="x-rows" id="prows">
-            {shown.slice(page * PAGE, page * PAGE + PAGE).map((c) => (
+            {shown.slice(pg * PAGE, pg * PAGE + PAGE).map((c) => (
               <Row key={c.id} c={c} rank={items.indexOf(c) + 1} />
             ))}
             {!shown.length && <p className="empty">No company matches these filters. Clear Filters shows all {items.length}.</p>}
           </div>
           {shown.length > PAGE && (
             <div className="pager">
-              <button className="btn" disabled={page === 0} onClick={() => setPage(page - 1)} title="Previous page">
+              <button className="btn" disabled={pg === 0} onClick={() => setPage(pg - 1)} title="Previous page">
                 Previous
               </button>
               <span>
-                {page * PAGE + 1}–{Math.min(shown.length, page * PAGE + PAGE)} of {shown.length}
+                {pg * PAGE + 1}–{Math.min(shown.length, pg * PAGE + PAGE)} of {shown.length}
               </span>
-              <button className="btn" disabled={(page + 1) * PAGE >= shown.length} onClick={() => setPage(page + 1)} title="Next page">
+              <button className="btn" disabled={(pg + 1) * PAGE >= shown.length} onClick={() => setPage(pg + 1)} title="Next page">
                 Next
               </button>
             </div>

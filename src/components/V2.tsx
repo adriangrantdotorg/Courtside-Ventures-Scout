@@ -10,7 +10,8 @@ import { Vote, useActions, NoteDialog, useGone, useShown } from "./cards";
 import { Ago } from "./Live";
 import type { CompanyCard } from "@/lib/queries";
 import type { Media } from "@/db/schema";
-import { fitHue, BUCKETS, moneyRange } from "@/lib/v2";
+import { fitHue, FUNDS_OPTS, fundsLabel, inFunds, moneyRange } from "@/lib/v2";
+import { rememberSpot, returnToSpot, setAddress } from "@/lib/client";
 import { skyPlan, usesSky } from "@/lib/brand";
 import { fmtDate, STAGE_LABEL, plural, videoTime } from "@/lib/format";
 import { sigLabel } from "@/lib/labels";
@@ -771,13 +772,41 @@ function Dd({ label, value, shown, opts, set }: { label: string; value: string; 
   );
 }
 
+/** On the Radar's filters and Show More in the address (?funds=lt5&fit=50&new=1&shown=36), so Back from a startup
+ *  returns to the same tiles (Adrian, 11-10-26, the Pipeline's twin). */
+export function radarKeys(f: RF, limit: number): Record<string, string> {
+  return { funds: f.bucket, area: f.area, fit: f.fit50 ? "50" : "", new: f.newonly ? "1" : "", shown: limit > PAGE ? String(limit) : "" };
+}
+export function radarFrom(p: { get(k: string): string | null }): { f: RF; limit: number } {
+  const n = parseInt(p.get("shown") || "", 10);
+  return { f: { bucket: p.get("funds") || "", area: p.get("area") || "", fit50: p.get("fit") === "50", newonly: p.get("new") === "1" }, limit: Number.isFinite(n) && n > PAGE ? n : PAGE };
+}
+
 export function Radar({ cards }: { cards: CompanyCard[] }) {
   const [f, setF] = useState<RF>(NONE);
   const [limit, setLimit] = useState(PAGE);
-  const ok = (c: CompanyCard, x: RF) => (x.bucket === "" || String(c.bucket) === x.bucket) && (!x.area || c.thesisArea === x.area) && (!x.fit50 || c.score >= 50) && (!x.newonly || c.isNew);
+  const first = useRef(true);
+  // the address is read before the first paint (the server draws Today without it), then kept up to date
+  useLayoutEffect(() => {
+    const r = radarFrom(new URLSearchParams(window.location.search));
+    setF(r.f);
+    setLimit(r.limit);
+  }, []);
+  // Back lands on the tile you left from (the tiles above are drawn by now)
+  useEffect(() => {
+    returnToSpot();
+    document.addEventListener("click", rememberSpot, true);
+    return () => document.removeEventListener("click", rememberSpot, true);
+  }, []);
+  useEffect(() => {
+    // the first draw still holds the defaults: the address is what the state is about to become
+    if (first.current) first.current = false;
+    else setAddress(radarKeys(f, limit));
+  }, [f, limit]);
+  const ok = (c: CompanyCard, x: RF) => inFunds(c.bucket, x.bucket) && (!x.area || c.thesisArea === x.area) && (!x.fit50 || c.score >= 50) && (!x.newonly || c.isNew);
   const shown = useMemo(() => cards.filter((c) => ok(c, f)), [cards, f]);
   // a range with no companies is never offered; the chosen one always stays
-  const bucketOpts = BUCKETS.map((n, i) => [String(i), n, cards.filter((c) => ok(c, { ...f, bucket: String(i) })).length] as [string, string, number]).filter(([v, , k]) => k > 0 || v === f.bucket);
+  const bucketOpts = FUNDS_OPTS.map(([v, n]) => [v, n, cards.filter((c) => ok(c, { ...f, bucket: v })).length] as [string, string, number]).filter(([v, , k]) => k > 0 || v === f.bucket);
   const areas = [...new Set(cards.map((c) => c.thesisArea).filter(Boolean))] as string[];
   const areaOpts = areas.map((a) => [a, cards.find((c) => c.thesisArea === a)!.area, cards.filter((c) => ok(c, { ...f, area: a })).length] as [string, string, number]).filter(([v, , k]) => k > 0 || v === f.area);
   const set = (k: keyof RF, v: string | boolean) => {
@@ -795,7 +824,7 @@ export function Radar({ cards }: { cards: CompanyCard[] }) {
       </div>
       <div className="x-fwrap" id="fbar">
         <div className="x-filter f2">
-          <Dd label="Funds Raised" value={f.bucket} shown={f.bucket === "" ? "All" : BUCKETS[Number(f.bucket)]} opts={bucketOpts} set={(v) => set("bucket", v)} />
+          <Dd label="Funds Raised" value={f.bucket} shown={fundsLabel(f.bucket)} opts={bucketOpts} set={(v) => set("bucket", v)} />
           <Dd label="Category" value={f.area} shown={f.area ? cards.find((c) => c.thesisArea === f.area)?.area || f.area : "All"} opts={areaOpts} set={(v) => set("area", v)} />
           <button type="button" className="x-chip" aria-pressed={f.fit50} onClick={() => set("fit50", !f.fit50)} title="Only startups with 50% thesis fit or more">
             50%+ Fit
@@ -807,7 +836,16 @@ export function Radar({ cards }: { cards: CompanyCard[] }) {
           <span className="x-fcount" data-count>
             {shown.length} of {cards.length} Companies
           </span>
-          <button type="button" className="x-fclear" disabled={!active} onClick={() => setF(NONE)} title="Clear every filter">
+          <button
+            type="button"
+            className="x-fclear"
+            disabled={!active}
+            onClick={() => {
+              setF(NONE);
+              setLimit(PAGE);
+            }}
+            title="Clear every filter"
+          >
             Clear Filters
           </button>
         </div>

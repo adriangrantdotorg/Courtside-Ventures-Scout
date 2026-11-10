@@ -4,6 +4,7 @@ import type { Media, Round, ThesisCheck } from "@/db/schema";
 import { moneyOf, stageOf, normKey, cleanName } from "./companies";
 import { classify } from "./thesis";
 import { domainOf } from "./format";
+import { decodeEntities } from "./copy";
 import { usd } from "./v2";
 
 const DAY = 86400000;
@@ -206,6 +207,36 @@ const meta = (html: string, prop: string) =>
   html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']+)["']`, "i"))?.[1] ||
   html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, "i"))?.[1] ||
   null;
+
+/** A meta tag's content, either attribute order, quoted with " or ' (an apostrophe inside "…" is kept: the shared
+ *  `meta()` above stops at one, which would cut "Courtside's" short). The quoted value never holds its own quote mark,
+ *  so a match can't run on into the next tag (11-10-26: ssbdfest.com's content-first tags gave
+ *  `California." name="description"/> <meta content=`). */
+function metaContent(html: string, prop: string): string | null {
+  const p = prop.replace(/[.:]/g, "\\$&");
+  const q = `(?:"([^"]*)"|'([^']*)')`;
+  const a = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${p}["'][^>]*content=${q}`, "i"));
+  const b = html.match(new RegExp(`<meta[^>]+content=${q}[^>]*(?:property|name)=["']${p}["']`, "i"));
+  const m = a || b;
+  return m ? (m[1] ?? m[2] ?? null) : null;
+}
+const SITE_PLACEHOLDER = /just another wordpress site|domain (is )?for sale|buy this domain|coming soon|lorem ipsum|default (store )?description|^welcome to /i;
+/** What the company says it does on its own homepage: the line it writes for Google and link previews (og:description,
+ *  then description, then twitter:description), when it says something: four words or more, not a placeholder, not
+ *  just its name. Cut at a sentence end near 300 characters. Fills a missing or empty description (11-10-26). */
+export function siteDescription(html: string, name: string): string | null {
+  for (const prop of ["og:description", "description", "twitter:description"]) {
+    const raw = metaContent(html, prop);
+    if (!raw) continue;
+    const t = decodeEntities(raw).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (t.split(" ").length < 4 || SITE_PLACEHOLDER.test(t) || t.toLowerCase() === name.toLowerCase()) continue;
+    if (t.length <= 300) return t;
+    const cut = t.slice(0, 300);
+    const end = cut.search(/[.!?](?=\s)[^.!?]*$/);
+    return end > 60 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, "") + ".";
+  }
+  return null;
+}
 
 /** What a homepage offers: its preview image, a product video, a YouTube video and a logo. */
 export function siteBits(html: string, base: string): SiteBits {

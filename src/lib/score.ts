@@ -1,7 +1,7 @@
 // Thesis-fit score (0-100), the "why it fits" line and the portfolio check. Deterministic, no AI.
 import { classify, notVentureScale, type Area } from "./thesis";
 import { pastStage, fmtDate, IN_RANGE_STAGES } from "./format";
-import { raisedText } from "./v2";
+import { raisedText, standInWhat } from "./v2";
 import type { Weights } from "./settings";
 
 export type Plays = { key: string; label: string; parallel: string; re: RegExp; areas?: Area[] };
@@ -106,7 +106,7 @@ export function whyFitsLine(i: { name: string; description: string; thesisArea: 
   const area = i.thesisArea ? i.thesisArea[0].toUpperCase() + i.thesisArea.slice(1) : "";
   const d = (i.description || "").trim();
   // A bare name or a stripped-to-nothing sentence never leaves the line starting with ":" or "," (10-14-26).
-  const what = (d.length > 30 && !HEADLINE.test(d.split(/(?<=[.!?])\s/)[0]) ? shortWhat(d) : "") || `A new ${area || "consumer"} company`;
+  const what = ownWhat(d) || standInWhat(area);
   // A portfolio tie is only ever the "Overlaps with …" tag, for real competitors; the line never says "near X in the
   // portfolio" (Adrian, 10-30-26: 305 cards read "near Religion of Sports" from a loose keyword match).
   const head = play ? `${what}: ${play.label}, like ${play.parallel}` : `${what}, inside Courtside's thesis`;
@@ -119,6 +119,19 @@ export function whyFitsLine(i: { name: string; description: string; thesisArea: 
   const line = fact ? `${head}; ${fact}.` : `${head}.`;
   const words = line.split(/\s+/);
   return words.length > 30 ? words.slice(0, 29).join(" ").replace(/[,;:]$/, "") + "." : line;
+}
+
+/** What the startup does, in its own words, from its description: "" when the description is missing, a headline
+ *  ("X raises $2M") or too short. whyFitsLine() writes the stand-in instead. */
+export function ownWhat(description: string | null): string {
+  const d = (description || "").trim();
+  return d.length > 30 && !HEADLINE.test(d.split(/(?<=[.!?])\s/)[0]) ? shortWhat(d) : "";
+}
+/** A description that says nothing: no words of its own, or fewer than three ("Homepage", the name again). The enrich
+ *  job replaces it with the company's own homepage description (Adrian, 11-10-26: "if a website is known, then surely
+ *  there should be a description"). */
+export function weakDescription(description: string | null): boolean {
+  return ownWhat(description).split(/\s+/).filter(Boolean).length < 3;
 }
 
 function shortWhat(desc: string): string {

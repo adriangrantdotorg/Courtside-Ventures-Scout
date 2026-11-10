@@ -19,7 +19,7 @@ describe("Find Startups in This Trend", () => {
 
 describe("the Pipeline search reads A OR B as either", () => {
   const card = (name: string, desc: string) => ({ name, domain: null, descSegs: [desc] }) as unknown as CompanyCard;
-  const f = (q: string): Filters => ({ q, area: "", bucket: "", signal: "", score: "", seen: "", rating: "" });
+  const f = (q: string): Filters => ({ q, area: "", bucket: "", signal: "", score: "", seen: "", rating: "", details: "" });
   const pick = card("Dinkly", "A booking app for pickleball courts");
   const pad = card("Courtly", "Padel clubs, one app");
   const golf = card("Teeup", "Short-course golf nights");

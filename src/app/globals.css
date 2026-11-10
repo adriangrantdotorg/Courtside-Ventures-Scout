@@ -269,9 +269,11 @@ html[data-theme="light"] .spark polyline { filter:none; }
 .ph-lede { padding:10px 32px 0; max-width:86ch; color:var(--text-2); margin:0; font-size:16px; }
 .filters { display:grid; gap:10px; padding:16px 32px 18px; }
 .frow { display:flex; gap:10px; align-items:center; }
-.frow.sels .fsel { flex:1 1 0; min-width:0; }
-.frow.sels .fsel select { width:100%; min-width:0; }
-@media (max-width:980px) { .frow.sels { flex-wrap:wrap; } .frow.sels .fsel { flex:1 1 160px; } }
+/* Sponsor Radar's menus: like the Pipeline's (v2.css), each never shrinks below its label and pick (11-10-26) */
+.frow.sels { flex-wrap:wrap; }
+.frow.sels .fsel { flex:1 1 120px; min-width:auto; }
+.frow.sels .fsel select { flex:1 0 auto; min-width:0; outline:none; }
+.frow.sels .fsel:focus-within { border-color:var(--heading); }
 .fsearch { position:relative; display:flex; align-items:center; gap:8px; min-height:40px; padding:0 10px 0 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text-3); min-width:260px; flex:0 1 340px; }
 .fsearch input { flex:1; min-width:0; border:0; background:transparent; color:var(--text); font:500 15px/1.3 Montserrat, sans-serif; outline:none; padding:8px 0; }
 .fsearch:focus-within { border-color:var(--red-ink); }
