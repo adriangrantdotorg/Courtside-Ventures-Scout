@@ -4,7 +4,7 @@
 // in place; the clock ticks every second from startedAt. Never reloads itself.
 import { useEffect, useState } from "react";
 import { clock, minutesToGo, isStale, stepRows, noteLine, STEPS, type P } from "@/lib/progress-core.mjs";
-import { Logo } from "./Shell";
+import { BrandName, Logo } from "./Shell";
 
 export function Building({ initial }: { initial: P }) {
   const [p, setP] = useState<P>(initial);
@@ -39,11 +39,7 @@ export function Building({ initial }: { initial: P }) {
       <div className="brand-row">
         <span className="brand">
           <Logo />
-          <span>
-            COURTSIDE
-            <br />
-            VENTURES SCOUT
-          </span>
+          <BrandName />
         </span>
       </div>
       <section className="pg">

@@ -43,6 +43,10 @@ nav a, .ticker a, a.seg, a.btn, a.lane-chip, a.src, a.src2, .evi a, .views a, .b
 .top { display:flex; align-items:stretch; border-bottom:1px solid var(--border); background:var(--bg-2); position:sticky; top:0; z-index:20; }
 .brand, a.brand { display:flex; align-items:center; gap:12px; padding:0 20px; background:var(--red); color:#fff; font-family:"Bruno Ace", sans-serif; font-size:13px; line-height:1.2; flex:none; min-height:64px; }
 .brand img, .brand svg { height:40px; width:auto; display:block; }
+/* the Demo tag (Adrian, 11-12-26, design/demo-signal A2): a solid white label under the logo's words */
+.brand-stack { display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
+.demo-tag { display:inline-flex; align-items:center; border:1.5px solid #fff; background:#fff; color:var(--red); border-radius:4px;
+  font:700 11px/1 Montserrat, sans-serif; letter-spacing:.12em; text-transform:uppercase; padding:3px 7px; white-space:nowrap; }
 .nav { display:flex; align-items:center; gap:0; padding:0 8px; flex:1; min-width:0; }
 .nav > a, .nav .dd > button { padding:22px 10px 20px; font:600 15px/1 Oswald, sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); white-space:nowrap; position:relative; background:none; border:0; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
 .nav > a:hover, .nav .dd > button:hover { color:var(--heading); }
@@ -593,7 +597,7 @@ html[data-theme="light"] .ov { box-shadow:0 30px 80px rgba(26,27,31,.25); }
   .set { grid-template-columns:minmax(0,1fr); }
   .snav { border-right:0; border-bottom:1px solid var(--border); display:flex; flex-wrap:wrap; gap:4px; padding:14px; }
   .snav .grp { width:100%; margin:8px 4px 2px; }
-  .brand span { display:none; }
+  .brand .brand-words { display:none; }
 }
 @media (max-width:900px) {
   .nav { display:none; }
@@ -668,7 +672,9 @@ html[data-motion="off"] .ticker .track { animation:none; }
   .brand { padding:0 14px; }
   .tools { padding:0 10px; gap:6px; }
 }
-@media (max-width:1320px) { .tools .chip .lbl-long, .tools .chip .kbd { display:none; } .brand span { display:none; } }
+@media (max-width:1320px) { .tools .chip .lbl-long, .tools .chip .kbd { display:none; } .brand .brand-words { display:none; }
+  .brand { position:relative; } .brand-stack { position:absolute; left:50%; bottom:3px; transform:translateX(-50%); }
+  .demo-tag { font-size:9px; padding:2px 5px; } }
 @media (max-width:1180px) {
   .nav > a, .nav .dd > button { padding:22px 5px 20px; font-size:13px; letter-spacing:.03em; }
   .tools .chip span:not(.kbd) { display:none; }

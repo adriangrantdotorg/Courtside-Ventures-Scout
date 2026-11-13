@@ -40,6 +40,23 @@ function usePages() {
   return { trends, nav: trends ? NAV : NAV_NO_TRENDS, all: trends ? ALL_PAGES : ALL_NO_TRENDS };
 }
 
+/** The logo's words with the Demo tag under them (Adrian, 11-12-26, the Solid Tag: design/demo-signal, A2): Scout is a
+ *  demo, and every page says so above the fold. Below 1320px the words hide and the tag sits on the logo's foot. */
+export function BrandName() {
+  return (
+    <span className="brand-stack">
+      <span className="brand-words">
+        COURTSIDE
+        <br />
+        VENTURES SCOUT
+      </span>
+      <span className="demo-tag" title="A working demo built by Adrian Grant">
+        Demo
+      </span>
+    </span>
+  );
+}
+
 export function Logo() {
   return (
     <svg viewBox="0 0 46 34" aria-hidden="true" width="54" height="40">
@@ -141,11 +158,7 @@ function TopBar() {
       <header className="top">
         <Link href="/" className="brand" title="Courtside Ventures Scout: go to Today">
           <Logo />
-          <span>
-            COURTSIDE
-            <br />
-            VENTURES SCOUT
-          </span>
+          <BrandName />
         </Link>
         <nav className="nav" aria-label="Pages">
           {nav.map((n) => (
