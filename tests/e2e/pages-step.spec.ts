@@ -42,7 +42,7 @@ test("Synergistic Funders and Neighborhood: both sections are named, and no Pitc
   await expect(page.locator("main h2", { hasText: "Their Latest Deals" })).toBeVisible();
   await expect(page.locator("main h2", { hasText: "The Funders Scout Watches" })).toBeVisible();
   await expect(page.locator("main")).toContainText("Funds Inside Courtside's Thesis");
-  for (const gone of ["PitchBook, X and LinkedIn", "links only in this prototype"]) await expect(page.locator("main")).not.toContainText(gone);
+  for (const gone of ["PitchBook, X and LinkedIn", "links only in this demo"]) await expect(page.locator("main")).not.toContainText(gone);
   await page.goto("/neighborhood");
   await ready(page);
   await expect(page.locator("main h2", { hasText: "Their Latest Deals" })).toBeVisible();

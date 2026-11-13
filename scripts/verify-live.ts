@@ -47,7 +47,7 @@ ok(sy.status === 200, "Synergistic Funders answers");
 const bt = await get("/backtest");
 ok(count(bt.html, /class="card2 win"/g) >= 2 && !/class="card2 none"/.test(bt.html), "backtest shows only the deals found first");
 const ab = await get("/about");
-ok(ab.html.includes("https://www.linkedin.com/in/adriangrant3/") && ab.html.includes("A prototype deal-sourcing site for Courtside Ventures built by Adrian Grant."), "About: Talk to Adrian and the prototype line");
+ok(ab.html.includes("https://www.linkedin.com/in/adriangrant3/") && ab.html.includes("A demo deal-sourcing site for Courtside Ventures built by Adrian Grant."), "About: Talk to Adrian and the demo line");
 for (const p of ["/icon.png", "/favicon.ico"]) ok((await fetch(url + p)).status === 200, `${p} answers`);
 // The share image (10-31-26): a link to Scout on LinkedIn showed a grey box with a cut-off description.
 const tag = (k: string) => (home.html.match(new RegExp(`<meta[^>]+(?:property|name)="${k}"[^>]+content="([^"]*)"`)) || [])[1] || "";

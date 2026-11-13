@@ -26,6 +26,13 @@ describe("share preview (content/share-preview.md)", () => {
     expect(siteUrl({ SITE_URL: "javascript:alert(1)" }, null)).toBeNull();
   });
 
+  it("every tab title and the share title end with (DEMO) (Adrian, 11-12-26)", () => {
+    const layout = readFileSync("src/app/layout.tsx", "utf8");
+    expect(layout).toContain('export const SITE_TITLE = "Courtside Ventures Scout (DEMO)";');
+    expect(layout).toMatch(/title:\s*\{\s*default:\s*SITE_TITLE,\s*template:\s*`%s · \$\{SITE_TITLE\}`/);
+    expect(sharePreview().title.endsWith("(DEMO)")).toBe(true);
+  });
+
   it("the layout takes its share words from the file, never a copy in code", () => {
     const layout = readFileSync("src/app/layout.tsx", "utf8");
     expect(layout).toContain("sharePreview()");

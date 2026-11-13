@@ -27,7 +27,7 @@ export default function Page() {
         title="Courtside Ventures Scout"
         lede={
           <>
-            A prototype deal-sourcing site for Courtside Ventures built by Adrian Grant.
+            A demo deal-sourcing site for Courtside Ventures built by Adrian Grant.
             <span style={{ display: "block", marginTop: 14 }}>
               <a className="btn red" href={ADRIAN_LINKEDIN} target="_blank" rel="noopener noreferrer" title="Opens Adrian Grant on LinkedIn in a new window" data-talk>
                 Talk to Adrian
@@ -61,7 +61,7 @@ export default function Page() {
             <li>Refresh Now: any time, once an hour for everyone</li>
           </ul>
           <h2 id="phase2">Phase II</h2>
-          <p>Phase I is a quick prototype; <Phase2Link /> is the production-ready version we build together: team-only access, trusted ratings, real-time updates, email alerts, social networks through the firm&apos;s accounts, PitchBook and Crunchbase, and LinkedIn.</p>
+          <p>Phase I is a quick demo; <Phase2Link /> is the production-ready version we build together: team-only access, trusted ratings, real-time updates, email alerts, social networks through the firm&apos;s accounts, PitchBook and Crunchbase, and LinkedIn.</p>
         </div>
         <aside className="rail">
           <div className="stick">

@@ -1,7 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import { PAGES, IGNORE_CONSOLE, HOME } from "./pages";
 
-const BANNED = [/\blanes?\b/i, /\bvoices\b/i, /key insight/i, /context only/i, /\bPre-seed\b/, /\bpretend\b/i, /\bthesis areas?\b/, /\b(pricing|subscribe|upsell|premium|paid tier|hiring|on board)\b/i, /\b(no payments|no ads|non-commercial)\b/i, /Flag a UI problem/i, /&#\d+;|&amp;/, /\b(near|close to|next to) [A-Z][^.;]* in the portfolio\b/];
+// "prototype": every Scout says demo (Adrian, 11-12-26)
+const BANNED = [/\bprototypes?\b/i, /\blanes?\b/i, /\bvoices\b/i, /key insight/i, /context only/i, /\bPre-seed\b/, /\bpretend\b/i, /\bthesis areas?\b/, /\b(pricing|subscribe|upsell|premium|paid tier|hiring|on board)\b/i, /\b(no payments|no ads|non-commercial)\b/i, /Flag a UI problem/i, /&#\d+;|&amp;/, /\b(near|close to|next to) [A-Z][^.;]* in the portfolio\b/];
 
 async function open(page: Page, path: string) {
   const errors: string[] = [];

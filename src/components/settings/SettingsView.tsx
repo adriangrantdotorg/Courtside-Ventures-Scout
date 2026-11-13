@@ -1037,7 +1037,7 @@ function Phase2Pane() {
   const ui = useUI();
   return (
     <>
-      <p className="sub">Phase I is this prototype: built by Adrian alone, on free public sources, to start a conversation with Courtside. Phase II is the production-ready version Adrian and Courtside build together, should they decide to.</p>
+      <p className="sub">Phase I is this demo: built by Adrian alone, on free public sources, to start a conversation with Courtside. Phase II is the production-ready version Adrian and Courtside build together, should they decide to.</p>
       <Card title="Phase II · Built Together">
         {PHASE2_ITEMS.map(([door, text], i) => (
           <div className="trow" key={i}>

@@ -1,6 +1,6 @@
 # Courtside Ventures Scout
 
-A deal-sourcing site for Courtside Ventures, a prototype by Adrian Grant. Live: https://courtside-ventures-scout.vercel.app
+A deal-sourcing site for Courtside Ventures, a demo by Adrian Grant (every tab title ends "(DEMO)", `SITE_TITLE` in `src/app/layout.tsx`, and no page says "prototype": `tests/unit/demo-words.test.ts`, 11-12-26). Live: https://courtside-ventures-scout.vercel.app
 
 ## Audience and voice (Adrian, 10-15-26)
 - *Trigger:* you write or edit any words a person reads: page copy, labels, tooltips, empty states, alerts, the Monday brief, the README.

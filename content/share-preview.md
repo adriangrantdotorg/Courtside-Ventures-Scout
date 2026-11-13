@@ -8,7 +8,7 @@ What LinkedIn, Slack, iMessage and X show when someone shares Scout's link: the 
 - The words ON the picture are separate: they live in `design/share-image/build.py` (option B). Change both together.
 
 ## Title
-Courtside Ventures AI Scout (prototype)
+Courtside Ventures AI Scout (DEMO)
 
 ## Description
-AI Scout prototype optimized for sourcing Sports, Lifestyle, and Gaming startups synergistic with Courtside Ventures.
+AI Scout demo optimized for sourcing Sports, Lifestyle, and Gaming startups synergistic with Courtside Ventures.

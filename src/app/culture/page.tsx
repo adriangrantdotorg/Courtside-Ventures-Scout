@@ -37,7 +37,7 @@ export default async function Page() {
       </div>
       <p className="ph-lede">
         Every day Scout reads the new episodes, videos and posts from {sources.filter((s) => s.status === "active").length} creators and shows and pulls out every company, brand and startup they mention. The
-        taste map below highlights the overlap. Info pulled once a day during this prototype phase, with real-time coming in <Phase2Link />.
+        taste map below highlights the overlap. Info pulled once a day during this demo phase, with real-time coming in <Phase2Link />.
       </p>
       <Tabs
         tabs={[

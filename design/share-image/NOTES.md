@@ -17,7 +17,7 @@ The picture LinkedIn, Slack, iMessage and X show when someone shares Scout's lin
 
 ## Copy of record
 
-- On the picture (10-31-26, his "Picture should match the new language"): AI SCOUT (AI in red), a Prototype tag,
+- On the picture (10-31-26, his "Picture should match the new language"): AI SCOUT (AI in red), a Demo tag,
   "Optimized for sourcing startups synergistic with Courtside Ventures.", kicker Sports · Lifestyle · Gaming.
 - The title and description live in `content/share-preview.md` (Adrian edits them there). Limits: title 60, description
   125 characters (LinkedIn's message card cut the old 168-character one at 129). A unit test fails past either.

@@ -249,10 +249,10 @@ export function UIProvider({ children, palette, sheet }: { children: ReactNode; 
             {door.today && <span style={{ fontSize: 15 }}>{door.today}</span>}
           </div>
           <div className="bd">
-            <p>Scout is a working prototype Adrian built to start a conversation with Courtside. Essentially it&apos;s an alpha that he would love to get production-ready as a Courtside team member. Below&apos;s a recap.</p>
+            <p>Scout is a working demo Adrian built to start a conversation with Courtside. Essentially it&apos;s an alpha that he would love to get production-ready as a Courtside team member. Below&apos;s a recap.</p>
             <div className="cols">
               <div>
-                <b>Phase I · the prototype, running now</b>
+                <b>Phase I · the demo, running now</b>
                 <ul>
                   {door.now.map((x) => (
                     <li key={x}>{x}</li>
@@ -269,7 +269,7 @@ export function UIProvider({ children, palette, sheet }: { children: ReactNode; 
               </div>
             </div>
             <div className="acts2">
-              <span className="why2">Phase I: a quick prototype. Phase II: production-ready, built by Adrian and Courtside together.</span>
+              <span className="why2">Phase I: a quick demo. Phase II: production-ready, built by Adrian and Courtside together.</span>
               <button className="btn" title="Close (Esc)" onClick={() => setDoorKey(null)}>
                 Cancel<Kbd>Esc</Kbd>
               </button>

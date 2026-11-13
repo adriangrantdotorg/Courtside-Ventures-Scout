@@ -12,13 +12,17 @@ const SITE = siteUrl() || "http://localhost:3000";
 // Adrian edits these in content/share-preview.md (a unit test holds the lengths).
 const SHARE = sharePreview();
 
+// Every tab and link preview says it is a demo (Adrian, 11-12-26: "all page titles should have (DEMO) at the end of
+// the name of the site to communicate its a demo"); the header keeps the bare name.
+export const SITE_TITLE = "Courtside Ventures Scout (DEMO)";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: { default: "Courtside Ventures Scout", template: "%s · Courtside Ventures Scout" },
-  description: "Deal sourcing for Courtside Ventures: startups, trends, sponsors and funds inside Courtside's thesis, every fact linked to its source. A prototype by Adrian Grant.",
+  title: { default: SITE_TITLE, template: `%s · ${SITE_TITLE}` },
+  description: "Deal sourcing for Courtside Ventures: startups, trends, sponsors and funds inside Courtside's thesis, every fact linked to its source. A demo by Adrian Grant.",
   robots: { index: false, follow: false },
   // The picture is src/app/opengraph-image.jpg (design/share-image/, Adrian's pick "Product Shot", 10-31-26).
-  openGraph: { type: "website", siteName: "Courtside Ventures Scout", title: SHARE.title, description: SHARE.description, url: "/" },
+  openGraph: { type: "website", siteName: SITE_TITLE, title: SHARE.title, description: SHARE.description, url: "/" },
   twitter: { card: "summary_large_image", title: SHARE.title, description: SHARE.description },
 };
 

@@ -26,7 +26,7 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Bruno+Ace&family=Oswald:wght@
 TITLE = "Courtside Ventures Scout"
 KICKER = "Sports · Lifestyle · Gaming"
 LINE = "Deal sourcing for Courtside Ventures, every fact linked to its source."
-BY = "A prototype by Adrian Grant"
+BY = "A demo by Adrian Grant"
 PICK = "B"  # Adrian, 10-31-26: "Product Shot - start build."
 
 
@@ -102,7 +102,7 @@ body{background:radial-gradient(70% 90% at 78% 40%,#3a0a1f 0%,#17181c 60%,#10111
 .shot img{width:820px;display:block}
 """
     body = (f'<div class="left"><div class="brand">{logo(46)}<span>Courtside<br>Ventures</span></div>'
-            f'<div class="big"><b>AI</b> Scout</div><div class="tag">Prototype</div>'
+            f'<div class="big"><b>AI</b> Scout</div><div class="tag">Demo</div>'
             f'<div class="l">Optimized for sourcing startups synergistic with Courtside&nbsp;Ventures.</div>'
             f'<div class="k">{KICKER}</div></div>'
             f'<div class="stage"><div class="shot"><img src="today.png" alt=""></div></div>')
